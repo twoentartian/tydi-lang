@@ -1,0 +1,201 @@
+///////////////////////  start of lex.sdf3  ///////////////////////
+ID = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")*  ~ !(ASCII_ALPHA | ASCII_DIGIT | "_") }
+
+INT_RAW_NORAML = @{ ASCII_DIGIT  ~ (ASCII_DIGIT | "_")* ~ !(ASCII_DIGIT | "_")}
+INT_RAW_HEX = @{ "0x" ~ ASCII_HEX_DIGIT  ~ (ASCII_HEX_DIGIT | "_")* ~ !(ASCII_HEX_DIGIT | "_")}
+INT_RAW_BIN = @{ "0b" ~ ASCII_BIN_DIGIT  ~ (ASCII_BIN_DIGIT | "_")* ~ !(ASCII_BIN_DIGIT | "_")}
+INT_RAW_OCT = @{ "0o" ~ ASCII_OCT_DIGIT  ~ (ASCII_OCT_DIGIT | "_")* ~ !(ASCII_OCT_DIGIT | "_")}
+INT = _{ (((INT_RAW_BIN | INT_RAW_OCT | INT_RAW_HEX | INT_RAW_NORAML) ~ "u")
+        | (INT_RAW_BIN | INT_RAW_OCT | INT_RAW_HEX | INT_RAW_NORAML)) ~ !(ASCII_DIGIT | ".") }
+
+BOOL = @{ ("true" | "false") }
+FLOAT = @{ ('1'..'9' ~ ASCII_DIGIT* ~ "." ~ ASCII_DIGIT*) | ("0" ~ "." ~ ASCII_DIGIT*) ~ !(ASCII_DIGIT) }
+
+LINE_COMMENT = _{ "//" ~  (!NEWLINE ~ ANY)* ~ (NEWLINE | EOI)}
+BLOCK_COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
+COMMENT = _{ LINE_COMMENT | BLOCK_COMMENT }
+WHITESPACE = _{ " " | "\t" | "\r" | "\n"}
+
+STR_CHAR = @{ ' '..'!' | '#'..'[' | ']'..'~' | "\\\t" | "\\n" | "\\t" | "\\\\"}
+STR = @{ "\"" ~ STR_CHAR* ~ "\"" }
+
+///////////////////////  end of lex.sdf3 ///////////////////////
+
+
+///////////////////////  start of exp.sdf3  ///////////////////////
+IntType = { "int" }
+StringType = { "str" }
+BoolType = { "bool" }
+FloatType = { "float" }
+BasicType = _{IntType | StringType | BoolType | FloatType}
+
+IntExp = { INT }
+StringExp = { STR }
+BoolExp = { BOOL }
+FloatExp = { FLOAT }
+
+ArrayExp = { "{" ~ Exp ~ ("," ~ Exp)* ~ "}" }
+ArrayRange = { "(" ~ Exp ~ "=" ~ Exp ~ "=>" ~ Exp ~ ")" }
+Var = { ID }
+
+Term = _{ ( "(" ~ Exp ~ ")") | (UnaryOp ~ Exp) |
+            IntExp | StringExp | BoolExp | FloatExp | Var }
+
+SingleTermExp = _{ Term }
+OpExp = { Term ~ (InfixOp  ~ Term)+ }
+UnaryOp = { "-" | "!"  }
+InfixOp = { "<<" | ">>" | "&&" | "||" | "==" | "!=" | ">=" | "<=" | ">" | "<" | "+" | "-" | "*" | "./" | "%" | "^" | "&" | "|" }
+
+ExpLog = { "log" ~ Exp ~ "(" ~ Exp ~ ")"}
+ExpBitWiseNot = { "~" ~ "(" ~ Exp ~ ")" ~ Exp }
+ExpIndex = { ID ~ "[" ~ Exp ~ "]" }
+ExpConstInType = { "type" ~ ID ~ "." ~ ID }
+ExpRound = { "round" ~ "(" ~ Exp ~ ")" }
+ExpFloor = { "floor" ~ "(" ~ Exp ~ ")" }
+ExpCeil = { "ceil" ~ "(" ~ Exp ~ ")" }
+
+Exp = _{ ArrayRange | ArrayExp | OpExp | ExpLog | ExpBitWiseNot | ExpConstInType | ExpRound | ExpFloor | ExpCeil | ExpIndex | SingleTermExp}
+
+///////////////////////  end of exp.sdf3  ///////////////////////
+
+
+///////////////////////  start of logical_type.sdf3  ///////////////////////
+TypeIndicatorBasicType = { ":" ~ BasicType }
+TypeIndicatorBasicArrayType = { ":" ~ BasicType ~ "[]" }
+TypeIndicator = _{ ( TypeIndicatorBasicArrayType | TypeIndicatorBasicType )? }
+
+LogicalNullType = { "Null" }
+LogicalBitType = { "Bit" ~ "(" ~ Exp ~ ")" }
+LogicalGroupType = {
+"Group" ~ ID ~ "{" ~
+    SubItem+ ~
+"}"
+}
+LogicalUnionType = {
+"Union" ~ ID ~ "{" ~
+    SubItem+ ~
+"}"
+}
+LogicalStreamType = { "Stream" ~ "(" ~ LogicalType ~ StreamProperty* ~ ")" }
+StreamPropertyDimension = { "," ~ "d" ~ "=" ~ Exp }
+StreamPropertyUserType = { "," ~ "u" ~ "=" ~ LogicalType }
+StreamPropertyThroughput = { "," ~ "t" ~ "=" ~ Exp }
+StreamPropertySynchronicity = { "," ~ "s" ~ "=" ~ Exp }
+StreamPropertyComplexity = { "," ~ "c" ~ "=" ~ Exp }
+StreamPropertyDirection = { "," ~ "r" ~ "=" ~ Exp }
+StreamPropertyKeep = { "," ~ "x" ~ "=" ~ Exp }
+StreamProperty = _{ (StreamPropertyDimension | StreamPropertyUserType | StreamPropertyThroughput | StreamPropertySynchronicity |
+                    StreamPropertyComplexity | StreamPropertyDirection | StreamPropertyKeep) }
+LogicalUserDefinedType = { ID }
+LogicalType = _{ (LogicalNullType | LogicalBitType | LogicalStreamType | LogicalGroupType | LogicalUnionType | LogicalUserDefinedType) }
+
+SubItemItem = { ID ~ ":" ~ LogicalType ~ "," }
+SubItemDeclareConst = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
+SubItem = _{ (SubItemItem | SubItemDeclareConst) }
+///////////////////////  end of logical_type.sdf3  ///////////////////////
+
+
+///////////////////////  start of streamlet.sdf3  ///////////////////////
+////1.StreamLet
+StreamLet = {
+"streamlet" ~ ID ~ StreamLetArgs? ~ "{" ~
+  StreamLetBody+ ~
+"}"
+}
+StreamLetArgs = _{ "<" ~ Arg ~ ("," ~ Arg)* ~ ">" }
+StreamLetBodyStreamLetPort = { ID ~ ":" ~ LogicalType ~ Direction ~ "," }
+StreamLetBodyStreamLetPortArray = { ID ~ ":" ~ LogicalType ~ "[" ~ Exp ~ "]" ~ Direction ~ "," }
+StreamLetBodyDeclareConstInStreamlet = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
+StreamLetBody = _{ (StreamLetBodyStreamLetPort | StreamLetBodyStreamLetPortArray | StreamLetBodyDeclareConstInStreamlet)}
+DirectionDirIn = { "in" }
+DirectionDirOut = { "out" }
+Direction = _{ (DirectionDirIn | DirectionDirOut) }
+
+ExpConstInStreamlet = { "streamlet" ~ ID ~ ArgExps? ~ "." ~ ID }
+
+////2.Implementation
+Implementation = {
+"impl" ~ ID ~ ImplementationArgs? ~ "of" ~ ID ~ ArgExps? ~ "{" ~
+  ImplementationBody* ~
+"}"
+}
+ImplementationArgs = _{ "<" ~ Arg ~ ("," ~ Arg)* ~ ">" }
+ImplementationBodyDeclareInstance = { "instance" ~ ID ~ "(" ~ ID ~ ArgExps? ~ ")" ~ "," }
+ImplementationBodyDeclareInstanceArray = { "instance" ~ ID ~ "(" ~ ID ~ ArgExps? ~ ")" ~ "[" ~ Exp ~ "]" ~ "," }
+ImplementationBodyDeclareNet = { LogicalTypeSlice ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
+ImplementationBodyDeclareDelayedNet = { LogicalTypeSlice ~ "=" ~ Exp ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
+ImplementationBodyDeclareConstInImpl = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
+ImplementationBodyDeclareProcess = { "process" ~ "{" ~ "}" ~ "," }
+ImplementationBodyIfBlock = {
+"if" ~ "(" ~ Exp ~ ")" ~ "{" ~
+  ImplementationBody* ~
+"}" ~
+ElifBlock* ~
+ElseBlock?
+}
+ElifBlock = {
+"elif" ~ "(" ~ Exp ~ ")" ~ "{" ~
+  ImplementationBody* ~
+"}"
+}
+ElseBlock = {
+"else" ~ "{" ~
+  ImplementationBody* ~
+"}"
+}
+ImplementationBodyForBlock = {
+"for" ~ ID ~ "in" ~ Exp ~ "{" ~
+  ImplementationBody* ~
+"}"
+}
+ImplementationBody = _{ (ImplementationBodyDeclareInstance | ImplementationBodyDeclareInstanceArray |ImplementationBodyDeclareConstInImpl |
+                        ImplementationBodyIfBlock | ImplementationBodyForBlock | ImplementationBodyDeclareProcess |
+                        ImplementationBodyDeclareNet | ImplementationBodyDeclareDelayedNet)}
+
+NetName = { Exp }
+// LogicalTypeSliceLogicalTypeSlice = { ID }
+// LogicalTypeSliceAccessIndex = { LogicalTypeSlice ~ "[" ~ Exp ~ "]" }
+// LogicalTypeSliceSubLogicalTypeSlice = { LogicalTypeSlice ~ "." ~ ID }
+// LogicalTypeSlice = _{ (LogicalTypeSliceLogicalTypeSlice | LogicalTypeSliceAccessIndex | LogicalTypeSliceSubLogicalTypeSlice) }
+LogicalTypeSliceIndex = _{ "[" ~ Exp ~ "]" }
+LogicalTypeSliceSelf = { ID ~ LogicalTypeSliceIndex? }
+LogicalTypeSliceCompound = { ID ~ LogicalTypeSliceIndex? ~ "." ~ ID ~ LogicalTypeSliceIndex? }
+LogicalTypeSlice = _{ (LogicalTypeSliceCompound | LogicalTypeSliceSelf) }
+
+////3.Arg
+ArgLogicalType = { ID ~ ":" ~ "type"}
+ArgValue = { ID ~ ":" ~ BasicType }
+ArgImplementationType = { ID ~ ":" ~ "impl" ~ "of" ~ ID ~ ArgExps? }
+Arg = _{ (ArgLogicalType | ArgValue | ArgImplementationType) }
+
+////4.ArgExp
+ArgExps = _{ "<" ~ ArgExp ~ ("," ~ ArgExp)* ~ ">" }
+ArgExpConstExp = { Exp }
+ArgExpTypeExp = { "type" ~ LogicalType }
+ArgExpImplementExp = { "impl" ~ ID ~ ArgExps }
+ArgExp = _{ (ArgExpTypeExp | ArgExpImplementExp | ArgExpConstExp) }
+
+////5.GlobalInstance
+GlobalInstance = { "instance" ~ ID ~ "(" ~ ID ~ ArgExps ~ ")" }
+///////////////////////  end of streamlet.sdf3  ///////////////////////
+
+
+///////////////////////  start of statement.sdf3  ///////////////////////
+StatementTypeAssign = { "type" ~ ID ~ "=" ~ LogicalType ~ ";" }
+StatementConstAssign = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ ";" }
+StatementDeclareStreamLet = { StreamLet ~ ";" }
+StatementDeclareImplementation = { Implementation ~ ";" }
+StatementDeclareGlobalInstance = { GlobalInstance ~ ";" }
+StatementDeclareLogicalDataType = { "type" ~ LogicalType ~ ";" }
+StatementAssertEqualLogicalType = { "assert" ~ "type" ~ "(" ~  LogicalType ~ "==" ~ LogicalType ~ ")" ~ ";" }
+Statement = _{ (StatementTypeAssign | StatementConstAssign | StatementDeclareStreamLet | StatementDeclareImplementation |
+                StatementDeclareGlobalInstance | StatementDeclareLogicalDataType | StatementAssertEqualLogicalType) }
+///////////////////////  end of statement.sdf3  ///////////////////////
+
+
+///////////////////////  start of start.sdf3  ///////////////////////
+Start = { SOI ~ "package" ~ ID ~ ";" ~ StartElement* ~ EOI }
+StartElementAStatement = { Statement }
+StartElementAImport = { "import" ~ ID ~ ";" }
+StartElement = _{ (StartElementAStatement |  StartElementAImport) }
+///////////////////////  end of start.sdf3  ///////////////////////
