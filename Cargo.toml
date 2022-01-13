@@ -1,7 +1,6 @@
 [package]
 name = "tydi-lang"
 version = "0.1.0"
-edition = "2021"
 description = "Tydi-lang complier front end"
 
 [dependencies]
