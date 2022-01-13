@@ -1,45 +1,32 @@
-use std::char::DecodeUtf16;
-use crate::id::*;
-use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
+use std::sync::{Arc};
+use crate::identifier::*;
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Identifier(pub String);
-
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-pub struct Project {
-    pub identifier: Id<Identifier>,
-    pub package: HashMap<String, String>,
-}
-
-impl Project {
-    pub fn new(identifier: Id<Identifier>) -> Self {
-        Self {
-            identifier,
-            package: HashMap::new(),
-        }
-    }
-
-    pub fn with_package(mut self, name : String, content : String) -> Self {
-        self.package.insert(name, content);
-        self
-    }
-}
+/// publicly use these to reduce the top-level "use" items.
+pub use crate::id::Id;
+pub use crate::ident::ident;
+pub use crate::project_arch::{Project, Package, BTreeMap};
+pub use crate::scope_var::{Scope, ScopeRelation, DataType, Variable};
 
 #[salsa::query_group(ProjectSpace)]
 pub trait ProjectElement {
     #[salsa::input]
-    fn code(&self) -> Arc<Project>;
+    fn project(&self) -> Arc<Project>;
 
+    #[salsa::interned]
+    fn intern_identifier(&self, identifier: Identifier) -> Id<Identifier>;
+
+    #[salsa::interned]
+    fn intern_package(&self, package: Package) -> Id<Package>;
+
+    #[salsa::interned]
+    fn intern_scope(&self, scope: Scope) -> Id<Scope>;
+
+    #[salsa::interned]
+    fn intern_variable(&self, var: Variable) -> Id<Variable>;
+
+    fn all_packages(&self) -> Arc<BTreeMap<String, Id<Package>>>;
 }
 
-#[cfg(test)]
-mod db_tests {
-    use crate::database::Project;
-
-    #[test]
-    fn test_project(){
-        //let test_project : Project = Project::new();
-
-    }
+fn all_packages(db: &dyn ProjectElement) -> Arc<BTreeMap<String,Id<Package>>> {
+    Arc::new(db.project().packages.clone())
 }
