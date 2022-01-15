@@ -99,7 +99,7 @@ pub struct Variable {
 impl Variable {
     pub fn new(name: Id<Identifier>) -> Self {
         Self {
-            identifier: id,
+            identifier: name,
             var_type: Unknown,
         }
     }
