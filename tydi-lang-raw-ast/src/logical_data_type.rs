@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use crate::scope_var::{Scope, DataType};
+use crate::scope::{Scope, DataType};
 
 #[derive(Clone, Debug)]
 pub enum LogicalDataType {

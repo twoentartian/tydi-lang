@@ -1,7 +1,7 @@
 pub use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use crate::generate_get;
-use crate::scope_var::Scope;
+use crate::scope::Scope;
 use crate::util::*;
 
 #[derive(Clone, Debug)]

@@ -1,8 +1,11 @@
 mod project_arch;
-mod scope_var;
+mod scope;
+mod variable;
+mod data_type;
 mod logical_data_type;
 mod util;
 mod error;
+
 
 
 #[cfg(test)]
