@@ -1,12 +1,17 @@
+mod util;
+mod error;
 mod project_arch;
 mod scope;
 mod variable;
 mod data_type;
 mod logical_data_type;
-mod util;
-mod error;
+mod group_union_type;
+mod steam_type;
+mod bit_null_type;
+mod streamlet;
 
-
+#[macro_use]
+extern crate lazy_static;
 
 #[cfg(test)]
 mod tests {

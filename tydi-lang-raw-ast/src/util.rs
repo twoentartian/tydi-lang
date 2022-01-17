@@ -1,13 +1,4 @@
 #[macro_export]
-macro_rules! generate_access {
-    ($id:ident, $t: ty, $id_get_fun:ident, $id_set_func:ident) => {
-        generate_set!($id, $t, $id_set_func);
-
-        generate_get!($id, $t, $id_get_fun);
-    };
-}
-
-#[macro_export]
 macro_rules! generate_set {
     ($id:ident, $t: ty, $id_set_func:ident) => {
         pub fn $id_set_func(&mut self, target: $t) {
@@ -25,8 +16,16 @@ macro_rules! generate_get {
     };
 }
 
+#[macro_export]
+macro_rules! generate_access {
+    ($id:ident, $t: ty, $id_get_fun:ident, $id_set_func:ident) => {
+        generate_set!($id, $t, $id_set_func);
+        generate_get!($id, $t, $id_get_fun);
+    };
+}
+
 pub trait PrettyPrint {
-    fn pretty_print(&self, depth: u32) -> String;
+    fn pretty_print(&self, depth: u32, verbose: bool) -> String;
 }
 
 pub fn generate_padding(depth: u32) -> String {

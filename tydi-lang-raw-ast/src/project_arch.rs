@@ -1,7 +1,7 @@
 pub use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use crate::generate_get;
-use crate::scope::Scope;
+use crate::scope::{Scope, ScopeType};
 use crate::util::*;
 
 #[derive(Clone, Debug)]
@@ -18,13 +18,17 @@ impl Project {
         }
     }
 
-    pub fn new_package(&mut self, name_: String) -> Result<(),String> {
+    pub fn new_package(&mut self, name_: String) -> Result<Arc<RwLock<Scope>>,String> {
         match self.packages.get(&name_) {
             None => {}
             Some(_) => {return Err(format!("package name: {} already exists", name_));}
         }
-        self.packages.insert(name_.clone(), Arc::new(RwLock::new(Package::new(name_.clone()))));
-        return Ok(());
+
+        let new_package = Package::new(name_.clone());
+        let new_package_scope = new_package.scope.clone();
+        let package_arc = Arc::new(RwLock::new(new_package));
+        self.packages.insert(name_.clone(), package_arc);
+        return Ok(new_package_scope);
     }
 
     pub fn find_package(&mut self, name_: String) -> Result<Arc<RwLock<Package>>,String> {
@@ -36,7 +40,7 @@ impl Project {
 }
 
 impl PrettyPrint for Project {
-    fn pretty_print(&self, depth: u32) -> String {
+    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
         let mut output = String::new();
 
         //enter scope
@@ -44,7 +48,7 @@ impl PrettyPrint for Project {
 
         //enter packages
         for (package_name, package) in &self.packages {
-            output.push_str(&format!("{}", package.read().unwrap().pretty_print(depth+1) ));
+            output.push_str(&format!("{}", package.read().unwrap().pretty_print(depth+1, verbose)));
         }
 
         //leave scope
@@ -64,25 +68,26 @@ impl Package {
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
 
     pub fn new(name_: String) -> Self {
+        let scope_ = Arc::new(RwLock::new(Scope::new(format!("package_{}", name_.clone()), ScopeType::BasicScope)));
+        scope_.write().unwrap().set_self_ref(scope_.clone());
         Self {
             name: name_.clone(),
-            scope: Arc::new(RwLock::new(Scope::new(format!("package_{}", name_.clone())))),
+            scope: scope_,
         }
     }
 }
 
 impl PrettyPrint for Package {
-    fn pretty_print(&self, depth: u32) -> String {
+    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
         let mut output = String::new();
 
         //enter package
         output.push_str(&format!("{}Package({}){{\n", generate_padding(depth), self.name.clone()));
-
         //enter scope
-        output.push_str(&format!("{}", self.scope.read().unwrap().pretty_print(depth+1) ));
-
+        output.push_str(&format!("{}", self.scope.read().unwrap().pretty_print(depth+1, verbose)));
         //leave package
         output.push_str(&format!("{}}}\n", generate_padding(depth)));
+
         return output;
     }
 }
