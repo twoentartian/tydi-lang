@@ -1,15 +1,17 @@
+use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 use crate::logical_data_type::LogicalDataType;
 use crate::util::{generate_padding, PrettyPrint};
 use crate::{generate_access, generate_get, generate_set};
 use crate::error::ErrorCode;
 use crate::inferable::{Inferable, NewInferable};
-use crate::scope::{Scope, ScopeType};
+use crate::scope::{Scope, ScopeRelationType, ScopeType};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PortDirection {
     Input,
     Output,
+    Unknown,
 }
 
 impl From<PortDirection> for String {
@@ -17,6 +19,7 @@ impl From<PortDirection> for String {
         return match dir {
             PortDirection::Input => { String::from("in") }
             PortDirection::Output => { String::from("out") }
+            PortDirection::Unknown => { String::from("unknown") }
         }
     }
 }
@@ -60,11 +63,70 @@ impl Scope {
 
         match self.types.get(&name_) {
             None => {}
-            Some(_) => { return Err(ErrorCode::IdRedefined(format!("type {} already defined", name_.clone()))); }
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("port {} already defined", name_.clone()))); }
         };
         let port = Port::new(name_.clone(), type_.clone(), dir.clone());
         self.ports.insert(name_.clone(), Arc::new(RwLock::new(port)));
 
         return Ok(());
     }
+
+    pub fn resolve_port_in_current_scope(& self, name_: String) -> Result<Arc<RwLock<Port>>, ErrorCode> {
+        return match self.ports.get(&name_) {
+            None => { Err(ErrorCode::IdNotFound(format!("port {} not found", name_))) }
+            Some(port) => { Ok(port.clone()) }
+        };
+    }
+
+    fn _resolve_port_in_scope(target_scope: Arc<RwLock<Scope>>, name_: &String, allowed_relationships: &HashSet<ScopeRelationType>) -> Result<Arc<RwLock<Port>>, ErrorCode> {
+        let target_scope_r = target_scope.read().unwrap();
+
+        //find self scope
+        match target_scope_r.resolve_port_in_current_scope(name_.clone()) {
+            Ok(var) => { return Ok(var) }
+            Err(_) => {}
+        }
+
+        //find in parent scope
+        for (_, scope_real) in &(target_scope_r.scope_relationships) {
+            let result = Scope::_resolve_port_in_scope(scope_real.get_target_scope().clone(), &name_, &allowed_relationships);
+            match result {
+                Ok(inst) => {return Ok(inst)}
+                Err(_) => {}
+            }
+        }
+
+        return Err(ErrorCode::IdNotFound(format!("port {} not found", name_.clone())));
+    }
+
+    pub fn resolve_port_with_relation(& self, name_: String, allowed_relationships: Vec<ScopeRelationType>) -> Result<Arc<RwLock<Port>>, ErrorCode> {
+        match self.resolve_port_in_current_scope(name_.clone()) {
+            Ok(inst) => { return Ok(inst) }
+            Err(_) => {}
+        }
+
+        let mut allowed_relationships_hash = HashSet::new();
+        for allowed_relationship in allowed_relationships {
+            allowed_relationships_hash.insert(allowed_relationship.clone());
+        }
+
+        //find in parent scope
+        for (_, scope_real) in &(self.scope_relationships) {
+            let result = Scope::_resolve_port_in_scope(scope_real.get_target_scope().clone(), &name_, & allowed_relationships_hash);
+            match result {
+                Ok(var) => {return Ok(var)}
+                Err(_) => {}
+            }
+        }
+
+        return Err(ErrorCode::IdNotFound(format!("port {} not found", name_.clone())));
+    }
+
+    pub fn resolve_port_from_scope(& self, name_: String) -> Result<Arc<RwLock<Port>>, ErrorCode> {
+        use crate::scope::ScopeRelationType::*;
+        let allowed_relationships = vec![GroupScopeRela, UnionScopeRela,
+                                         StreamScopeRela, StreamletScopeRela, ImplementScopeRela];
+        return self.resolve_port_with_relation(name_, allowed_relationships);
+    }
+
 }

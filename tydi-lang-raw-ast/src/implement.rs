@@ -1,14 +1,16 @@
 use std::collections::HashSet;
+use std::fs::copy;
 use std::sync::{Arc, RwLock};
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
 use crate::generate_get;
 use crate::inferable::Inferable;
 use crate::logical_data_type::LogicalDataType;
-use crate::port::PortDirection;
+use crate::port::{Port, PortDirection};
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
 use crate::streamlet::Streamlet;
 use crate::util::{generate_padding, PrettyPrint};
+use crate::variable::Variable;
 
 #[derive(Clone, Debug)]
 pub enum ImplementType {
@@ -32,7 +34,7 @@ impl Implement {
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
 
     pub fn new(name_: String, type_: ImplementType) -> Self {
-        let scope_ = Arc::new(RwLock::new(Scope::new(format!("implement_{}", name_.clone()), ScopeType::StreamletScope)));
+        let scope_ = Arc::new(RwLock::new(Scope::new(format!("implement_{}", name_.clone()), ScopeType::ImplementScope)));
         {
             scope_.write().unwrap().set_self_ref(scope_.clone());
         }
@@ -46,6 +48,11 @@ impl Implement {
     pub fn new_instance(& self, name_: String, streamlet_: Inferable<Arc<RwLock<Streamlet>>>) -> Result<(), ErrorCode> {
         let mut scope = self.scope.write().unwrap();
         return scope.new_instance(name_.clone(), streamlet_.clone());
+    }
+
+    pub fn new_connection(& self, name_: String, lhs_port_: Inferable<Arc<RwLock<Port>>>, rhs_port_: Inferable<Arc<RwLock<Port>>>, delay_: Variable) -> Result<(), ErrorCode> {
+        let mut scope = self.scope.write().unwrap();
+        return scope.new_connection(name_.clone(), lhs_port_.clone(), rhs_port_.clone(), delay_.clone());
     }
 
     pub fn new_variable(& self, name_: String, type_: DataType, exp_: String) -> Result<(), ErrorCode> {
@@ -80,7 +87,7 @@ impl PrettyPrint for Implement {
 }
 
 impl Scope {
-    pub fn new_implement(&mut self, name_: String, type_: ImplementType) -> Result<Arc<RwLock<Implement>>, ErrorCode> {
+    pub fn new_implement(&mut self, name_: String, type_: ImplementType) -> Result<Arc<RwLock<Scope>>, ErrorCode> {
         if self.scope_type != ScopeType::BasicScope { panic!("not allowed to define implement outside of base scope") }
 
         match self.implements.get(&name_) {
@@ -94,9 +101,10 @@ impl Scope {
             implement.scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), String::from("base"), ScopeRelationType::ImplementScopeRela);
         }
 
+        let scope_copy = implement.scope.clone();
         let implement_box = Arc::new(RwLock::new(implement));
         self.implements.insert(name_.clone(), implement_box.clone());
-        return Ok(implement_box);
+        return Ok(scope_copy);
     }
 
 }

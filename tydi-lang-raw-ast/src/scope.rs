@@ -15,9 +15,8 @@ pub use crate::instances::Instance;
 pub use crate::error::ErrorCode;
 pub use crate::util::*;
 
-use crate::{generate_get};
-
-
+use crate::{generate_access, generate_get, generate_set};
+use crate::connection::Connection;
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub enum ScopeRelationType {
@@ -107,7 +106,7 @@ impl From<ScopeType> for String {
 
 #[derive(Clone, Debug)]
 pub struct Scope {
-    pub name: String,
+    name: String,
     pub scope_type: ScopeType,
     pub self_ref: Option<Arc<RwLock<Scope>>>,
 
@@ -119,7 +118,7 @@ pub struct Scope {
     pub ports: HashMap<String, Arc<RwLock<Port>>>,
     pub implements: HashMap<String, Arc<RwLock<Implement>>>,
     pub instances: HashMap<String, Arc<RwLock<Instance>>>,
-
+    pub connections: HashMap<String, Arc<RwLock<Connection>>>,
     //pub implements: HashMap<String, Arc<RwLock<Streamlet>>>,
 }
 
@@ -138,6 +137,7 @@ impl Scope {
             ports: HashMap::new(),
             implements: HashMap::new(),
             instances: HashMap::new(),
+            connections: HashMap::new(),
         }
     }
 
@@ -220,6 +220,14 @@ impl PrettyPrint for Scope {
             }
             output.push_str(&format!("{}}}\n", generate_padding(depth+1)));
         }
+        if !self.connections.is_empty() || verbose {
+            //enter scope_relationships
+            output.push_str(&format!("{}Connections{{\n", generate_padding(depth+1)));
+            for (_, inst) in &self.connections {
+                output.push_str(&format!("{}\n", inst.read().unwrap().pretty_print(depth+2, verbose)) );
+            }
+            output.push_str(&format!("{}}}\n", generate_padding(depth+1)));
+        }
 
         //leave scope
         output.push_str(&format!("{}}}\n", generate_padding(depth)));
@@ -234,7 +242,7 @@ mod tests {
     use std::sync::RwLockReadGuard;
     use crate::implement::ImplementType;
     use crate::inferable::{Inferable, NewInferable};
-    use crate::{inferred, not_inferred};
+    use crate::{infer_port, inferred, not_inferred, infer_streamlet};
     use crate::project_arch::Project;
     use crate::scope::*;
     use crate::scope::DataType::StringType;
@@ -326,9 +334,17 @@ mod tests {
                 }
             }
 
-            let implement0_box = package_scope.new_implement(String::from("impl0"), ImplementType::NormalImplement).unwrap();
-            implement0_box.read().unwrap().new_instance(String::from("instance"),
-                <Inferable<Arc<RwLock<Streamlet>>> as NewInferable<Arc<RwLock<Streamlet>>>>::_new(String::from("streamlet_unknown")));
+            let implement_scope = package_scope.new_implement(String::from("impl0"), ImplementType::NormalImplement).unwrap();
+
+            {
+                let mut impl_scope = implement_scope.write().unwrap();
+                impl_scope.new_instance(String::from("instance"),not_inferred!(infer_streamlet!(), String::from("streamlet_unknown"))).unwrap();
+                impl_scope.new_connection(String::from("connection0"),
+                                          not_inferred!(infer_port!(), String::from("a.b")),
+                                          not_inferred!(infer_port!(), String::from("a.b")),
+                                          Variable::new(String::from("temp"), DataType::IntType, String::from("1")));
+            }
+
 
         }
         println!("{}", project0.pretty_print(0, false));
@@ -362,8 +378,8 @@ mod tests {
                 }
                 _ => {}
             }
-            let output_str = group_type.read().unwrap().pretty_print(0, false);
-            println!("{}", output_str);
+            // let output_str = group_type.read().unwrap().pretty_print(0, false);
+            // println!("{}", output_str);
         }
     }
 }

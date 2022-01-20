@@ -1,6 +1,8 @@
 use std::sync::{Arc, RwLock};
 use crate::logical_data_type::LogicalDataType;
-use crate::{generate_get, generate_set, generate_access};
+use crate::{generate_get, generate_set, generate_access, infer_logical_data_type, inferred, not_inferred};
+use crate::port::PortDirection;
+use crate::scope::Port;
 use crate::streamlet::{Streamlet,StreamletType};
 use crate::util::PrettyPrint;
 use crate::variable::VariableValue;
@@ -100,6 +102,24 @@ impl NewInferable<Arc<RwLock<Streamlet>>> for Inferable<Arc<RwLock<Streamlet>>> 
     }
 }
 
+impl NewInferable<Arc<RwLock<Port>>> for Inferable<Arc<RwLock<Port>>> {
+    fn _new(exp: String) -> Self {
+        Self {
+            raw_exp: exp,
+            infer_state: InferState::NotInferred,
+            raw_value: Arc::new(RwLock::new(Port::new(String::from(""), not_inferred!(infer_logical_data_type!(), String::from("")), PortDirection::Unknown))),
+        }
+    }
+
+    fn _new_inferred(exp: String, type_: Arc<RwLock<Port>>) -> Self {
+        Self {
+            raw_exp: exp,
+            infer_state: InferState::Inferred,
+            raw_value: type_.clone(),
+        }
+    }
+}
+
 /// Inferable struct implementation
 macro_rules! inferable_new_wrapper {
     ($t: ty) => {
@@ -177,3 +197,9 @@ macro_rules! infer_streamlet {
     }
 }
 
+#[macro_export]
+macro_rules! infer_port {
+    () => {
+        Arc<RwLock<Port>>
+    }
+}

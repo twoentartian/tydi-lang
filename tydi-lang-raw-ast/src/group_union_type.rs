@@ -106,7 +106,7 @@ impl PrettyPrint for LogicalUnion {
 
 impl Scope {
     pub fn new_logical_group(&mut self, name_: String) -> Result<Arc<RwLock<Scope>>, ErrorCode> {
-        if self.scope_type != ScopeType::BasicScope { panic!("not allowed to define group type outside of base scope") }
+        if self.scope_type != ScopeType::BasicScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define group type outside of base scope"))); }
 
         match self.types.get(&name_) {
             None => {}
@@ -126,7 +126,7 @@ impl Scope {
     }
 
     pub fn new_logical_union(&mut self, name_: String) -> Result<Arc<RwLock<Scope>>, ErrorCode> {
-        if self.scope_type != ScopeType::BasicScope { panic!("not allowed to define group type outside of base scope") }
+        if self.scope_type != ScopeType::BasicScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define union type outside of base scope"))); }
 
         match self.types.get(&name_) {
             None => {}

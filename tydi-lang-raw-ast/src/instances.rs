@@ -4,7 +4,7 @@ use crate::error::ErrorCode;
 use crate::streamlet::Streamlet;
 use crate::generate_get;
 use crate::inferable::{Inferable, InferState, NewInferable};
-use crate::scope::{Scope, ScopeRelationType};
+use crate::scope::{Scope, ScopeRelationType, ScopeType};
 use crate::util::{generate_padding, PrettyPrint};
 
 #[derive(Clone, Debug)]
@@ -50,9 +50,11 @@ impl PrettyPrint for Instance {
 
 impl Scope {
     pub fn new_instance(&mut self, name_: String, streamlet_exp: Inferable<Arc<RwLock<Streamlet>>>) -> Result<(), ErrorCode> {
+        if (self.scope_type != ScopeType::ImplementScope) && (self.scope_type != ScopeType::BasicScope) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define instances outside of implement or base scope"))); }
+
         match self.instances.get(&name_) {
             None => {}
-            Some(_) => { return Err(ErrorCode::IdRedefined(format!("variable {} already defined", name_))); }
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("instance {} already defined", name_))); }
         };
         self.instances.insert(name_.clone(), Arc::new(RwLock::new(Instance::new(name_.clone(), streamlet_exp))));
         return Ok(());
@@ -60,7 +62,7 @@ impl Scope {
 
     pub fn resolve_instance_in_current_scope(& self, name_: String) -> Result<Arc<RwLock<Instance>>, ErrorCode> {
         return match self.instances.get(&name_) {
-            None => { Err(ErrorCode::IdNotFound(format!("variable {} not found", name_))) }
+            None => { Err(ErrorCode::IdNotFound(format!("instance {} not found", name_))) }
             Some(var) => { Ok(var.clone()) }
         };
     }
@@ -106,7 +108,7 @@ impl Scope {
             }
         }
 
-        return Err(ErrorCode::IdNotFound(format!("variable {} not found", name_.clone())));
+        return Err(ErrorCode::IdNotFound(format!("instance {} not found", name_.clone())));
     }
 
     pub fn resolve_instance_from_scope(& self, name_: String) -> Result<Arc<RwLock<Instance>>, ErrorCode> {

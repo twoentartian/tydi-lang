@@ -14,6 +14,7 @@ mod implement;
 mod type_alias;
 mod inferable;
 mod instances;
+mod connection;
 
 #[macro_use]
 extern crate lazy_static;
