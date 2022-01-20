@@ -1,47 +1,53 @@
 use std::sync::{Arc, RwLock};
+use crate::bit_null_type::LogicalBit;
 use crate::group_union_type::{LogicalGroup, LogicalUnion};
+use crate::inferable::Inferable;
 use crate::scope::{Scope, DataType};
 use crate::steam_type::LogicalStream;
 use crate::util::{generate_padding, PrettyPrint};
+use crate::variable::{Variable};
 
 #[derive(Clone, Debug)]
 pub enum LogicalDataType {
     EmptyLogicalData,
     DataNull,
-    DataBitType(u32),
+    DataBitType(LogicalBit),
     DataGroupType(String, Arc<RwLock<LogicalGroup>>),
     DataUnionType(String, Arc<RwLock<LogicalUnion>>),
     DataStreamType(String, Arc<RwLock<LogicalStream>>),
+    DataVar(String),
 }
 
 impl From<LogicalDataType> for String {
     fn from(logical_data_type: LogicalDataType) -> Self {
-        match logical_data_type {
-            LogicalDataType::EmptyLogicalData => { return String::from("EmptyLogicalData"); }
-            LogicalDataType::DataNull => { return String::from("DataNull"); }
-            LogicalDataType::DataBitType(i) => { return format!("Bit({})", i); }
-            LogicalDataType::DataGroupType(name, _) => { return format!("DataGroup({})", name); }
-            LogicalDataType::DataUnionType(name, _) => { return format!("DataUnion({})", name); }
-            LogicalDataType::DataStreamType(name, _) => { return format!("Stream({})", name.clone()); }
+        return match logical_data_type {
+            LogicalDataType::EmptyLogicalData => { String::from("EmptyLogicalData") }
+            LogicalDataType::DataNull => { String::from("DataNull") }
+            LogicalDataType::DataBitType(v) => { format!("{}", String::from(v.clone())) }
+            LogicalDataType::DataGroupType(name, _) => { format!("DataGroup({})", name) }
+            LogicalDataType::DataUnionType(name, _) => { format!("DataUnion({})", name) }
+            LogicalDataType::DataStreamType(name, _) => { format!("Stream({})", name.clone()) }
+            LogicalDataType::DataVar(name) => { format!("Var({})", name.clone()) }
         }
     }
 }
 
 impl PrettyPrint for LogicalDataType {
     fn pretty_print(&self, depth: u32, verbose: bool) -> String {
-        match self {
-            LogicalDataType::EmptyLogicalData => { return String::from(self.clone()); }
-            LogicalDataType::DataNull => { return String::from(self.clone()); }
-            LogicalDataType::DataBitType(_) => { return String::from(self.clone()); }
+        return match self {
+            LogicalDataType::EmptyLogicalData => { String::from(self.clone()) }
+            LogicalDataType::DataNull => { String::from(self.clone()) }
+            LogicalDataType::DataBitType(_) => { String::from(self.clone()) }
             LogicalDataType::DataGroupType(_, group) => {
-                return group.read().unwrap().pretty_print(depth, verbose);
+                group.read().unwrap().pretty_print(depth, verbose)
             }
             LogicalDataType::DataUnionType(_, union) => {
-                return union.read().unwrap().pretty_print(depth, verbose);
+                union.read().unwrap().pretty_print(depth, verbose)
             }
             LogicalDataType::DataStreamType(_, stream) => {
-                return stream.read().unwrap().pretty_print(depth, verbose);
+                stream.read().unwrap().pretty_print(depth, verbose)
             }
+            LogicalDataType::DataVar(name) => { name.clone() }
         }
     }
 }

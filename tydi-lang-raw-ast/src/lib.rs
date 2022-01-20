@@ -9,6 +9,11 @@ mod group_union_type;
 mod steam_type;
 mod bit_null_type;
 mod streamlet;
+mod port;
+mod implement;
+mod type_alias;
+mod inferable;
+mod instances;
 
 #[macro_use]
 extern crate lazy_static;

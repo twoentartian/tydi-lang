@@ -1,11 +1,11 @@
 use std::sync::{Arc, RwLock};
-use crate::data_type::DataType::LogicalDataType;
+use crate::data_type::DataType;
 use crate::error::ErrorCode;
-use crate::generate_get;
-use crate::logical_data_type::LogicalDataType::DataGroupType;
-use crate::scope::{Scope, ScopeRelationType, ScopeType};
-use crate::scope::LogicalDataType::DataUnionType;
+use crate::{generate_get, inferred, not_inferred};
+use crate::scope::{Scope, ScopeRelationType, ScopeType, TypeAlias};
 use crate::util::{generate_padding, PrettyPrint};
+use crate::inferable::{Inferable, NewInferable};
+use crate::logical_data_type::LogicalDataType;
 
 #[derive(Clone, Debug)]
 pub struct LogicalGroup {
@@ -30,12 +30,18 @@ impl LogicalGroup {
     }
 }
 
+impl From<LogicalGroup> for String {
+    fn from(group: LogicalGroup) -> Self {
+        return format!("DataGroup({})", group.get_name());
+    }
+}
+
 impl PrettyPrint for LogicalGroup {
     fn pretty_print(&self, depth: u32, verbose: bool) -> String {
         let mut output = String::new();
 
         //enter group
-        output.push_str(&format!("Group({}){{\n", self.name.clone()));
+        output.push_str(&format!("DataGroup({}){{\n", self.name.clone()));
         //enter scope
         output.push_str(&format!("{}", self.scope.read().unwrap().pretty_print(depth+1, verbose)));
         //leave group
@@ -66,6 +72,21 @@ impl LogicalUnion {
             scope: scope_,
         }
     }
+
+    pub fn new_variable(& self, name_: String, type_: DataType, exp_: String) -> Result<(), ErrorCode> {
+        {
+            self.scope.write().unwrap().new_variable(name_.clone(), type_.clone(), exp_.clone());
+        }
+        return Ok(());
+    }
+
+
+}
+
+impl From<LogicalUnion> for String {
+    fn from(union: LogicalUnion) -> Self {
+        return format!("DataUnion({})", union.get_name());
+    }
 }
 
 impl PrettyPrint for LogicalUnion {
@@ -73,7 +94,7 @@ impl PrettyPrint for LogicalUnion {
         let mut output = String::new();
 
         //enter union
-        output.push_str(&format!("Union({}){{\n", self.name.clone()));
+        output.push_str(&format!("DataUnion({}){{\n", self.name.clone()));
         //enter union
         output.push_str(&format!("{}", self.scope.read().unwrap().pretty_print(depth+1, verbose)));
         //leave union
@@ -99,8 +120,8 @@ impl Scope {
         }
 
         let scope_clone = logical_group.scope.clone();
-        let mut group_data_type = LogicalDataType(Arc::new(RwLock::new(DataGroupType(name_.clone(), Arc::new(RwLock::new(logical_group))))));
-        self.types.insert(name_.clone(), Arc::new(RwLock::new(group_data_type)));
+        let mut group_data_type = Arc::new(RwLock::new(LogicalDataType::DataGroupType(name_.clone(), Arc::new(RwLock::new(logical_group)))));
+        self.types.insert(name_.clone(), Arc::new(RwLock::new( TypeAlias::new(format!("!{{union_type}}_{}", name_.clone()), inferred!(Arc<RwLock<LogicalDataType>>, group_data_type)))));
         return Ok(scope_clone);
     }
 
@@ -119,8 +140,8 @@ impl Scope {
         }
 
         let scope_clone = logical_union.scope.clone();
-        let mut union_data_type = LogicalDataType(Arc::new(RwLock::new(DataUnionType(name_.clone(), Arc::new(RwLock::new(logical_union))))));
-        self.types.insert(name_.clone(), Arc::new(RwLock::new(union_data_type)));
+        let mut union_data_type = Arc::new(RwLock::new(LogicalDataType::DataUnionType(name_.clone(), Arc::new(RwLock::new(logical_union)))));
+        self.types.insert(name_.clone(), Arc::new(RwLock::new(TypeAlias::new(format!("!{{union_type}}_{}", name_.clone()), inferred!(Arc<RwLock<LogicalDataType>>, union_data_type) ))));
         return Ok(scope_clone);
     }
 

@@ -3,5 +3,5 @@ pub enum ErrorCode {
     UnknownError(String),
     IdRedefined(String),
     IdNotFound(String),
-
+    ScopeNotAllowed(String),
 }

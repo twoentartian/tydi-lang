@@ -24,6 +24,16 @@ macro_rules! generate_access {
     };
 }
 
+#[macro_export]
+macro_rules! generate_set_in_arc_rwlock {
+    ($id:ident, $t: ty, $id_set_func:ident) => {
+        pub fn $id_set_func(&mut self, target: $t) {
+            self.$id = Arc::new(RwLock::new(target));
+        }
+    };
+}
+
+
 pub trait PrettyPrint {
     fn pretty_print(&self, depth: u32, verbose: bool) -> String;
 }
