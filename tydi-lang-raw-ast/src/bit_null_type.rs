@@ -71,9 +71,9 @@ impl Scope {
     }
 
     pub fn new_logical_bit(&mut self, name_: String, exp_: String) -> Result<(), ErrorCode> {
-        if self.scope_type == ScopeType::StreamScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define group type in Stream scope"))); }
-        if self.scope_type == ScopeType::StreamletScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define group type in Streamlet scope"))); }
-        if self.scope_type == ScopeType::ImplementScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define group type in Implement scope"))); }
+        if self.scope_type == ScopeType::StreamScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define logical bit in Stream scope"))); }
+        if self.scope_type == ScopeType::StreamletScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define logical bit in Streamlet scope"))); }
+        if self.scope_type == ScopeType::ImplementScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define logical bit in Implement scope"))); }
 
         match self.types.get(&name_) {
             None => {}

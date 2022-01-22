@@ -48,7 +48,7 @@ impl PrettyPrint for Connection {
 
 impl Scope {
     pub fn new_connection(&mut self, name_: String, lhs_port_: Inferable<Arc<RwLock<Port>>>, rhs_port_: Inferable<Arc<RwLock<Port>>>, delay_: Variable) -> Result<(), ErrorCode> {
-        if self.scope_type != ScopeType::ImplementScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define connections outside of implement scope"))); }
+        if !(self.scope_type == ScopeType::ImplementScope || self.scope_type == ScopeType::IfForScope) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define connections outside of implement scope"))); }
 
         match self.connections.get(&name_) {
             None => {}

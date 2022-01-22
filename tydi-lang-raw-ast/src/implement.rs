@@ -55,13 +55,10 @@ impl Implement {
         return scope.new_connection(name_.clone(), lhs_port_.clone(), rhs_port_.clone(), delay_.clone());
     }
 
-    pub fn new_variable(& self, name_: String, type_: DataType, exp_: String) -> Result<(), ErrorCode> {
-        {
-            self.scope.write().unwrap().new_variable(name_.clone(), type_.clone(), exp_.clone());
-        }
-        return Ok(());
+    pub fn new_variable(&self, name_: String, type_: DataType, exp_: String) -> Result<(), ErrorCode> {
+        let mut scope = self.scope.write().unwrap();
+        return scope.new_variable(name_.clone(), type_.clone(), exp_.clone());
     }
-
 
 }
 
@@ -88,7 +85,7 @@ impl PrettyPrint for Implement {
 
 impl Scope {
     pub fn new_implement(&mut self, name_: String, type_: ImplementType) -> Result<Arc<RwLock<Scope>>, ErrorCode> {
-        if self.scope_type != ScopeType::BasicScope { panic!("not allowed to define implement outside of base scope") }
+        if self.scope_type != ScopeType::BasicScope { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define implement outside of base scope"))); }
 
         match self.implements.get(&name_) {
             None => {}

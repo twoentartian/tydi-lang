@@ -37,9 +37,10 @@ FloatExp = { FLOAT }
 ArrayExp = { "{" ~ Exp ~ ("," ~ Exp)* ~ "}" }
 ArrayRange = { "(" ~ Exp ~ "=" ~ Exp ~ "=>" ~ Exp ~ ")" }
 Var = { ID }
+ExternalVar = { ID ~ "." ~ ID }
 
 Term = _{ ( "(" ~ Exp ~ ")") | (UnaryOp ~ Exp) |
-            IntExp | StringExp | BoolExp | FloatExp | Var }
+            IntExp | StringExp | BoolExp | FloatExp | ExternalVar | Var }
 
 SingleTermExp = _{ Term }
 OpExp = { Term ~ (InfixOp  ~ Term)+ }
@@ -54,7 +55,7 @@ ExpRound = { "round" ~ "(" ~ Exp ~ ")" }
 ExpFloor = { "floor" ~ "(" ~ Exp ~ ")" }
 ExpCeil = { "ceil" ~ "(" ~ Exp ~ ")" }
 
-Exp = _{ ArrayRange | ArrayExp | OpExp | ExpLog | ExpBitWiseNot | ExpConstInType | ExpRound | ExpFloor | ExpCeil | ExpIndex | SingleTermExp}
+Exp = _{ ArrayRange | ArrayExp | OpExp | ExpLog | ExpBitWiseNot | ExpConstInType | ExpRound | ExpFloor | ExpCeil | ExpIndex | ExpConstInStreamlet | ExpExternalConstInStreamlet | ExpConstInImplement | ExpExternalConstInStreamlet | SingleTermExp}
 
 ///////////////////////  end of exp.sdf3  ///////////////////////
 
@@ -64,6 +65,7 @@ TypeIndicatorBasicType = { ":" ~ BasicType }
 TypeIndicatorBasicArrayType = { ":" ~ BasicType ~ "[]" }
 TypeIndicator = _{ ( TypeIndicatorBasicArrayType | TypeIndicatorBasicType )? }
 
+LogicalExternalType = { ID ~ "." ~ LogicalType }
 LogicalNullType = { "Null" }
 LogicalBitType = { "Bit" ~ "(" ~ Exp ~ ")" }
 LogicalGroupType = {
@@ -87,7 +89,7 @@ StreamPropertyKeep = { "," ~ "x" ~ "=" ~ Exp }
 StreamProperty = _{ (StreamPropertyDimension | StreamPropertyUserType | StreamPropertyThroughput | StreamPropertySynchronicity |
                     StreamPropertyComplexity | StreamPropertyDirection | StreamPropertyKeep) }
 LogicalUserDefinedType = { ID }
-LogicalType = _{ (LogicalNullType | LogicalBitType | LogicalStreamType | LogicalGroupType | LogicalUnionType | LogicalUserDefinedType) }
+LogicalType = _{ ( LogicalExternalType | LogicalNullType | LogicalBitType | LogicalStreamType | LogicalGroupType | LogicalUnionType | LogicalUserDefinedType) }
 
 SubItemItem = { ID ~ ":" ~ LogicalType ~ "," }
 SubItemDeclareConst = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
@@ -112,16 +114,20 @@ DirectionDirOut = { "out" }
 Direction = _{ (DirectionDirIn | DirectionDirOut) }
 
 ExpConstInStreamlet = { "streamlet" ~ ID ~ ArgExps? ~ "." ~ ID }
+ExpExternalConstInStreamlet = { ID ~ "." ~  "streamlet" ~ ID ~ ArgExps? ~ "." ~ ID }
 
 ////2.Implementation
+InternalId = { ID }
+ExternalId = { ID ~ "." ~ ID }
+Extern_Intern_Id = _{ ExternalId | InternalId }
 Implementation = {
-"impl" ~ ID ~ ImplementationArgs? ~ "of" ~ ID ~ ArgExps? ~ "{" ~
+"impl" ~ ID ~ ImplementationArgs? ~ "of" ~ Extern_Intern_Id ~ ArgExps? ~ "{" ~
   ImplementationBody* ~
 "}"
 }
 ImplementationArgs = _{ "<" ~ Arg ~ ("," ~ Arg)* ~ ">" }
-ImplementationBodyDeclareInstance = { "instance" ~ ID ~ "(" ~ ID ~ ArgExps? ~ ")" ~ "," }
-ImplementationBodyDeclareInstanceArray = { "instance" ~ ID ~ "(" ~ ID ~ ArgExps? ~ ")" ~ "[" ~ Exp ~ "]" ~ "," }
+ImplementationBodyDeclareInstance = { "instance" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" ~ "," }
+ImplementationBodyDeclareInstanceArray = { "instance" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" ~ "[" ~ Exp ~ "]" ~ "," }
 ImplementationBodyDeclareNet = { LogicalTypeSlice ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
 ImplementationBodyDeclareDelayedNet = { LogicalTypeSlice ~ "=" ~ Exp ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
 ImplementationBodyDeclareConstInImpl = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
@@ -162,21 +168,27 @@ LogicalTypeSliceSelf = { ID ~ LogicalTypeSliceIndex? }
 LogicalTypeSliceCompound = { ID ~ LogicalTypeSliceIndex? ~ "." ~ ID ~ LogicalTypeSliceIndex? }
 LogicalTypeSlice = _{ (LogicalTypeSliceCompound | LogicalTypeSliceSelf) }
 
+ExpConstInImplement = { "impl" ~ ID ~ ArgExps? ~ "." ~ ID }
+ExpExternalConstInImplement = { ID ~ "." ~  "impl" ~ ID ~ ArgExps? ~ "." ~ ID }
+
 ////3.Arg
 ArgLogicalType = { ID ~ ":" ~ "type"}
 ArgValue = { ID ~ ":" ~ BasicType }
 ArgImplementationType = { ID ~ ":" ~ "impl" ~ "of" ~ ID ~ ArgExps? }
-Arg = _{ (ArgLogicalType | ArgValue | ArgImplementationType) }
+ArgExternalImplementationType = { ID ~ ":" ~ ID ~ "." ~ "impl" ~ "of" ~ ID ~ ArgExps? }
+Arg = _{ (ArgLogicalType | ArgValue | ArgExternalImplementationType | ArgImplementationType) }
 
 ////4.ArgExp
-ArgExps = _{ "<" ~ ArgExp ~ ("," ~ ArgExp)* ~ ">" }
+ArgExps = { "<" ~ ArgExp ~ ("," ~ ArgExp)* ~ ">" }
 ArgExpConstExp = { Exp }
 ArgExpTypeExp = { "type" ~ LogicalType }
-ArgExpImplementExp = { "impl" ~ ID ~ ArgExps }
-ArgExp = _{ (ArgExpTypeExp | ArgExpImplementExp | ArgExpConstExp) }
+ArgExpExternalTypeExp = { ID ~ "." ~ "type" ~ LogicalType }
+ArgExpImplementExp = { "impl" ~ ID ~ ArgExps? }
+ArgExpExternalImplementExp = { ID ~ "." ~ "impl" ~ ID ~ ArgExps? }
+ArgExp = _{ (ArgExpTypeExp | ArgExpExternalTypeExp | ArgExpImplementExp | ArgExpExternalImplementExp | ArgExpConstExp) }
 
 ////5.GlobalInstance
-GlobalInstance = { "instance" ~ ID ~ "(" ~ ID ~ ArgExps ~ ")" }
+GlobalInstance = { "instance" ~ ID ~ "(" ~ ID ~ ArgExps? ~ ")" }
 ///////////////////////  end of streamlet.sdf3  ///////////////////////
 
 

@@ -1,5 +1,5 @@
 pub use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
 pub use crate::logical_data_type::*;
 pub use crate::variable::*;
@@ -11,6 +11,7 @@ pub use crate::port::*;
 pub use crate::implement::Implement;
 pub use crate::type_alias::TypeAlias;
 pub use crate::instances::Instance;
+pub use crate::if_for::{IfScope, ForScope};
 
 pub use crate::error::ErrorCode;
 pub use crate::util::*;
@@ -25,6 +26,7 @@ pub enum ScopeRelationType {
     StreamScopeRela,
     StreamletScopeRela,
     ImplementScopeRela,
+    IfForScopeRela,
 
     ParentScopeRela, // a placeholder, should never be used
 }
@@ -37,6 +39,7 @@ impl From<ScopeRelationType> for String {
             ScopeRelationType::StreamScopeRela => {String::from("StreamScope")}
             ScopeRelationType::StreamletScopeRela => {String::from("StreamletScope")}
             ScopeRelationType::ImplementScopeRela => {String::from("ImplementScope")}
+            ScopeRelationType::IfForScopeRela => {String::from("IfForScope")}
             ScopeRelationType::ParentScopeRela => {String::from("ParentScope")}
         }
     }
@@ -87,6 +90,8 @@ pub enum ScopeType {
     StreamletScope,
     ImplementScope,
 
+    IfForScope,
+
     ParentScope, // a placeholder, should never be used
 }
 
@@ -99,6 +104,7 @@ impl From<ScopeType> for String {
             ScopeType::StreamScope => {String::from("StreamScope")}
             ScopeType::StreamletScope => {String::from("StreamletScope")}
             ScopeType::ImplementScope => {String::from("ImplementScope")}
+            ScopeType::IfForScope => {String::from("IfForScope")}
             ScopeType::ParentScope => {String::from("ParentScope")}
         }
     }
@@ -119,6 +125,9 @@ pub struct Scope {
     pub implements: HashMap<String, Arc<RwLock<Implement>>>,
     pub instances: HashMap<String, Arc<RwLock<Instance>>>,
     pub connections: HashMap<String, Arc<RwLock<Connection>>>,
+
+    pub if_blocks: HashMap<String, Arc<RwLock<IfScope>>>,
+    pub for_blocks: HashMap<String, Arc<RwLock<ForScope>>>,
     //pub implements: HashMap<String, Arc<RwLock<Streamlet>>>,
 }
 
@@ -138,6 +147,8 @@ impl Scope {
             implements: HashMap::new(),
             instances: HashMap::new(),
             connections: HashMap::new(),
+            if_blocks: HashMap::new(),
+            for_blocks: HashMap::new(),
         }
     }
 
@@ -228,6 +239,22 @@ impl PrettyPrint for Scope {
             }
             output.push_str(&format!("{}}}\n", generate_padding(depth+1)));
         }
+        if !self.if_blocks.is_empty() || verbose {
+            //enter scope_relationships
+            output.push_str(&format!("{}IfBlocks{{\n", generate_padding(depth+1)));
+            for (_, inst) in &self.if_blocks {
+                output.push_str(&format!("{}\n", inst.read().unwrap().pretty_print(depth+2, verbose)) );
+            }
+            output.push_str(&format!("{}}}\n", generate_padding(depth+1)));
+        }
+        if !self.for_blocks.is_empty() || verbose {
+            //enter scope_relationships
+            output.push_str(&format!("{}ForBlocks{{\n", generate_padding(depth+1)));
+            for (_, inst) in &self.for_blocks {
+                output.push_str(&format!("{}\n", inst.read().unwrap().pretty_print(depth+2, verbose)) );
+            }
+            output.push_str(&format!("{}}}\n", generate_padding(depth+1)));
+        }
 
         //leave scope
         output.push_str(&format!("{}}}\n", generate_padding(depth)));
@@ -242,7 +269,7 @@ mod tests {
     use std::sync::RwLockReadGuard;
     use crate::implement::ImplementType;
     use crate::inferable::{Inferable, NewInferable};
-    use crate::{infer_port, inferred, not_inferred, infer_streamlet};
+    use crate::{infer_port, inferred, not_inferred, infer_streamlet, infer_variable_value};
     use crate::project_arch::Project;
     use crate::scope::*;
     use crate::scope::DataType::StringType;
@@ -296,39 +323,38 @@ mod tests {
             let package_name = String::from("package0");
             let package_scope_l = project0.new_package(package_name.clone()).unwrap();
             let mut package_scope = package_scope_l.write().unwrap();
-            package_scope.new_variable(String::from("var1"), DataType::IntType, String::from(""));
-            package_scope.new_variable(String::from("var2"), DataType::StringType, String::from(""));
-            package_scope.new_variable(String::from("f0"), DataType::FloatType, String::from(""));
+            package_scope.new_variable(String::from("var1"), DataType::IntType, String::from("")).unwrap();
+            package_scope.new_variable(String::from("var2"), DataType::StringType, String::from("")).unwrap();
+            package_scope.new_variable(String::from("f0"), DataType::FloatType, String::from("")).unwrap();
             let new_group = package_scope.new_logical_group(String::from("group0")).unwrap();
             {
                 let mut group_scope = new_group.write().unwrap();
-                group_scope.new_variable(String::from("var3"), DataType::StringType, String::from(""));
-                group_scope.new_logical_bit(String::from("bit16"), String::from("16"));
-                group_scope.new_logical_bit_with_definite(String::from("bit16_"), 16);
+                group_scope.new_variable(String::from("var3"), DataType::StringType, String::from("")).unwrap();
+                group_scope.new_logical_bit(String::from("bit16"), String::from("16")).unwrap();
+                group_scope.new_logical_bit_with_definite(String::from("bit16_"), 16).unwrap();
             }
-            package_scope.new_logical_union(String::from("union0"));
-            package_scope.new_logical_null(String::from("null"));
-            package_scope.new_logical_bit(String::from("bit8"), String::from("8"));
+            package_scope.new_logical_union(String::from("union0")).unwrap();
+            package_scope.new_logical_null(String::from("null")).unwrap();
+            package_scope.new_logical_bit(String::from("bit8"), String::from("8")).unwrap();
             let temp_type = package_scope.resolve_type_in_current_scope(String::from("group0")).unwrap();
 
             let streamlet_new = package_scope.new_streamlet(String::from("streamlet0"), StreamletType::NormalStreamlet).unwrap();
             {
                 let mut streamlet_scope = streamlet_new.write().unwrap();
-                streamlet_scope.new_variable(String::from("var4"), DataType::StringType, String::from(""));
-                streamlet_scope.new_logical_bit(String::from("bit2"), String::from("2"));
+                streamlet_scope.new_variable(String::from("var4"), DataType::StringType, String::from("")).unwrap();
             }
 
             {
                 let type_alias = temp_type.read().unwrap();
                 let t = type_alias.get_type_infer().get_raw_value();
 
-                package_scope.new_logical_stream(String::from("stream0"), t.clone());
+                package_scope.new_logical_stream(String::from("stream0"), t.clone()).unwrap();
 
                 match package_scope.resolve_streamlet_from_scope(String::from("streamlet0")) {
                     Ok(streamlet) => {
                         //streamlet.read().unwrap().new_port(String::from("port0"), <Inferable<Arc<RwLock<LogicalDataType>>> as NewInferable<Arc<RwLock<LogicalDataType>>>>::_new_inferred(String::from(""), t.clone()) , PortDirection::Input);
-                        streamlet.read().unwrap().new_port(String::from("port0"), inferred!(Arc<RwLock<LogicalDataType>>, t.clone()) , PortDirection::Input);
-                        streamlet.read().unwrap().new_port(String::from("port1"), not_inferred!(Arc<RwLock<LogicalDataType>>, String::from("port1_type")) , PortDirection::Input);
+                        streamlet.read().unwrap().new_port(String::from("port0"), inferred!(Arc<RwLock<LogicalDataType>>, t.clone()) , PortDirection::Input).unwrap();
+                        streamlet.read().unwrap().new_port(String::from("port1"), not_inferred!(Arc<RwLock<LogicalDataType>>, String::from("port1_type")) , PortDirection::Input).unwrap();
                     }
                     Err(_) => { assert!(false) }
                 }
@@ -342,9 +368,14 @@ mod tests {
                 impl_scope.new_connection(String::from("connection0"),
                                           not_inferred!(infer_port!(), String::from("a.b")),
                                           not_inferred!(infer_port!(), String::from("a.b")),
-                                          Variable::new(String::from("temp"), DataType::IntType, String::from("1")));
-            }
+                                          Variable::new(String::from("temp"), DataType::IntType, String::from("1"))).unwrap();
 
+                let if_scope = impl_scope.new_if_block(String::from("if_block0"), Arc::new(RwLock::new(Variable::new(String::from(""), DataType::BoolType, String::from("true"))))).unwrap();
+                {
+                    if_scope.write().unwrap().new_for_block(String::from("for_block0"), Arc::new(RwLock::new(Variable::new(String::from(""), DataType::IntType, String::from("i")))),
+                                                            Arc::new(RwLock::new(Variable::new(String::from(""), DataType::ArrayType(Arc::new(RwLock::new(DataType::BoolType))), String::from("i_array")))));
+                }
+            }
 
         }
         println!("{}", project0.pretty_print(0, false));

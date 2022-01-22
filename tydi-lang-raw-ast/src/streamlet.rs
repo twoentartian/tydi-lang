@@ -79,7 +79,7 @@ impl PrettyPrint for Streamlet {
 
 impl Scope {
     pub fn new_streamlet(&mut self, name_: String, type_: StreamletType) -> Result<Arc<RwLock<Scope>>, ErrorCode> {
-        if self.scope_type != ScopeType::BasicScope { panic!("not allowed to define streamlet outside of base scope") }
+        if self.scope_type != ScopeType::BasicScope { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define streamlet outside of base scope"))); }
 
         match self.streamlets.get(&name_) {
             None => {}
