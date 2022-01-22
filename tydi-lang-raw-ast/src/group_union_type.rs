@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
-use crate::{generate_get, inferred, not_inferred};
+use crate::{generate_get, inferred};
 use crate::scope::{Scope, ScopeRelationType, ScopeType, TypeAlias};
 use crate::util::{generate_padding, PrettyPrint};
 use crate::inferable::{Inferable, NewInferable};
@@ -74,12 +74,8 @@ impl LogicalUnion {
     }
 
     pub fn new_variable(& self, name_: String, type_: DataType, exp_: String) -> Result<(), ErrorCode> {
-        {
-            self.scope.write().unwrap().new_variable(name_.clone(), type_.clone(), exp_.clone());
-        }
-        return Ok(());
+        return self.scope.write().unwrap().new_variable(name_.clone(), type_.clone(), exp_.clone());
     }
-
 
 }
 
@@ -113,14 +109,14 @@ impl Scope {
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("type {} already defined", name_.clone()))); }
         };
 
-        let mut logical_group = LogicalGroup::new(name_.clone());
+        let logical_group = LogicalGroup::new(name_.clone());
         {
             let parent_scope = self.self_ref.clone().unwrap();
             logical_group.scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), String::from("base"), ScopeRelationType::GroupScopeRela);
         }
 
         let scope_clone = logical_group.scope.clone();
-        let mut group_data_type = Arc::new(RwLock::new(LogicalDataType::DataGroupType(name_.clone(), Arc::new(RwLock::new(logical_group)))));
+        let group_data_type = Arc::new(RwLock::new(LogicalDataType::DataGroupType(name_.clone(), Arc::new(RwLock::new(logical_group)))));
         self.types.insert(name_.clone(), Arc::new(RwLock::new( TypeAlias::new(format!("!{{union_type}}_{}", name_.clone()), inferred!(Arc<RwLock<LogicalDataType>>, group_data_type)))));
         return Ok(scope_clone);
     }
@@ -133,14 +129,14 @@ impl Scope {
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("type {} already defined", name_.clone()))); }
         };
 
-        let mut logical_union = LogicalUnion::new(name_.clone());
+        let logical_union = LogicalUnion::new(name_.clone());
         {
             let parent_scope = self.self_ref.clone().unwrap();
             logical_union.scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), String::from("base"), ScopeRelationType::UnionScopeRela);
         }
 
         let scope_clone = logical_union.scope.clone();
-        let mut union_data_type = Arc::new(RwLock::new(LogicalDataType::DataUnionType(name_.clone(), Arc::new(RwLock::new(logical_union)))));
+        let union_data_type = Arc::new(RwLock::new(LogicalDataType::DataUnionType(name_.clone(), Arc::new(RwLock::new(logical_union)))));
         self.types.insert(name_.clone(), Arc::new(RwLock::new(TypeAlias::new(format!("!{{union_type}}_{}", name_.clone()), inferred!(Arc<RwLock<LogicalDataType>>, union_data_type) ))));
         return Ok(scope_clone);
     }

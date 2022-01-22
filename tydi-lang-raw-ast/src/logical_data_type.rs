@@ -1,11 +1,8 @@
 use std::sync::{Arc, RwLock};
 use crate::bit_null_type::LogicalBit;
 use crate::group_union_type::{LogicalGroup, LogicalUnion};
-use crate::inferable::Inferable;
-use crate::scope::{Scope, DataType};
 use crate::steam_type::LogicalStream;
-use crate::util::{generate_padding, PrettyPrint};
-use crate::variable::{Variable};
+use crate::util::{PrettyPrint};
 
 #[derive(Clone, Debug)]
 pub enum LogicalDataType {

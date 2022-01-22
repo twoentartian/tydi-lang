@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 use std::collections::HashSet;
-use crate::scope::{DataType, ScopeRelationType, Scope, ScopeType};
+use crate::scope::{DataType, ScopeRelationType, Scope};
 use crate::util::{generate_padding, PrettyPrint};
 use crate::{generate_get, generate_set, generate_access};
 pub use crate::error::ErrorCode;
@@ -28,7 +28,7 @@ impl From<VariableValue> for String {
 }
 
 impl PrettyPrint for VariableValue {
-    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
+    fn pretty_print(&self, _: u32, _: bool) -> String {
         return String::from(self.clone());
     }
 }

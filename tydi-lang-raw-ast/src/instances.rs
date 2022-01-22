@@ -43,7 +43,7 @@ impl From<Instance> for String {
 }
 
 impl PrettyPrint for Instance {
-    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
+    fn pretty_print(&self, depth: u32, _: bool) -> String {
         return format!("{}{}", generate_padding(depth), String::from(self.clone()));
     }
 }

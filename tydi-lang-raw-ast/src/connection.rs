@@ -1,9 +1,8 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 use crate::error::ErrorCode;
-use crate::streamlet::Streamlet;
 use crate::generate_get;
-use crate::inferable::{Inferable, InferState, NewInferable};
+use crate::inferable::{Inferable};
 use crate::port::Port;
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
 use crate::util::{generate_padding, PrettyPrint};
@@ -41,7 +40,7 @@ impl From<Connection> for String {
 }
 
 impl PrettyPrint for Connection {
-    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
+    fn pretty_print(&self, depth: u32, _: bool) -> String {
         return format!("{}{}", generate_padding(depth), String::from(self.clone()));
     }
 }

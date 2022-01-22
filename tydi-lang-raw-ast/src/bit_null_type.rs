@@ -5,7 +5,7 @@ use crate::{generate_get, inferred, infer_logical_data_type};
 use crate::logical_data_type::LogicalDataType;
 use crate::scope::{Scope, ScopeType};
 use crate::type_alias::TypeAlias;
-use crate::variable::{Variable, VariableValue};
+use crate::variable::{Variable};
 use crate::inferable::{Inferable, NewInferable};
 
 #[derive(Clone, Debug)]

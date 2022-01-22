@@ -1,12 +1,9 @@
-use std::collections::HashSet;
-use std::fs::copy;
 use std::sync::{Arc, RwLock};
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
 use crate::generate_get;
 use crate::inferable::Inferable;
-use crate::logical_data_type::LogicalDataType;
-use crate::port::{Port, PortDirection};
+use crate::port::{Port};
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
 use crate::streamlet::Streamlet;
 use crate::util::{generate_padding, PrettyPrint};
@@ -92,7 +89,7 @@ impl Scope {
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("implement {} already defined", name_.clone()))); }
         };
 
-        let mut implement = Implement::new(name_.clone(), type_.clone());
+        let implement = Implement::new(name_.clone(), type_.clone());
         {
             let parent_scope = self.self_ref.clone().unwrap();
             implement.scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), String::from("base"), ScopeRelationType::ImplementScopeRela);

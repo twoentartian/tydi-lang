@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 use crate::logical_data_type::LogicalDataType;
-use crate::{generate_get, generate_set, generate_access, infer_logical_data_type, inferred, not_inferred};
+use crate::{generate_get, generate_set, generate_access, infer_logical_data_type, not_inferred};
 use crate::port::PortDirection;
 use crate::scope::Port;
 use crate::streamlet::{Streamlet,StreamletType};

@@ -1,8 +1,5 @@
-use std::process::Output;
 use std::sync::{Arc, RwLock};
 use crate::logical_data_type::LogicalDataType;
-use crate::bit_null_type::LogicalNull;
-use crate::data_type::DataType;
 use crate::error::ErrorCode;
 use crate::{generate_access, generate_get, generate_set, generate_set_in_arc_rwlock, inferred, infer_logical_data_type};
 use crate::scope::{PrettyPrint, Scope, ScopeType, TypeAlias};
@@ -30,7 +27,7 @@ impl From<LogicalStreamSynchronicity> for String {
 }
 
 impl PrettyPrint for LogicalStreamSynchronicity {
-    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
+    fn pretty_print(&self, _: u32, _: bool) -> String {
         return String::from(self.clone());
     }
 }
@@ -51,7 +48,7 @@ impl From<LogicalStreamDirection> for String {
 }
 
 impl PrettyPrint for LogicalStreamDirection {
-    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
+    fn pretty_print(&self, _: u32, _: bool) -> String {
         return String::from(self.clone());
     }
 }
@@ -145,8 +142,9 @@ impl Scope {
 }
 
 lazy_static! {
+    #[allow(non_upper_case_globals)]
     pub static ref DefaultLogicalStream: Arc<RwLock<LogicalStream>> = {
-        let mut default = Arc::new(RwLock::new(LogicalStream::new_raw()));
+        let default = Arc::new(RwLock::new(LogicalStream::new_raw()));
         return default;
     };
 }

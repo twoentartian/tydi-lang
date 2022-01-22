@@ -1,6 +1,5 @@
 use std::sync::{Arc, RwLock};
-use crate::data_type::DataType;
-use crate::inferable::{Inferable, InferState, NewInferable};
+use crate::inferable::{Inferable};
 use crate::logical_data_type::LogicalDataType;
 use crate::util::PrettyPrint;
 use crate::{generate_get, generate_set, generate_access};

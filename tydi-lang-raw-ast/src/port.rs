@@ -4,7 +4,7 @@ use crate::logical_data_type::LogicalDataType;
 use crate::util::{generate_padding, PrettyPrint};
 use crate::{generate_access, generate_get, generate_set};
 use crate::error::ErrorCode;
-use crate::inferable::{Inferable, NewInferable};
+use crate::inferable::{Inferable};
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -52,7 +52,7 @@ impl From<Port> for String {
 }
 
 impl PrettyPrint for Port {
-    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
+    fn pretty_print(&self, depth: u32, _: bool) -> String {
         return format!("{}{}", generate_padding(depth), String::from(self.clone()));
     }
 }

@@ -1,11 +1,6 @@
-use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
-use crate::data_type::DataType;
 use crate::error::ErrorCode;
 use crate::generate_get;
-use crate::inferable::Inferable;
-use crate::logical_data_type::LogicalDataType;
-use crate::port::PortDirection;
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
 use crate::util::{generate_padding, PrettyPrint};
 use crate::variable::Variable;
@@ -68,7 +63,7 @@ impl Scope {
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("if block {} already defined", name_.clone()))); }
         };
 
-        let mut if_scope = IfScope::new(name_.clone(), if_exp_.clone());
+        let if_scope = IfScope::new(name_.clone(), if_exp_.clone());
         {
             let parent_scope = self.self_ref.clone().unwrap();
             if_scope.scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), String::from("base"), ScopeRelationType::IfForScopeRela);
@@ -141,7 +136,7 @@ impl Scope {
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("for block {} already defined", name_.clone()))); }
         };
 
-        let mut for_scope = ForScope::new(name_.clone(), for_var_exp_.clone(), for_array_exp_.clone());
+        let for_scope = ForScope::new(name_.clone(), for_var_exp_.clone(), for_array_exp_.clone());
         {
             let parent_scope = self.self_ref.clone().unwrap();
             for_scope.scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), String::from("base"), ScopeRelationType::IfForScopeRela);

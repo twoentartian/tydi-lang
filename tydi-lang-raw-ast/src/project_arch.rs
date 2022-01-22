@@ -47,7 +47,7 @@ impl PrettyPrint for Project {
         output.push_str(&format!("{}Project({}){{\n", generate_padding(depth), self.name.clone()));
 
         //enter packages
-        for (package_name, package) in &self.packages {
+        for (_, package) in &self.packages {
             output.push_str(&format!("{}", package.read().unwrap().pretty_print(depth+1, verbose)));
         }
 
@@ -110,7 +110,7 @@ mod tests {
         let result = project0.find_package(package_name.clone());
         match result {
             Ok(package) => {
-                let mut package = package.write().unwrap();
+                let package = package.write().unwrap();
                 println!("{}", package.get_name());
             }
             Err(_) => {assert!(false)}
@@ -121,15 +121,15 @@ mod tests {
 
     #[test]
     fn temp_test() {
-        let mut value = Arc::new(Mutex::new(0));
-        let mut value1 = value.clone();
+        let value = Arc::new(Mutex::new(0));
+        let value1 = value.clone();
 
         {
             let mut data = value1.lock().unwrap();
             *data = 1;
         }
         {
-            let mut data = value.lock().unwrap();
+            let data = value.lock().unwrap();
             println!("{}", *data);
         }
 

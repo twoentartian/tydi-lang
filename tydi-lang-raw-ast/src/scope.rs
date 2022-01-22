@@ -16,7 +16,7 @@ pub use crate::if_for::{IfScope, ForScope};
 pub use crate::error::ErrorCode;
 pub use crate::util::*;
 
-use crate::{generate_access, generate_get, generate_set};
+use crate::{generate_get};
 use crate::connection::Connection;
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
@@ -75,7 +75,7 @@ impl ScopeRelationship {
 }
 
 impl PrettyPrint for ScopeRelationship {
-    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
+    fn pretty_print(&self, depth: u32, _: bool) -> String {
         return format!("{}--{}-->{}", generate_padding(depth), String::from(self.relationship.clone()), self.target_scope.read().unwrap().get_name() );
     }
 }
@@ -266,22 +266,19 @@ impl PrettyPrint for Scope {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::RwLockReadGuard;
     use crate::implement::ImplementType;
     use crate::inferable::{Inferable, NewInferable};
-    use crate::{infer_port, inferred, not_inferred, infer_streamlet, infer_variable_value};
+    use crate::{infer_port, inferred, not_inferred, infer_streamlet};
     use crate::project_arch::Project;
     use crate::scope::*;
-    use crate::scope::DataType::StringType;
-
 
     #[test]
     fn var_scope() {
         let mut project0 = Project::new(String::from("project0"));
         let package_name = String::from("package0");
-        let result = project0.new_package(package_name.clone());
+        project0.new_package(package_name.clone()).unwrap();
         let result = project0.find_package(package_name.clone()).unwrap();
-        let mut package = result.write().unwrap();
+        let package = result.write().unwrap();
         let mut package_scope = package.scope.write().unwrap();
         match package_scope.new_variable(String::from("var1"), DataType::IntType, String::from("")) {
             Ok(()) => {}
@@ -301,7 +298,7 @@ mod tests {
                 }
             }
         }
-        package_scope.new_variable(String::from("var2"), DataType::StringType, String::from(""));
+        package_scope.new_variable(String::from("var2"), DataType::StringType, String::from("")).unwrap();
 
         println!("{}", package_scope.pretty_print(0, false));
 
@@ -373,7 +370,7 @@ mod tests {
                 let if_scope = impl_scope.new_if_block(String::from("if_block0"), Arc::new(RwLock::new(Variable::new(String::from(""), DataType::BoolType, String::from("true"))))).unwrap();
                 {
                     if_scope.write().unwrap().new_for_block(String::from("for_block0"), Arc::new(RwLock::new(Variable::new(String::from(""), DataType::IntType, String::from("i")))),
-                                                            Arc::new(RwLock::new(Variable::new(String::from(""), DataType::ArrayType(Arc::new(RwLock::new(DataType::BoolType))), String::from("i_array")))));
+                                                            Arc::new(RwLock::new(Variable::new(String::from(""), DataType::ArrayType(Arc::new(RwLock::new(DataType::BoolType))), String::from("i_array"))))).unwrap();
                 }
             }
 
@@ -388,9 +385,9 @@ mod tests {
             let group_type_alias = group_type.read().unwrap();
 
             match &*(group_type_alias.get_type_infer().get_raw_value().read().unwrap()) {
-                LogicalDataType::DataGroupType(group_name, group_scope) => {
+                LogicalDataType::DataGroupType(_, group_scope) => {
                     let result = group_scope.read().unwrap().get_scope().read().unwrap().resolve_variable_from_scope(String::from("var1"));
-                    let var = result.unwrap();
+                    let _ = result.unwrap();
 
                     let result = group_scope.read().unwrap().get_scope().read().unwrap().resolve_variable_in_current_scope(String::from("var1"));
                     match result {
@@ -399,7 +396,7 @@ mod tests {
                     }
 
                     let result = group_scope.read().unwrap().get_scope().read().unwrap().resolve_type_from_scope(String::from("bit8"));
-                    let type_ = result.unwrap();
+                    let _ = result.unwrap();
 
                     let result = group_scope.read().unwrap().get_scope().read().unwrap().resolve_type_in_current_scope(String::from("bit8"));
                     match result {

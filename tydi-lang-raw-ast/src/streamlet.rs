@@ -42,17 +42,11 @@ impl Streamlet {
     }
 
     pub fn new_port(& self, name_: String, type_: Inferable<Arc<RwLock<LogicalDataType>>>, direction_: PortDirection) -> Result<(),ErrorCode> {
-        {
-            self.scope.write().unwrap().new_port(name_.clone(), type_.clone(), direction_.clone());
-        }
-        return Ok(());
+        return self.scope.write().unwrap().new_port(name_.clone(), type_.clone(), direction_.clone());
     }
 
     pub fn new_variable(& self, name_: String, type_: DataType, exp_: String) -> Result<(), ErrorCode> {
-        {
-            self.scope.write().unwrap().new_variable(name_.clone(), type_.clone(), exp_.clone());
-        }
-        return Ok(());
+        return self.scope.write().unwrap().new_variable(name_.clone(), type_.clone(), exp_.clone());
     }
 }
 
@@ -86,7 +80,7 @@ impl Scope {
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("streamlet {} already defined", name_.clone()))); }
         };
 
-        let mut streamlet = Streamlet::new(name_.clone(), type_.clone());
+        let streamlet = Streamlet::new(name_.clone(), type_.clone());
         {
             let parent_scope = self.self_ref.clone().unwrap();
             streamlet.scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), String::from("base"), ScopeRelationType::StreamletScopeRela);
