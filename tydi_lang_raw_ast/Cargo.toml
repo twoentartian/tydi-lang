@@ -1,5 +1,5 @@
 [package]
-name = "tydi-lang-raw-ast"
+name = "tydi_lang_raw_ast"
 version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

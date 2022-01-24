@@ -9,6 +9,7 @@ use crate::util::PrettyPrint;
 pub enum DataType {
     UnknownType,  /// reserved Unknown type
     UnableToInfer,  /// reserved UnableToInfer type, means currently the type is unknown, but might be inferred in the future. Eg, template.
+    PackageType,
 
     IntType,
     StringType,
@@ -25,6 +26,7 @@ impl From<DataType> for String {
         return match t {
             DataType::UnknownType => { String::from("UnknownType") }
             DataType::UnableToInfer => { String::from("UnableToInfer") }
+            DataType::PackageType => { String::from("PackageType") }
             DataType::IntType => { String::from("int") }
             DataType::StringType => { String::from("string") }
             DataType::BoolType => { String::from("bool") }
@@ -49,6 +51,7 @@ impl PrettyPrint for DataType {
         return match self {
             DataType::UnknownType => { String::from(self.clone()) }
             DataType::UnableToInfer => { String::from(self.clone()) }
+            DataType::PackageType => { String::from(self.clone()) }
             DataType::IntType => { String::from(self.clone()) }
             DataType::StringType => { String::from(self.clone()) }
             DataType::BoolType => { String::from(self.clone()) }

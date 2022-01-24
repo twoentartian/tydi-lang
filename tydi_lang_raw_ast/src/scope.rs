@@ -16,7 +16,7 @@ pub use crate::if_for::{IfScope, ForScope};
 pub use crate::error::ErrorCode;
 pub use crate::util::*;
 
-use crate::{generate_get};
+use crate::{generate_get, generate_set, generate_access};
 use crate::connection::Connection;
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
@@ -132,7 +132,7 @@ pub struct Scope {
 }
 
 impl Scope {
-    generate_get!(name, String, get_name);
+    generate_access!(name, String, get_name, set_name);
 
     pub fn new(name_: String, scope_type_: ScopeType) -> Self {
         Self {

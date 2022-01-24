@@ -4,4 +4,6 @@ version = "0.1.0"
 description = "Tydi-lang complier front end"
 
 [dependencies]
-tydi-parser = {path = "tydi-parser"}
+tydi_lang_parser = { path = "tydi_lang_parser" }
+tydi_lang_raw_ast = { path = "tydi_lang_raw_ast" }
+tydi_lang_front_end = { path = "tydi_lang_front_end" }

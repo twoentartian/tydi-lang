@@ -88,16 +88,17 @@ impl LogicalStream {
     }
 
     pub fn new_raw() -> Self {
+        let name = String::from("default");
         Self {
-            name: String::from("default"),
+            name: name.clone(),
             data_type: Arc::new(RwLock::new(LogicalDataType::DataNull)),
-            dimension: Arc::new(RwLock::new(Variable::new_int(format!("!{{stream_{}}}_dimension", "default"), 0))),
+            dimension: Arc::new(RwLock::new(Variable::new_int(format!("!{{stream_{}}}_dimension", name.clone()), 0))),
             user_type: Arc::new(RwLock::new(LogicalDataType::DataNull)),
-            throughput: Arc::new(RwLock::new(Variable::new_float(format!("!{{stream_{}}}_throughput", "default"), 1.0))),
+            throughput: Arc::new(RwLock::new(Variable::new_float(format!("!{{stream_{}}}_throughput", name.clone()), 1.0))),
             synchronicity: LogicalStreamSynchronicity::Sync,
-            complexity: Arc::new(RwLock::new(Variable::new_int(format!("!{{stream_{}}}_complexity", "default"), 7))),
+            complexity: Arc::new(RwLock::new(Variable::new_int(format!("!{{stream_{}}}_complexity", name.clone()), 7))),
             direction: LogicalStreamDirection::Forward,
-            keep: Arc::new(RwLock::new(Variable::new_bool(format!("!{{stream_{}}}_keep", "default"), false))),
+            keep: Arc::new(RwLock::new(Variable::new_bool(format!("!{{stream_{}}}_keep", name.clone()), false))),
         }
     }
 }
@@ -141,8 +142,8 @@ impl Scope {
     }
 }
 
+#[allow(non_upper_case_globals)]
 lazy_static! {
-    #[allow(non_upper_case_globals)]
     pub static ref DefaultLogicalStream: Arc<RwLock<LogicalStream>> = {
         let default = Arc::new(RwLock::new(LogicalStream::new_raw()));
         return default;

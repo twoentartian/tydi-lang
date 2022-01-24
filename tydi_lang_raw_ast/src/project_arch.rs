@@ -1,6 +1,6 @@
-pub use std::collections::HashMap;
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
-use crate::generate_get;
+use crate::{generate_get};
 use crate::scope::{Scope, ScopeType};
 use crate::util::*;
 
@@ -66,6 +66,11 @@ pub struct Package {
 impl Package {
     generate_get!(name, String, get_name);
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
+
+    pub fn set_name(&mut self, name_: String) {
+        self.name = name_.clone();
+        self.scope.write().unwrap().set_name(format!("package_{}", name_.clone()));
+    }
 
     pub fn new(name_: String) -> Self {
         let scope_ = Arc::new(RwLock::new(Scope::new(format!("package_{}", name_.clone()), ScopeType::BasicScope)));

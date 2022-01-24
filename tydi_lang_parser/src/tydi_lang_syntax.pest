@@ -55,15 +55,15 @@ ExpRound = { "round" ~ "(" ~ Exp ~ ")" }
 ExpFloor = { "floor" ~ "(" ~ Exp ~ ")" }
 ExpCeil = { "ceil" ~ "(" ~ Exp ~ ")" }
 
-Exp = _{ ArrayRange | ArrayExp | OpExp | ExpLog | ExpBitWiseNot | ExpConstInType | ExpRound | ExpFloor | ExpCeil | ExpIndex | ExpConstInStreamlet | ExpExternalConstInStreamlet | ExpConstInImplement | ExpExternalConstInStreamlet | SingleTermExp}
+Exp = { ArrayRange | ArrayExp | OpExp | ExpLog | ExpBitWiseNot | ExpConstInType | ExpRound | ExpFloor | ExpCeil | ExpIndex | ExpConstInStreamlet | ExpExternalConstInStreamlet | ExpConstInImplement | ExpExternalConstInStreamlet | SingleTermExp}
 
 ///////////////////////  end of exp.sdf3  ///////////////////////
 
 
 ///////////////////////  start of logical_type.sdf3  ///////////////////////
-TypeIndicatorBasicType = { ":" ~ BasicType }
-TypeIndicatorBasicArrayType = { ":" ~ BasicType ~ "[]" }
-TypeIndicator = _{ ( TypeIndicatorBasicArrayType | TypeIndicatorBasicType )? }
+TypeIndicatorBasicType = { BasicType }
+TypeIndicatorBasicArrayType = { BasicType ~ "[]" }
+TypeIndicator = _{ ( (":"  ~ TypeIndicatorBasicArrayType) | ( ":" ~ TypeIndicatorBasicType) )? }
 
 LogicalExternalType = { ID ~ "." ~ LogicalType }
 LogicalNullType = { "Null" }
