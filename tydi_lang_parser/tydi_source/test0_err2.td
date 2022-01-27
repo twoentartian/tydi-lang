@@ -9,11 +9,10 @@ const num_stream:int = 2;
 const external_var = pack.a;
 const f = 1.0;
 const g = 1;
-//const v = f./g;
+const v = f./g;
 const v = g./f;
 
 type f = Bit(1);
-type f1 = pack.t;
 
 type location = Union location_ {
   const i = 1,
@@ -21,25 +20,7 @@ type location = Union location_ {
   y : Bit(32),
 };
 
-type location2 = Group location_ {
-  const i = 1,
-  x : external.location,
-  y : Bit(32),
-};
-
-type Union location_0 {
-  const i = 1,
-  x : external.location,
-  y : Bit(32),
-};
-
-type Group location_1 {
-  const i = 1,
-  x : external.location,
-  y : Bit(32),
-};
-
-type stream0 = Stream(Bit(4), u = location, d = 2, c = 2, x = true, r = reverse, t = 2, s = flatten);
+type stream0 = Stream(Bit(4));
 type stream1 = Stream(Bit(8));
 
 streamlet sl0<i:int, t:type> {

@@ -16,6 +16,29 @@ pub enum StreamletType {
     TemplateStreamlet(Vec<Arc<RwLock<DataType>>>),
 }
 
+impl From<StreamletType> for String {
+    fn from(type_: StreamletType) -> Self {
+        match type_ {
+            StreamletType::UnknownType => { return String::from("UnknownType"); },
+            StreamletType::NormalStreamlet => { return String::from("NormalStreamlet"); },
+            StreamletType::TemplateStreamlet(types) => {
+                let mut output = String::from("");
+                for t in types {
+                    output.push_str(&String::from((*t.read().unwrap()).clone()));
+                    output.push_str(",");
+                }
+                return output;
+            },
+        }
+    }
+}
+
+impl PrettyPrint for StreamletType {
+    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
+        return String::from(self.clone());
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Streamlet {
     name: String,
@@ -28,6 +51,11 @@ impl Streamlet {
     generate_get!(name, String, get_name);
     generate_get!(streamlet_type, StreamletType, get_type);
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
+
+    pub fn set_name(&mut self, name_: String) {
+        self.name = name_.clone();
+        self.scope.write().unwrap().set_name(format!("streamlet_{}", name_.clone()));
+    }
 
     pub fn new(name_: String, type_: StreamletType) -> Self {
         let scope_ = Arc::new(RwLock::new(Scope::new(format!("streamlet_{}", name_.clone()), ScopeType::StreamletScope)));
@@ -61,7 +89,7 @@ impl PrettyPrint for Streamlet {
         let mut output = String::new();
 
         //enter group
-        output.push_str(&format!("{}Streamlet({}){{\n", generate_padding(depth), self.name.clone()));
+        output.push_str(&format!("{}Streamlet({})<{}>{{\n", generate_padding(depth), self.name.clone(), String::from(self.streamlet_type.clone())));
         //enter scope
         output.push_str(&format!("{}", self.scope.read().unwrap().pretty_print(depth+1, verbose)));
         //leave group
@@ -88,6 +116,19 @@ impl Scope {
 
         let scope_clone = streamlet.scope.clone();
         self.streamlets.insert(name_.clone(), Arc::new(RwLock::new(streamlet)));
+        return Ok(scope_clone);
+    }
+
+    pub fn with_streamlet(&mut self, streamlet: Streamlet) -> Result<Arc<RwLock<Scope>>, ErrorCode> {
+        if self.scope_type != ScopeType::BasicScope { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define streamlet outside of base scope"))); }
+
+        match self.streamlets.get(&streamlet.name) {
+            None => {}
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("streamlet {} already defined", streamlet.get_name()))); }
+        };
+
+        let scope_clone = streamlet.scope.clone();
+        self.streamlets.insert(streamlet.get_name(), Arc::new(RwLock::new(streamlet)));
         return Ok(scope_clone);
     }
 

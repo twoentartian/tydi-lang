@@ -1,3 +1,4 @@
+
 #[macro_export]
 macro_rules! generate_set {
     ($id:ident, $t: ty, $id_set_func:ident) => {
@@ -35,11 +36,21 @@ macro_rules! generate_set_in_arc_rwlock {
     };
 }
 
-
 pub trait PrettyPrint {
     fn pretty_print(&self, depth: u32, verbose: bool) -> String;
 }
 
 pub fn generate_padding(depth: u32) -> String {
     return str::repeat("  ", depth as usize);
+}
+
+pub fn generate_random_str(length: usize) -> String {
+    use rand::{thread_rng, Rng};
+    use rand::distributions::Alphanumeric;
+    let rand_string: String = thread_rng()
+            .sample_iter(&Alphanumeric)
+            .take(length)
+            .map(char::from)
+            .collect();
+    return rand_string;
 }

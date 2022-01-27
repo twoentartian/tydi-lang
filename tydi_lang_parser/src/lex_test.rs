@@ -224,7 +224,7 @@ mod lex_tests {
     #[test]
     fn parse_simple_array() {
         {
-            let mut parse_result = TydiParser::parse(Rule::Exp, "{1,2,3,4,5,6}")
+            let mut parse_result = TydiParser::parse(Rule::ArrayExp, "{1,2,3,4,5,6}")
                 .expect("unsuccessful parse");
             println!("{}",parse_result);
             let parse_result = parse_result.next().unwrap();
@@ -242,7 +242,7 @@ mod lex_tests {
             assert!(pass);
         }
         {
-            let mut parse_result = TydiParser::parse(Rule::Exp, "(1=1=>5)")
+            let mut parse_result = TydiParser::parse(Rule::ArrayRange, "(1=1=>5)")
                 .expect("unsuccessful parse");
             println!("{}",parse_result);
             let parse_result = parse_result.next().unwrap();
@@ -264,7 +264,7 @@ mod lex_tests {
     fn parse_basic_logical_types() {
         {
             let code = "Null";
-            let mut parse_result = TydiParser::parse(Rule::LogicalType, code).expect("unsuccessful parse");
+            let mut parse_result = TydiParser::parse(Rule::LogicalNullType, code).expect("unsuccessful parse");
             println!("{}",parse_result);
             let parse_result = parse_result.next().unwrap();
             let mut pass : bool = false;
@@ -282,7 +282,7 @@ mod lex_tests {
         }
         {
             let code = "Bit(x)";
-            let mut parse_result = TydiParser::parse(Rule::LogicalType, code).expect("unsuccessful parse");
+            let mut parse_result = TydiParser::parse(Rule::LogicalBitType, code).expect("unsuccessful parse");
             println!("{}",parse_result);
             let parse_result = parse_result.next().unwrap();
             let mut pass : bool = false;
@@ -309,7 +309,7 @@ mod lex_tests {
   d : Stream(A, d=0),
   e : Stream(A),
 }";
-            let mut parse_result = TydiParser::parse(Rule::LogicalType, code).expect("unsuccessful parse");
+            let mut parse_result = TydiParser::parse(Rule::LogicalUnionType, code).expect("unsuccessful parse");
             println!("{}",parse_result);
             let parse_result = parse_result.next().unwrap();
             let mut pass : bool = false;
@@ -333,7 +333,7 @@ mod lex_tests {
   d : Stream(A, d=0), \
   e : Stream(A), \
 }";
-            let mut parse_result = TydiParser::parse(Rule::LogicalType, code).expect("unsuccessful parse");
+            let mut parse_result = TydiParser::parse(Rule::LogicalGroupType, code).expect("unsuccessful parse");
             println!("{}",parse_result);
             let parse_result = parse_result.next().unwrap();
             let mut pass : bool = false;

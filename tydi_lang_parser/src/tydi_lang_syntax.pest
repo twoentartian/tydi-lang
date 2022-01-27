@@ -65,7 +65,7 @@ TypeIndicatorBasicType = { BasicType }
 TypeIndicatorBasicArrayType = { BasicType ~ "[]" }
 TypeIndicator = _{ ( (":"  ~ TypeIndicatorBasicArrayType) | ( ":" ~ TypeIndicatorBasicType) )? }
 
-LogicalExternalType = { ID ~ "." ~ LogicalType }
+LogicalExternalType = { ID ~ "." ~ ID }
 LogicalNullType = { "Null" }
 LogicalBitType = { "Bit" ~ "(" ~ Exp ~ ")" }
 LogicalGroupType = {
@@ -89,7 +89,7 @@ StreamPropertyKeep = { "," ~ "x" ~ "=" ~ Exp }
 StreamProperty = _{ (StreamPropertyDimension | StreamPropertyUserType | StreamPropertyThroughput | StreamPropertySynchronicity |
                     StreamPropertyComplexity | StreamPropertyDirection | StreamPropertyKeep) }
 LogicalUserDefinedType = { ID }
-LogicalType = _{ ( LogicalExternalType | LogicalNullType | LogicalBitType | LogicalStreamType | LogicalGroupType | LogicalUnionType | LogicalUserDefinedType) }
+LogicalType = { ( LogicalExternalType | LogicalNullType | LogicalBitType | LogicalStreamType | LogicalGroupType | LogicalUnionType | LogicalUserDefinedType) }
 
 SubItemItem = { ID ~ ":" ~ LogicalType ~ "," }
 SubItemDeclareConst = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
@@ -99,7 +99,7 @@ SubItem = _{ (SubItemItem | SubItemDeclareConst) }
 
 ///////////////////////  start of streamlet.sdf3  ///////////////////////
 ////1.StreamLet
-StreamLet = {
+StreamLet = _{
 "streamlet" ~ ID ~ StreamLetArgs? ~ "{" ~
   StreamLetBody+ ~
 "}"
@@ -176,7 +176,7 @@ ArgLogicalType = { ID ~ ":" ~ "type"}
 ArgValue = { ID ~ ":" ~ BasicType }
 ArgImplementationType = { ID ~ ":" ~ "impl" ~ "of" ~ ID ~ ArgExps? }
 ArgExternalImplementationType = { ID ~ ":" ~ ID ~ "." ~ "impl" ~ "of" ~ ID ~ ArgExps? }
-Arg = _{ (ArgLogicalType | ArgValue | ArgExternalImplementationType | ArgImplementationType) }
+Arg = { (ArgLogicalType | ArgValue | ArgExternalImplementationType | ArgImplementationType) }
 
 ////4.ArgExp
 ArgExps = { "<" ~ ArgExp ~ ("," ~ ArgExp)* ~ ">" }

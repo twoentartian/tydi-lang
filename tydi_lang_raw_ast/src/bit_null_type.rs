@@ -57,8 +57,8 @@ impl From<LogicalBit> for String {
 impl Scope {
     pub fn new_logical_null(&mut self, name_: String) -> Result<(), ErrorCode> {
         if self.scope_type == ScopeType::StreamScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define group type in Stream scope"))); }
-        if self.scope_type == ScopeType::StreamletScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define group type in Streamlet scope"))); }
         if self.scope_type == ScopeType::ImplementScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define group type in Implement scope"))); }
+        if self.scope_type == ScopeType::IfForScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define group type in If/For scope"))); }
 
         match self.types.get(&name_) {
             None => {}

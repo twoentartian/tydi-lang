@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
-use crate::{generate_get, inferred};
+use crate::{generate_get, generate_set, generate_access, inferred};
 use crate::scope::{Scope, ScopeRelationType, ScopeType, TypeAlias};
 use crate::util::{generate_padding, PrettyPrint};
 use crate::inferable::{Inferable, NewInferable};
@@ -17,6 +17,11 @@ pub struct LogicalGroup {
 impl LogicalGroup {
     generate_get!(name, String, get_name);
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
+
+    pub fn set_name(&mut self, name_: String) {
+        self.name = name_.clone();
+        self.scope.write().unwrap().set_name(format!("group_{}", name_.clone()));
+    }
 
     pub fn new(name_: String) -> Self {
         let scope_ = Arc::new(RwLock::new(Scope::new(format!("group_{}", name_.clone()), ScopeType::GroupScope)));
@@ -61,6 +66,11 @@ pub struct LogicalUnion {
 impl LogicalUnion {
     generate_get!(name, String, get_name);
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
+
+    pub fn set_name(&mut self, name_: String) {
+        self.name = name_.clone();
+        self.scope.write().unwrap().set_name(format!("union_{}", name_.clone()));
+    }
 
     pub fn new(name_: String) -> Self {
         let scope_ = Arc::new(RwLock::new(Scope::new(format!("union_{}", name_.clone()), ScopeType::UnionScope)));

@@ -9,6 +9,7 @@ use crate::inferable::{NewInferable, Inferable};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LogicalStreamSynchronicity {
+    Unknown,
     Sync,
     Flatten,
     Desync,
@@ -18,11 +19,22 @@ pub enum LogicalStreamSynchronicity {
 impl From<LogicalStreamSynchronicity> for String {
     fn from(s: LogicalStreamSynchronicity) -> Self {
         match s {
+            LogicalStreamSynchronicity::Unknown => { String::from("Unknown") }
             LogicalStreamSynchronicity::Sync => { String::from("Sync") }
             LogicalStreamSynchronicity::Flatten => { String::from("Flatten") }
             LogicalStreamSynchronicity::Desync => { String::from("Desync") }
             LogicalStreamSynchronicity::FlatDesync => { String::from("FlatDesync") }
         }
+    }
+}
+
+impl From<String> for LogicalStreamSynchronicity {
+    fn from(s: String) -> Self {
+        if s == String::from("Sync") || s == String::from("sync") { return LogicalStreamSynchronicity::Sync; }
+        else if s == String::from("Flatten") || s == String::from("flatten") { return LogicalStreamSynchronicity::Flatten; }
+        else if s == String::from("Desync") || s == String::from("desync") { return LogicalStreamSynchronicity::Desync; }
+        else if s == String::from("FlatDesync") || s == String::from("flatdesync") { return LogicalStreamSynchronicity::FlatDesync; }
+        else { return LogicalStreamSynchronicity::Unknown; }
     }
 }
 
@@ -34,6 +46,7 @@ impl PrettyPrint for LogicalStreamSynchronicity {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LogicalStreamDirection {
+    Unknown,
     Forward,
     Reverse,
 }
@@ -41,9 +54,18 @@ pub enum LogicalStreamDirection {
 impl From<LogicalStreamDirection> for String {
     fn from(d: LogicalStreamDirection) -> Self {
         match d {
+            LogicalStreamDirection::Unknown => { String::from("Unknown") }
             LogicalStreamDirection::Forward => { String::from("Forward") }
             LogicalStreamDirection::Reverse => { String::from("Reverse") }
         }
+    }
+}
+
+impl From<String> for LogicalStreamDirection {
+    fn from(s: String) -> Self {
+        if s == String::from("Forward") || s == String::from("forward") { return LogicalStreamDirection::Forward; }
+        else if s == String::from("Reverse") || s == String::from("reverse") { return LogicalStreamDirection::Reverse; }
+        else { return LogicalStreamDirection::Unknown; }
     }
 }
 
@@ -57,10 +79,10 @@ impl PrettyPrint for LogicalStreamDirection {
 pub struct LogicalStream {
     name: String,
 
-    data_type: Arc<RwLock<LogicalDataType>>,
+    data_type: Inferable<Arc<RwLock<LogicalDataType>>>,
 
     dimension: Arc<RwLock<Variable>>,
-    user_type: Arc<RwLock<LogicalDataType>>,
+    user_type: Inferable<Arc<RwLock<LogicalDataType>>>,
     throughput: Arc<RwLock<Variable>>,
     synchronicity: LogicalStreamSynchronicity,
     complexity: Arc<RwLock<Variable>>,
@@ -70,16 +92,16 @@ pub struct LogicalStream {
 
 impl LogicalStream {
     generate_get!(name, String, get_name);
-    generate_access!(data_type, Arc<RwLock<LogicalDataType>>, get_data_type, set_data_type);
+    generate_access!(data_type, Inferable<Arc<RwLock<LogicalDataType>>>, get_data_type, set_data_type);
     generate_get!(dimension, Arc<RwLock<Variable>>, get_dimension);generate_set_in_arc_rwlock!(dimension, Variable, set_dimension);
-    generate_access!(user_type, Arc<RwLock<LogicalDataType>>, get_user_type, set_user_type);
+    generate_access!(user_type, Inferable<Arc<RwLock<LogicalDataType>>>, get_user_type, set_user_type);
     generate_get!(throughput, Arc<RwLock<Variable>>, get_throughput);generate_set_in_arc_rwlock!(throughput, Variable, set_throughput);
     generate_access!(synchronicity, LogicalStreamSynchronicity, get_synchronicity, set_synchronicity);
     generate_get!(complexity, Arc<RwLock<Variable>>, get_complexity);generate_set_in_arc_rwlock!(complexity, Variable, set_complexity);
     generate_access!(direction, LogicalStreamDirection, get_direction, set_direction);
     generate_get!(keep, Arc<RwLock<Variable>>, get_keep);generate_set_in_arc_rwlock!(keep, Variable, set_keep);
 
-    pub fn new(name_: String, data_type_: Arc<RwLock<LogicalDataType>>) -> Self {
+    pub fn new(name_: String, data_type_: Inferable<Arc<RwLock<LogicalDataType>>>) -> Self {
         let default_clone: Arc<RwLock<LogicalStream>> = DefaultLogicalStream.clone();
         let mut output = default_clone.read().unwrap().clone();
         output.name = name_.clone();
@@ -91,9 +113,9 @@ impl LogicalStream {
         let name = String::from("default");
         Self {
             name: name.clone(),
-            data_type: Arc::new(RwLock::new(LogicalDataType::DataNull)),
+            data_type: inferred!(infer_logical_data_type!(), Arc::new(RwLock::new(LogicalDataType::DataNull))),
             dimension: Arc::new(RwLock::new(Variable::new_int(format!("!{{stream_{}}}_dimension", name.clone()), 0))),
-            user_type: Arc::new(RwLock::new(LogicalDataType::DataNull)),
+            user_type: inferred!(infer_logical_data_type!(), Arc::new(RwLock::new(LogicalDataType::DataNull))),
             throughput: Arc::new(RwLock::new(Variable::new_float(format!("!{{stream_{}}}_throughput", name.clone()), 1.0))),
             synchronicity: LogicalStreamSynchronicity::Sync,
             complexity: Arc::new(RwLock::new(Variable::new_int(format!("!{{stream_{}}}_complexity", name.clone()), 7))),
@@ -110,10 +132,10 @@ impl PrettyPrint for LogicalStream {
         //enter union
         output.push_str(&format!("Stream({}){{\n", self.name.clone()));
         //enter union
-        output.push_str(&format!("{}DataType={}\n", generate_padding(depth + 1), String::from((*self.data_type.read().unwrap()).clone())));
+        output.push_str(&format!("{}DataType={}\n", generate_padding(depth + 1), String::from(self.data_type.clone())));
         output.push_str(&format!("{}dimension={}, user={}, throughput={}, synchronicity={}, complexity={}, direction={}, keep={}\n", generate_padding(depth + 1),
                                  String::from( (*self.dimension.read().unwrap()).clone() ),
-                                 String::from((*self.user_type.read().unwrap()).clone()),
+                                 String::from(self.user_type.clone()),
                                  String::from( (*self.throughput.read().unwrap()).clone() ), self.synchronicity.pretty_print(depth + 1, verbose),
                                  String::from( (*self.complexity.read().unwrap()).clone() ), self.direction.pretty_print(depth + 1, verbose),
                                  String::from( (*self.keep.read().unwrap()).clone() )));
@@ -124,7 +146,7 @@ impl PrettyPrint for LogicalStream {
 }
 
 impl Scope {
-    pub fn new_logical_stream(&mut self, name_: String, data_type_: Arc<RwLock<LogicalDataType>>) -> Result<(), ErrorCode> {
+    pub fn new_logical_stream(&mut self, name_: String, data_type_: Inferable<Arc<RwLock<LogicalDataType>>>) -> Result<(), ErrorCode> {
         if self.scope_type == ScopeType::StreamScope { return  Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define group type in Stream scope"))); }
         if self.scope_type == ScopeType::StreamletScope { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define group type in Streamlet scope"))); }
         if self.scope_type == ScopeType::ImplementScope { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define group type in Implement scope"))); }
@@ -142,7 +164,6 @@ impl Scope {
     }
 }
 
-#[allow(non_upper_case_globals)]
 lazy_static! {
     pub static ref DefaultLogicalStream: Arc<RwLock<LogicalStream>> = {
         let default = Arc::new(RwLock::new(LogicalStream::new_raw()));

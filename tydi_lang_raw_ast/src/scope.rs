@@ -13,6 +13,7 @@ pub use crate::type_alias::TypeAlias;
 pub use crate::instances::Instance;
 pub use crate::if_for::{IfScope, ForScope};
 
+pub use crate::inferable::*;
 pub use crate::error::ErrorCode;
 pub use crate::util::*;
 
@@ -266,6 +267,7 @@ impl PrettyPrint for Scope {
 
 #[cfg(test)]
 mod tests {
+    use infer_logical_data_type;
     use crate::implement::ImplementType;
     use crate::inferable::{Inferable, NewInferable};
     use crate::{infer_port, inferred, not_inferred, infer_streamlet};
@@ -333,6 +335,7 @@ mod tests {
             package_scope.new_logical_union(String::from("union0")).unwrap();
             package_scope.new_logical_null(String::from("null")).unwrap();
             package_scope.new_logical_bit(String::from("bit8"), String::from("8")).unwrap();
+            package_scope.new_external_type(String::from("external"), String::from("pack"), String::from("t1"));
             let temp_type = package_scope.resolve_type_in_current_scope(String::from("group0")).unwrap();
 
             let streamlet_new = package_scope.new_streamlet(String::from("streamlet0"), StreamletType::NormalStreamlet).unwrap();
@@ -345,13 +348,13 @@ mod tests {
                 let type_alias = temp_type.read().unwrap();
                 let t = type_alias.get_type_infer().get_raw_value();
 
-                package_scope.new_logical_stream(String::from("stream0"), t.clone()).unwrap();
+                package_scope.new_logical_stream(String::from("stream0"), inferred!(infer_logical_data_type!(), t.clone()));
 
                 match package_scope.resolve_streamlet_from_scope(String::from("streamlet0")) {
                     Ok(streamlet) => {
                         //streamlet.read().unwrap().new_port(String::from("port0"), <Inferable<Arc<RwLock<LogicalDataType>>> as NewInferable<Arc<RwLock<LogicalDataType>>>>::_new_inferred(String::from(""), t.clone()) , PortDirection::Input);
-                        streamlet.read().unwrap().new_port(String::from("port0"), inferred!(Arc<RwLock<LogicalDataType>>, t.clone()) , PortDirection::Input).unwrap();
-                        streamlet.read().unwrap().new_port(String::from("port1"), not_inferred!(Arc<RwLock<LogicalDataType>>, String::from("port1_type")) , PortDirection::Input).unwrap();
+                        streamlet.read().unwrap().new_port(String::from("port0"), inferred!(infer_logical_data_type!(), t.clone()) , PortDirection::Input).unwrap();
+                        streamlet.read().unwrap().new_port(String::from("port1"), not_inferred!(infer_logical_data_type!(), String::from("port1_type")) , PortDirection::Input).unwrap();
                     }
                     Err(_) => { assert!(false) }
                 }
