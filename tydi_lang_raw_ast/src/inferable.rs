@@ -53,7 +53,7 @@ impl NewInferable<Arc<RwLock<LogicalDataType>>> for Inferable<Arc<RwLock<Logical
         Self {
             raw_exp: exp,
             infer_state: InferState::NotInferred,
-            raw_value: Arc::new(RwLock::new(LogicalDataType::EmptyLogicalData)),
+            raw_value: Arc::new(RwLock::new(LogicalDataType::DummyLogicalData)),
         }
     }
 

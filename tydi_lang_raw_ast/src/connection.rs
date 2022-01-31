@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
+use streamlet::Streamlet;
 use crate::error::ErrorCode;
-use crate::generate_get;
+use crate::{generate_get, generate_access, generate_set};
 use crate::inferable::{Inferable};
 use crate::port::Port;
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
@@ -9,25 +10,80 @@ use crate::util::{generate_padding, PrettyPrint};
 use crate::variable::Variable;
 
 #[derive(Clone, Debug)]
+pub enum PortArray {
+    UnknownPortArray,
+    SinglePort,
+    ArrayPort(Arc<RwLock<Variable>>),
+}
+
+impl From<PortArray> for String {
+    fn from(arr: PortArray) -> Self {
+        return match arr {
+            PortArray::UnknownPortArray => { String::from("UnknownPortArray") }
+            PortArray::SinglePort => { String::from("") }
+            PortArray::ArrayPort(p) => { format!("[{}]", String::from((*p.read().unwrap()).clone())) }
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum PortOwner {
+    UnknownPortOwner,
+    SelfOwner,
+    ExternalOwner(String, Option<Arc<RwLock<Streamlet>>>, Option<Arc<RwLock<Variable>>>),
+}
+
+impl From<PortOwner> for String {
+    fn from(owner: PortOwner) -> Self {
+        return match owner {
+            PortOwner::UnknownPortOwner => { String::from("UnknownPortOwner") }
+            PortOwner::SelfOwner => { String::from("Self") }
+            PortOwner::ExternalOwner(name,_, index) => {
+                match index {
+                    None => { format!("ExternalOwner({})", name.clone()) }
+                    Some(index) => { format!("ExternalOwner({})[{}]", name.clone(), String::from((*index.read().unwrap()).clone())) }
+                }
+            }
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct Connection {
     name: String,
 
     lhs_port: Inferable<Arc<RwLock<Port>>>,
+    lhs_port_owner: PortOwner,
+    lhs_port_array_type: PortArray,
+
     rhs_port: Inferable<Arc<RwLock<Port>>>,
+    rhs_port_owner: PortOwner,
+    rhs_port_array_type: PortArray,
     delay: Arc<RwLock<Variable>>,
 }
 
 impl Connection {
-    generate_get!(name, String, get_name);
-    generate_get!(lhs_port, Inferable<Arc<RwLock<Port>>>, get_lhs_port);
-    generate_get!(rhs_port, Inferable<Arc<RwLock<Port>>>, get_rhs_port);
-    generate_get!(delay, Arc<RwLock<Variable>>, get_delay);
+    generate_access!(name, String, get_name, set_name);
+
+    generate_access!(lhs_port, Inferable<Arc<RwLock<Port>>>, get_lhs_port, set_lhs_port);
+    generate_access!(lhs_port_owner, PortOwner, get_lhs_port_owner, set_lhs_port_owner);
+    generate_access!(lhs_port_array_type, PortArray, get_lhs_port_array_type, set_lhs_port_array_type);
+
+    generate_access!(rhs_port, Inferable<Arc<RwLock<Port>>>, get_rhs_port, set_rhs_port);
+    generate_access!(rhs_port_owner, PortOwner, get_rhs_port_owner, set_rhs_port_owner);
+    generate_access!(rhs_port_array_type, PortArray, get_rhs_port_array_type, set_rhs_port_array_type);
+
+    generate_access!(delay, Arc<RwLock<Variable>>, get_delay, set_delay);
 
     pub fn new(name_: String, lhs_port_: Inferable<Arc<RwLock<Port>>>, rhs_port_: Inferable<Arc<RwLock<Port>>>, delay_: Variable) -> Self {
         Self {
             name: name_.clone(),
             lhs_port: lhs_port_.clone(),
+            lhs_port_owner: PortOwner::UnknownPortOwner,
+            lhs_port_array_type: PortArray::UnknownPortArray,
             rhs_port: rhs_port_.clone(),
+            rhs_port_owner: PortOwner::UnknownPortOwner,
+            rhs_port_array_type: PortArray::UnknownPortArray,
             delay: Arc::new(RwLock::new(delay_.clone())),
         }
     }
@@ -35,7 +91,10 @@ impl Connection {
 
 impl From<Connection> for String {
     fn from(conn: Connection) -> Self {
-        return format!("{}={}=>{} ({})", String::from(conn.lhs_port.clone()), String::from((*conn.delay.read().unwrap()).clone()), String::from(conn.rhs_port.clone()), conn.name.clone());
+        return format!("{}.{}{}={}=>{}.{}{} ({})", String::from(conn.lhs_port_owner), String::from(conn.lhs_port.clone()), String::from(conn.lhs_port_array_type),
+                       String::from((*conn.delay.read().unwrap()).clone()),
+                       String::from(conn.rhs_port_owner), String::from(conn.rhs_port.clone()), String::from(conn.rhs_port_array_type),
+                       conn.name.clone());
     }
 }
 
@@ -54,6 +113,18 @@ impl Scope {
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("connection {} already defined", name_))); }
         };
         self.connections.insert(name_.clone(), Arc::new(RwLock::new(Connection::new(name_.clone(), lhs_port_.clone(), rhs_port_.clone(), delay_.clone()))));
+        return Ok(());
+    }
+
+    pub fn with_connection(&mut self, connection: Arc<RwLock<Connection>>) -> Result<(), ErrorCode> {
+        if !(self.scope_type == ScopeType::ImplementScope || self.scope_type == ScopeType::IfForScope) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define connections outside of implement scope"))); }
+
+        let name_ = connection.read().unwrap().get_name();
+        match self.connections.get(&name_) {
+            None => {}
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("connection {} already defined", name_))); }
+        };
+        self.connections.insert(name_.clone(), connection.clone());
         return Ok(());
     }
 

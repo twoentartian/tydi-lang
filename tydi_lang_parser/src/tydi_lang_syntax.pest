@@ -111,7 +111,7 @@ StreamLetBodyDeclareConstInStreamlet = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Ex
 StreamLetBody = _{ (StreamLetBodyStreamLetPort | StreamLetBodyStreamLetPortArray | StreamLetBodyDeclareConstInStreamlet)}
 DirectionDirIn = { "in" }
 DirectionDirOut = { "out" }
-Direction = _{ (DirectionDirIn | DirectionDirOut) }
+Direction = { (DirectionDirIn | DirectionDirOut) }
 
 ExpConstInStreamlet = { "streamlet" ~ ID ~ ArgExps? ~ "." ~ ID }
 ExpExternalConstInStreamlet = { ID ~ "." ~  "streamlet" ~ ID ~ ArgExps? ~ "." ~ ID }
@@ -119,8 +119,8 @@ ExpExternalConstInStreamlet = { ID ~ "." ~  "streamlet" ~ ID ~ ArgExps? ~ "." ~ 
 ////2.Implementation
 InternalId = { ID }
 ExternalId = { ID ~ "." ~ ID }
-Extern_Intern_Id = _{ ExternalId | InternalId }
-Implementation = {
+Extern_Intern_Id = { ExternalId | InternalId }
+Implementation = _{
 "impl" ~ ID ~ ImplementationArgs? ~ "of" ~ Extern_Intern_Id ~ ArgExps? ~ "{" ~
   ImplementationBody* ~
 "}"
@@ -154,7 +154,7 @@ ImplementationBodyForBlock = {
   ImplementationBody* ~
 "}"
 }
-ImplementationBody = _{ (ImplementationBodyDeclareInstance | ImplementationBodyDeclareInstanceArray |ImplementationBodyDeclareConstInImpl |
+ImplementationBody = { (ImplementationBodyDeclareInstance | ImplementationBodyDeclareInstanceArray |ImplementationBodyDeclareConstInImpl |
                         ImplementationBodyIfBlock | ImplementationBodyForBlock | ImplementationBodyDeclareProcess |
                         ImplementationBodyDeclareNet | ImplementationBodyDeclareDelayedNet)}
 
@@ -166,26 +166,25 @@ NetName = { Exp }
 LogicalTypeSliceIndex = _{ "[" ~ Exp ~ "]" }
 LogicalTypeSliceSelf = { ID ~ LogicalTypeSliceIndex? }
 LogicalTypeSliceCompound = { ID ~ LogicalTypeSliceIndex? ~ "." ~ ID ~ LogicalTypeSliceIndex? }
-LogicalTypeSlice = _{ (LogicalTypeSliceCompound | LogicalTypeSliceSelf) }
+LogicalTypeSlice = { (LogicalTypeSliceCompound | LogicalTypeSliceSelf) }
 
 ExpConstInImplement = { "impl" ~ ID ~ ArgExps? ~ "." ~ ID }
 ExpExternalConstInImplement = { ID ~ "." ~  "impl" ~ ID ~ ArgExps? ~ "." ~ ID }
 
 ////3.Arg
 ArgLogicalType = { ID ~ ":" ~ "type"}
-ArgValue = { ID ~ ":" ~ BasicType }
-ArgImplementationType = { ID ~ ":" ~ "impl" ~ "of" ~ ID ~ ArgExps? }
-ArgExternalImplementationType = { ID ~ ":" ~ ID ~ "." ~ "impl" ~ "of" ~ ID ~ ArgExps? }
-Arg = { (ArgLogicalType | ArgValue | ArgExternalImplementationType | ArgImplementationType) }
+ArgValue = { ID ~ TypeIndicator }
+ArgImplementationType = { ID ~ ":" ~ "impl" ~ "of" ~ Extern_Intern_Id ~ ArgExps? }
+
+Arg = { (ArgImplementationType | ArgLogicalType | ArgValue ) }
 
 ////4.ArgExp
 ArgExps = { "<" ~ ArgExp ~ ("," ~ ArgExp)* ~ ">" }
 ArgExpConstExp = { Exp }
 ArgExpTypeExp = { "type" ~ LogicalType }
-ArgExpExternalTypeExp = { ID ~ "." ~ "type" ~ LogicalType }
-ArgExpImplementExp = { "impl" ~ ID ~ ArgExps? }
-ArgExpExternalImplementExp = { ID ~ "." ~ "impl" ~ ID ~ ArgExps? }
-ArgExp = _{ (ArgExpTypeExp | ArgExpExternalTypeExp | ArgExpImplementExp | ArgExpExternalImplementExp | ArgExpConstExp) }
+ArgExpExternalTypeExp = { "type" ~ ID ~ "." ~ LogicalType }
+ArgExpImplementExp = { "impl" ~ Extern_Intern_Id ~ ArgExps? }
+ArgExp = _{ (ArgExpTypeExp | ArgExpExternalTypeExp | ArgExpImplementExp | ArgExpConstExp) }
 
 ////5.GlobalInstance
 GlobalInstance = { "instance" ~ ID ~ "(" ~ ID ~ ArgExps? ~ ")" }
@@ -199,9 +198,10 @@ StatementDeclareStreamLet = { StreamLet ~ ";" }
 StatementDeclareImplementation = { Implementation ~ ";" }
 StatementDeclareGlobalInstance = { GlobalInstance ~ ";" }
 StatementDeclareLogicalDataType = { "type" ~ LogicalType ~ ";" }
-StatementAssertEqualLogicalType = { "assert" ~ "type" ~ "(" ~  LogicalType ~ "==" ~ LogicalType ~ ")" ~ ";" }
+/// Obsolete
+/// StatementAssertEqualLogicalType = { "assert" ~ "type" ~ "(" ~  LogicalType ~ "==" ~ LogicalType ~ ")" ~ ";" }
 Statement = _{ (StatementTypeAssign | StatementConstAssign | StatementDeclareStreamLet | StatementDeclareImplementation |
-                StatementDeclareGlobalInstance | StatementDeclareLogicalDataType | StatementAssertEqualLogicalType) }
+                StatementDeclareGlobalInstance | StatementDeclareLogicalDataType /*| StatementAssertEqualLogicalType*/) }
 ///////////////////////  end of statement.sdf3  ///////////////////////
 
 

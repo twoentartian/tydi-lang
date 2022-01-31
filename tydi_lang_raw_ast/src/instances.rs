@@ -1,35 +1,82 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
+use project_arch::Package;
 use crate::error::ErrorCode;
 use crate::streamlet::Streamlet;
-use crate::generate_get;
+use crate::{generate_get, generate_set, generate_access};
 use crate::inferable::{Inferable, InferState, NewInferable};
+use crate::variable::Variable;
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
 use crate::util::{generate_padding, PrettyPrint};
 
 #[derive(Clone, Debug)]
+pub enum InstanceArray {
+    UnknownInstanceArray,
+    SingleInstance,
+    ArrayInstance(Arc<RwLock<Variable>>),
+}
+
+impl From<InstanceArray> for String {
+    fn from(arr: InstanceArray) -> Self {
+        return match arr {
+            InstanceArray::UnknownInstanceArray => { String::from("UnknownInstanceArray") }
+            InstanceArray::SingleInstance => { String::from("SingleInstance") }
+            InstanceArray::ArrayInstance(p) => { format!("ArrayInstance({})", String::from((*p.read().unwrap()).clone())) }
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct Instance {
     name: String,
+    package: Option<String>,
 
     streamlet_type: Inferable<Arc<RwLock<Streamlet>>>,
+    array_type: InstanceArray,
 }
 
 impl Instance {
     generate_get!(name, String, get_name);
-    generate_get!(streamlet_type, Inferable<Arc<RwLock<Streamlet>>>, get_streamlet_type);
+    generate_access!(streamlet_type, Inferable<Arc<RwLock<Streamlet>>>, get_streamlet_type, set_streamlet_type);
+    generate_access!(array_type, InstanceArray, get_array_type, set_array_type);
 
-    pub fn new(name_: String, streamlet_type_exp_: Inferable<Arc<RwLock<Streamlet>>>) -> Self {
+    pub fn new(name_: String, package_: Option<String>, streamlet_type_exp_: Inferable<Arc<RwLock<Streamlet>>>) -> Self {
         match streamlet_type_exp_.get_infer_state() {
             InferState::Inferred => {
                 Self {
                     name: name_,
+                    package: package_,
                     streamlet_type: <Inferable<Arc<RwLock<Streamlet>>> as NewInferable<Arc<RwLock<Streamlet>>>>::_new_inferred(streamlet_type_exp_.get_raw_exp(), streamlet_type_exp_.get_raw_value()),
+                    array_type: InstanceArray::SingleInstance,
                 }
             }
             InferState::NotInferred => {
                 Self {
                     name: name_,
+                    package: package_,
                     streamlet_type: <Inferable<Arc<RwLock<Streamlet>>> as NewInferable<Arc<RwLock<Streamlet>>>>::_new(streamlet_type_exp_.get_raw_exp()),
+                    array_type: InstanceArray::SingleInstance,
+                }
+            }
+        }
+    }
+
+    pub fn new_array(name_: String, package_: Option<String>, streamlet_type_exp_: Inferable<Arc<RwLock<Streamlet>>>, array_: Arc<RwLock<Variable>>) -> Self {
+        match streamlet_type_exp_.get_infer_state() {
+            InferState::Inferred => {
+                Self {
+                    name: name_,
+                    package: package_,
+                    streamlet_type: <Inferable<Arc<RwLock<Streamlet>>> as NewInferable<Arc<RwLock<Streamlet>>>>::_new_inferred(streamlet_type_exp_.get_raw_exp(), streamlet_type_exp_.get_raw_value()),
+                    array_type: InstanceArray::ArrayInstance(array_),
+                }
+            }
+            InferState::NotInferred => {
+                Self {
+                    name: name_,
+                    package: package_,
+                    streamlet_type: <Inferable<Arc<RwLock<Streamlet>>> as NewInferable<Arc<RwLock<Streamlet>>>>::_new(streamlet_type_exp_.get_raw_exp()),
+                    array_type: InstanceArray::ArrayInstance(array_),
                 }
             }
         }
@@ -38,7 +85,17 @@ impl Instance {
 
 impl From<Instance> for String {
     fn from(inst: Instance) -> Self {
-        return format!("{}:Instance({})", inst.get_name(), String::from(inst.streamlet_type));
+        let mut array_exp = match inst.clone().array_type {
+            InstanceArray::UnknownInstanceArray => { String::from("[Unknown]") }
+            InstanceArray::SingleInstance => { String::from("") }
+            InstanceArray::ArrayInstance(var) => { format!("[{}]", String::from((*var.read().unwrap()).clone())) }
+            _ => { unreachable!() }
+        };
+        let mut package_exp = match inst.clone().package {
+            None => { String::from("") }
+            Some(package) => { format!("{}.", package) }
+        };
+        return format!("{}:{}({}){}", inst.get_name(), package_exp, String::from(inst.streamlet_type), array_exp);
     }
 }
 
@@ -49,14 +106,25 @@ impl PrettyPrint for Instance {
 }
 
 impl Scope {
-    pub fn new_instance(&mut self, name_: String, streamlet_exp: Inferable<Arc<RwLock<Streamlet>>>) -> Result<(), ErrorCode> {
+    pub fn new_instance(&mut self, name_: String, package_: Option<String>, streamlet_exp: Inferable<Arc<RwLock<Streamlet>>>) -> Result<(), ErrorCode> {
         if (self.scope_type != ScopeType::ImplementScope) && (self.scope_type != ScopeType::BasicScope) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define instances outside of implement or base scope"))); }
 
         match self.instances.get(&name_) {
             None => {}
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("instance {} already defined", name_))); }
         };
-        self.instances.insert(name_.clone(), Arc::new(RwLock::new(Instance::new(name_.clone(), streamlet_exp))));
+        self.instances.insert(name_.clone(), Arc::new(RwLock::new(Instance::new(name_.clone(), package_,streamlet_exp))));
+        return Ok(());
+    }
+
+    pub fn new_instance_array(&mut self, name_: String, package_: Option<String>, streamlet_exp: Inferable<Arc<RwLock<Streamlet>>>, array_: Arc<RwLock<Variable>>) -> Result<(), ErrorCode> {
+        if (self.scope_type != ScopeType::ImplementScope) && (self.scope_type != ScopeType::BasicScope) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define instances outside of implement or base scope"))); }
+
+        match self.instances.get(&name_) {
+            None => {}
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("instance {} already defined", name_))); }
+        };
+        self.instances.insert(name_.clone(), Arc::new(RwLock::new(Instance::new_array(name_.clone(), package_,streamlet_exp, array_))));
         return Ok(());
     }
 

@@ -1,6 +1,7 @@
 pub use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
+
 pub use crate::logical_data_type::*;
 pub use crate::variable::*;
 pub use crate::data_type::*;
@@ -10,15 +11,16 @@ pub use crate::streamlet::*;
 pub use crate::port::*;
 pub use crate::implement::Implement;
 pub use crate::type_alias::TypeAlias;
-pub use crate::instances::Instance;
-pub use crate::if_for::{IfScope, ForScope};
+pub use crate::instances::{Instance, InstanceArray};
+pub use crate::if_for::{IfScope, ForScope, ElifScope, ElseScope};
+pub use crate::connection::{Connection, PortOwner, PortArray};
 
 pub use crate::inferable::*;
 pub use crate::error::ErrorCode;
 pub use crate::util::*;
 
 use crate::{generate_get, generate_set, generate_access};
-use crate::connection::Connection;
+
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub enum ScopeRelationType {
@@ -364,7 +366,7 @@ mod tests {
 
             {
                 let mut impl_scope = implement_scope.write().unwrap();
-                impl_scope.new_instance(String::from("instance"),not_inferred!(infer_streamlet!(), String::from("streamlet_unknown"))).unwrap();
+                impl_scope.new_instance(String::from("instance"), Some(String::from("external_package")), not_inferred!(infer_streamlet!(), String::from("streamlet_unknown"))).unwrap();
                 impl_scope.new_connection(String::from("connection0"),
                                           not_inferred!(infer_port!(), String::from("a.b")),
                                           not_inferred!(infer_port!(), String::from("a.b")),

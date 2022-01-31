@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
+use crate::variable::Variable;
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
-use crate::generate_get;
+use crate::{generate_get, generate_access, generate_set};
 use crate::inferable::Inferable;
 use crate::logical_data_type::LogicalDataType;
 use crate::port::PortDirection;
@@ -13,7 +14,8 @@ use crate::util::{generate_padding, PrettyPrint};
 pub enum StreamletType {
     UnknownType,
     NormalStreamlet,
-    TemplateStreamlet(Vec<Arc<RwLock<DataType>>>),
+    TemplateStreamlet(Vec<Arc<RwLock<Variable>>>),
+    DummyStremlet,
 }
 
 impl From<StreamletType> for String {
@@ -21,14 +23,15 @@ impl From<StreamletType> for String {
         match type_ {
             StreamletType::UnknownType => { return String::from("UnknownType"); },
             StreamletType::NormalStreamlet => { return String::from("NormalStreamlet"); },
-            StreamletType::TemplateStreamlet(types) => {
+            StreamletType::TemplateStreamlet(vars) => {
                 let mut output = String::from("");
-                for t in types {
-                    output.push_str(&String::from((*t.read().unwrap()).clone()));
-                    output.push_str(",");
+                for v in vars {
+                    let type_ = v.read().unwrap().get_type();
+                    output.push_str(&format!("@{}", String::from((*(type_.read().unwrap())).clone()) ));
                 }
                 return output;
             },
+            StreamletType::DummyStremlet => { return String::from("DummyStremlet"); },
         }
     }
 }
@@ -49,7 +52,7 @@ pub struct Streamlet {
 
 impl Streamlet {
     generate_get!(name, String, get_name);
-    generate_get!(streamlet_type, StreamletType, get_type);
+    generate_access!(streamlet_type, StreamletType, get_type, set_type);
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
 
     pub fn set_name(&mut self, name_: String) {
@@ -71,6 +74,10 @@ impl Streamlet {
 
     pub fn new_port(& self, name_: String, type_: Inferable<Arc<RwLock<LogicalDataType>>>, direction_: PortDirection) -> Result<(),ErrorCode> {
         return self.scope.write().unwrap().new_port(name_.clone(), type_.clone(), direction_.clone());
+    }
+
+    pub fn new_port_array(& self, name_: String, type_: Inferable<Arc<RwLock<LogicalDataType>>>, direction_: PortDirection, array_: Arc<RwLock<Variable>>) -> Result<(),ErrorCode> {
+        return self.scope.write().unwrap().new_port_array(name_.clone(), type_.clone(), direction_.clone(), array_.clone());
     }
 
     pub fn new_variable(& self, name_: String, type_: DataType, exp_: String) -> Result<(), ErrorCode> {

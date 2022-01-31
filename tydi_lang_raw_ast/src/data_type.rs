@@ -1,9 +1,12 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
+use crate::scope::Implement;
+use crate::streamlet::Streamlet;
 use crate::error::ErrorCode;
 use crate::logical_data_type::LogicalDataType;
 use crate::scope::{Scope, ScopeRelationType, TypeAlias};
 use crate::util::PrettyPrint;
+use crate::variable::Variable;
 
 #[derive(Clone, Debug)]
 pub enum DataType {
@@ -19,6 +22,17 @@ pub enum DataType {
 
     EmptyLogicalDataType,
     LogicalDataType(Arc<RwLock<LogicalDataType>>),
+
+    ExternalProxyType(String, Arc<RwLock<LogicalDataType>>),
+
+    ProxyStreamlet(String, Vec<Arc<RwLock<Variable>>>),
+    ExternalProxyStreamlet(String, String, Vec<Arc<RwLock<Variable>>>),
+
+    ProxyImplement(String, Vec<Arc<RwLock<Variable>>>),
+    ExternalProxyImplement(String, String, Vec<Arc<RwLock<Variable>>>),
+
+    ProxyImplementOfStreamlet(String, Vec<Arc<RwLock<Variable>>>),
+    ExternalProxyImplementOfStreamlet(String, String, Vec<Arc<RwLock<Variable>>>),
 }
 
 impl From<DataType> for String {
@@ -42,6 +56,53 @@ impl From<DataType> for String {
                 let inner_type_str = String::from((*inner_type).clone());
                 format!("LogicalDataType({})", inner_type_str)
             }
+
+            DataType::ExternalProxyType(name,type_) => { format!("ExternalProxyType({}.{})", name.clone(), String::from((*type_.read().unwrap()).clone())) }
+
+            DataType::ProxyStreamlet(name,vars) => {
+                let mut vars_string = String::from("");
+                for var in vars {
+                    vars_string.push_str(&format!("@{}", String::from(var.read().unwrap().get_var_value().get_raw_exp())) );
+                }
+                format!("ProxyStreamlet({}<{}>)", name, vars_string)
+            }
+            DataType::ExternalProxyStreamlet(package,name,vars) => {
+                let mut vars_string = String::from("");
+                for var in vars {
+                    vars_string.push_str(&format!("@{}", String::from(var.read().unwrap().get_var_value().get_raw_exp())) );
+                }
+                format!("ProxyStreamlet({}.{}<{}>)", package, name, vars_string)
+            }
+
+            DataType::ProxyImplement(name, vars) => {
+                let mut vars_string = String::from("");
+                for var in vars {
+                    vars_string.push_str(&format!("@{}", String::from(var.read().unwrap().get_var_value().get_raw_exp())) );
+                }
+                format!("ProxyImplement({}<{}>)", name, vars_string)
+            }
+            DataType::ExternalProxyImplement(package, name, vars) => {
+                let mut vars_string = String::from("");
+                for var in vars {
+                    vars_string.push_str(&format!("@{}", String::from(var.read().unwrap().get_var_value().get_raw_exp())) );
+                }
+                format!("ExternalProxyImplement({}.{}<{}>)", package, name, vars_string)
+            }
+
+            DataType::ProxyImplementOfStreamlet(implement, vars) => {
+                let mut vars_string = String::from("");
+                for var in vars {
+                    vars_string.push_str(&format!("@{}", String::from(var.read().unwrap().get_var_value().get_raw_exp())) );
+                }
+                format!("ProxyImplementOfStreamlet({}<{}>)", implement.clone(), vars_string)
+            }
+            DataType::ExternalProxyImplementOfStreamlet(package, implement, vars) => {
+                let mut vars_string = String::from("");
+                for var in vars {
+                    vars_string.push_str(&format!("@{}", String::from(var.read().unwrap().get_var_value().get_raw_exp())) );
+                }
+                format!("ProxyImplementOfStreamlet({}.{}<{}>)", package.clone(), implement.clone(), vars_string)
+            }
         }
     }
 }
@@ -49,13 +110,6 @@ impl From<DataType> for String {
 impl PrettyPrint for DataType {
     fn pretty_print(&self, depth: u32, verbose: bool) -> String {
         return match self {
-            DataType::UnknownType => { String::from(self.clone()) }
-            DataType::UnableToInfer => { String::from(self.clone()) }
-            DataType::PackageType => { String::from(self.clone()) }
-            DataType::IntType => { String::from(self.clone()) }
-            DataType::StringType => { String::from(self.clone()) }
-            DataType::BoolType => { String::from(self.clone()) }
-            DataType::FloatType => { String::from(self.clone()) }
             DataType::ArrayType(inner_data_type) => {
                 let inner_type = inner_data_type.read().unwrap();
                 let inner_type_str = inner_type.pretty_print(depth, verbose);
@@ -67,6 +121,7 @@ impl PrettyPrint for DataType {
                 let output = logical_data_type.pretty_print(depth, verbose);
                 output
             }
+            _ => { String::from(self.clone()) }
         }
     }
 }

@@ -74,10 +74,13 @@ impl temp_impl of external.sl0<1, type Bit(1)> {
 };
 impl tmux<n: int, ts: impl of sl0<num_instance, type Bit(1)>> of sl0<n, type stream0> {
   const i = 10,
-  instance test_inst(ts),
+  instance test_inst(extern.ts),
   instance external_inst(external.streamlet),
 
-  test_inst.out => test_inst.in,
+  if (true) {
+    test_inst.out => test_inst.in,
+  }
+
 
   process{},
 };
@@ -104,7 +107,7 @@ impl test2 of sl1 {
 
 //////////////////////////////REGION3
 streamlet sl4<i:int> {
-  in : stream0 in,
+  in : Bit(i) in,
   out : stream0 out,
 };
 
@@ -112,11 +115,14 @@ streamlet sl4<i:int> {
 impl temp_impl3 of sl4<1> {
 
 };
-impl tmux3<n: int, ts: external. impl of sl4<1> > of sl0<n, type stream0> {
+impl tmux3<n: int, t: type, ts: impl of external.sl4<1> > of sl0<n, type stream0> {
   instance test_inst(ts),
   test_inst.out => test_inst.in,
+  test_inst[1].out[1] => test_inst[1].in[1],
   process{},
 };
 impl test3 of sl1 {
-  instance inst0(tmux3<1,  e. impl temp_impl3>),
+  instance inst0(tmux3<1,  impl e.temp_impl3>),
+
+  port0 => port1,
 };

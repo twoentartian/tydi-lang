@@ -1,6 +1,8 @@
 use std::sync::{Arc, RwLock};
+use data_type::DataType;
+
 use crate::error::ErrorCode;
-use crate::generate_get;
+use crate::{generate_get, generate_access, generate_set};
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
 use crate::util::{generate_padding, PrettyPrint};
 use crate::variable::Variable;
@@ -8,16 +10,67 @@ use crate::variable::Variable;
 /// If Scope
 
 #[derive(Clone, Debug)]
+pub struct ElifScope {
+    name: String,
+    elif_exp: Arc<RwLock<Variable>>,
+    scope: Arc<RwLock<Scope>>,
+}
+
+impl ElifScope {
+    generate_access!(name, String, get_name, set_name);
+    generate_access!(elif_exp, Arc<RwLock<Variable>>, get_elif_exp, set_elif_exp);
+    generate_access!(scope, Arc<RwLock<Scope>>, get_scope, set_scope);
+
+    pub fn new(name_: String) -> Self {
+        let scope_ = Arc::new(RwLock::new(Scope::new(format!("elif_{}", name_.clone()), ScopeType::IfForScope)));
+        {
+            scope_.write().unwrap().set_self_ref(scope_.clone());
+        }
+        return Self{
+            name: name_.clone(),
+            elif_exp: Arc::new(RwLock::new(Variable::new(String::from(""), DataType::UnknownType, String::from("")))),
+            scope: scope_,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ElseScope {
+    name: String,
+    scope: Arc<RwLock<Scope>>,
+}
+
+impl ElseScope {
+    generate_access!(name, String, get_name, set_name);
+    generate_access!(scope, Arc<RwLock<Scope>>, get_scope, set_scope);
+
+    pub fn new(name_: String) -> Self {
+        let scope_ = Arc::new(RwLock::new(Scope::new(format!("else_{}", name_.clone()), ScopeType::IfForScope)));
+        {
+            scope_.write().unwrap().set_self_ref(scope_.clone());
+        }
+        return Self{
+            name: name_.clone(),
+            scope: scope_,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct IfScope {
     name: String,
     if_exp: Arc<RwLock<Variable>>,
     scope: Arc<RwLock<Scope>>,
+    elif_elements: Vec<ElifScope>,
+    else_element: Option<ElseScope>,
 }
 
 impl IfScope {
     generate_get!(name, String, get_name);
-    generate_get!(if_exp, Arc<RwLock<Variable>>, get_if_exp);
-    generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
+    generate_access!(if_exp, Arc<RwLock<Variable>>, get_if_exp, set_if_exp);
+    generate_access!(scope, Arc<RwLock<Scope>>, get_scope, set_scope);
+    generate_access!(elif_elements, Vec<ElifScope>, get_elif, set_elif);
+    generate_access!(else_element, Option<ElseScope>, get_else, set_else);
 
     pub fn new(name_: String, if_exp_: Arc<RwLock<Variable>>) -> Self {
         let scope_ = Arc::new(RwLock::new(Scope::new(format!("if_{}", name_.clone()), ScopeType::IfForScope)));
@@ -28,6 +81,8 @@ impl IfScope {
             name: name_,
             if_exp: if_exp_,
             scope: scope_,
+            elif_elements: vec![],
+            else_element: None,
         }
     }
 

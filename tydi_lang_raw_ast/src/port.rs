@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
+use variable::Variable;
 use crate::logical_data_type::LogicalDataType;
 use crate::util::{generate_padding, PrettyPrint};
 use crate::{generate_access, generate_get, generate_set};
@@ -25,29 +26,68 @@ impl From<PortDirection> for String {
 }
 
 #[derive(Clone, Debug)]
+pub enum PortArray {
+    UnknownPortArray,
+    SinglePort,
+    ArrayPort(Arc<RwLock<Variable>>),
+}
+
+impl From<PortArray> for String {
+    fn from(arr: PortArray) -> Self {
+        return match arr {
+            PortArray::UnknownPortArray => { String::from("UnknownPortArray") }
+            PortArray::SinglePort => { String::from("SinglePort") }
+            PortArray::ArrayPort(p) => { format!("ArrayPort({})", String::from((*p.read().unwrap()).clone())) }
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
 pub struct Port {
     name: String,
     port_type: Inferable<Arc<RwLock<LogicalDataType>>>,
     direction: PortDirection,
+    array_type: PortArray,
 }
 
 impl Port {
     generate_get!(name, String, get_name);
     generate_access!(port_type, Inferable<Arc<RwLock<LogicalDataType>>>, get_type, set_type);
     generate_get!(direction, PortDirection, get_direction);
+    generate_access!(array_type, PortArray, get_array_type, set_array_type);
 
     pub fn new(name_: String, type_exp: Inferable<Arc<RwLock<LogicalDataType>>>, direction_: PortDirection) -> Self {
         Self {
             name: name_.clone(),
             port_type: type_exp.clone(),
             direction: direction_,
+            array_type: PortArray::SinglePort,
+        }
+    }
+
+    pub fn new_array(name_: String, type_exp: Inferable<Arc<RwLock<LogicalDataType>>>, direction_: PortDirection, array_: Arc<RwLock<Variable>>) -> Self {
+        Self {
+            name: name_.clone(),
+            port_type: type_exp.clone(),
+            direction: direction_,
+            array_type: PortArray::ArrayPort(array_.clone()),
         }
     }
 }
 
 impl From<Port> for String {
     fn from(port: Port) -> Self {
-        return format!("{}:Port({},{})", port.get_name(), String::from(port.get_type().clone()), String::from(port.direction.clone()) );
+        match port.clone().array_type {
+            PortArray::UnknownPortArray => {
+                return format!("{}:UnknownPort({},{})", port.get_name(), String::from(port.get_type().clone()), String::from(port.direction.clone()) );
+            },
+            PortArray::SinglePort => {
+                return format!("{}:Port({},{})", port.get_name(), String::from(port.get_type().clone()), String::from(port.direction.clone()) );
+            },
+            PortArray::ArrayPort(array) => {
+                return format!("{}:PortArray[{}]({},{})", port.get_name(), String::from((*array.read().unwrap()).clone()), String::from(port.get_type().clone()), String::from(port.direction.clone()) );
+            },
+        }
     }
 }
 
@@ -66,6 +106,19 @@ impl Scope {
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("port {} already defined", name_.clone()))); }
         };
         let port = Port::new(name_.clone(), type_.clone(), dir.clone());
+        self.ports.insert(name_.clone(), Arc::new(RwLock::new(port)));
+
+        return Ok(());
+    }
+
+    pub fn new_port_array(&mut self, name_: String, type_: Inferable<Arc<RwLock<LogicalDataType>>>, dir: PortDirection, array_: Arc<RwLock<Variable>>) -> Result<(), ErrorCode> {
+        if self.scope_type != ScopeType::StreamletScope { return Err(ErrorCode::ScopeNotAllowed(String::from("port is only allowed to define in streamlet"))); }
+
+        match self.types.get(&name_) {
+            None => {}
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("port {} already defined", name_.clone()))); }
+        };
+        let port = Port::new_array(name_.clone(), type_.clone(), dir.clone(), array_.clone());
         self.ports.insert(name_.clone(), Arc::new(RwLock::new(port)));
 
         return Ok(());

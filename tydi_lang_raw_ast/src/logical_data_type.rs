@@ -1,10 +1,9 @@
 use std::sync::{Arc, RwLock};
-use scope::Scope;
 use crate::bit_null_type::LogicalBit;
 use crate::group_union_type::{LogicalGroup, LogicalUnion};
 use crate::steam_type::LogicalStream;
 use crate::util::{PrettyPrint};
-use crate::scope::ScopeType;
+use crate::scope::{ScopeType, ScopeRelationType, Scope};
 use crate::type_alias::TypeAlias;
 use crate::inferable::{NewInferable, Inferable};
 use crate::{inferred, infer_logical_data_type};
@@ -12,7 +11,7 @@ use crate::error::ErrorCode;
 
 #[derive(Clone, Debug)]
 pub enum LogicalDataType {
-    EmptyLogicalData,
+    DummyLogicalData,
     UnknownLogicalDataType,
     ExternalLogicalDataType(String, String),
 
@@ -27,7 +26,7 @@ pub enum LogicalDataType {
 impl From<LogicalDataType> for String {
     fn from(logical_data_type: LogicalDataType) -> Self {
         return match logical_data_type {
-            LogicalDataType::EmptyLogicalData => { String::from("EmptyLogicalData") }
+            LogicalDataType::DummyLogicalData => { String::from("DummyLogicalData") }
             LogicalDataType::UnknownLogicalDataType => { String::from("UnknownLogicalDataType") }
             LogicalDataType::ExternalLogicalDataType(s1, s2) => { format!("ExternalLogicalDataType({}.{})", s1.clone(), s2.clone()) }
             LogicalDataType::DataNull => { String::from("DataNull") }
@@ -43,7 +42,7 @@ impl From<LogicalDataType> for String {
 impl PrettyPrint for LogicalDataType {
     fn pretty_print(&self, depth: u32, verbose: bool) -> String {
         return match self {
-            LogicalDataType::EmptyLogicalData => { String::from(self.clone()) }
+            LogicalDataType::DummyLogicalData => { String::from(self.clone()) }
             LogicalDataType::UnknownLogicalDataType => { String::from(self.clone()) }
             LogicalDataType::ExternalLogicalDataType(_,_) => { String::from(self.clone()) }
             LogicalDataType::DataNull => { String::from(self.clone()) }
@@ -82,6 +81,22 @@ impl Scope {
             None => {}
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("type {} already defined", name_.clone()))); }
         };
+
+        match type_.clone() {
+            LogicalDataType::DataGroupType(_, group) => {
+                let group_scope = group.read().unwrap().get_scope();
+                let parent_scope = self.self_ref.clone().unwrap();
+                group_scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), String::from("base"), ScopeRelationType::GroupScopeRela);
+            },
+            LogicalDataType::DataUnionType(_, union) => {
+                let union_scope = union.read().unwrap().get_scope();
+                let parent_scope = self.self_ref.clone().unwrap();
+                union_scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), String::from("base"), ScopeRelationType::GroupScopeRela);
+            },
+
+            _ => { },
+        }
+
         self.types.insert(name_.clone(), Arc::new(RwLock::new(TypeAlias::new(name_.clone(), inferred!(infer_logical_data_type!(), Arc::new(RwLock::new(type_)))))));
         return Ok(());
     }
