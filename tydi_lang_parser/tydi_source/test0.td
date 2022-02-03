@@ -77,9 +77,23 @@ impl tmux<n: int, ts: impl of sl0<num_instance, type Bit(1)>> of sl0<n, type str
   instance test_inst(extern.ts),
   instance external_inst(external.streamlet),
 
-  if (true) {
-    test_inst.out => test_inst.in,
+  for i in i_array {
+    if (true) {
+      test_inst.out => test_inst.in,
+    }
+    elif (true) {
+      test_inst.out => test_inst.in,
+    }
+    elif (true) {
+      test_inst.out => test_inst.in,
+    }
+    else {
+      test_inst.out => test_inst.in,
+    }
+
+
   }
+
 
 
   process{},

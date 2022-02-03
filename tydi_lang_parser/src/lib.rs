@@ -240,6 +240,35 @@ pub fn parse_logical_type_slice(slice: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
     unreachable!();
 }
 
+pub fn parse_else_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+    for item in block.into_iter() {
+        match item.clone().as_rule() {
+            Rule::ImplementationBody => {
+                let result = parse_implement_body(item.into_inner(), scope.clone());
+                if result.is_err() { return Err(result.err().unwrap()); }
+            }
+            _ => { unreachable!() }
+        }
+    }
+    return Ok(());
+}
+
+pub fn parse_elif_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>, elif_block: & mut ElifScope) -> Result<(), ParserErrorCode> {
+    for item in block.into_iter() {
+        match item.clone().as_rule() {
+            Rule::Exp => {
+                elif_block.set_elif_exp(Arc::new(RwLock::new(Variable::new(String::from(""), DataType::BoolType, item.as_str().to_string()))));
+            }
+            Rule::ImplementationBody => {
+                let result = parse_implement_body(item.into_inner(), scope.clone());
+                if result.is_err() { return Err(result.err().unwrap()); }
+            }
+            _ => { unreachable!() }
+        }
+    }
+    return Ok(());
+}
+
 pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     for single_stat in statement.into_iter() {
         match single_stat.clone().as_rule() {
@@ -256,38 +285,71 @@ pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
                 if result.is_err() { return Err(result.err().unwrap()); }
             },
             Rule::ImplementationBodyIfBlock => {
-                let mut if_stat = format!("{}-{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
-                if_stat.retain(|c| !c.is_whitespace());
-                let mut if_scope: Arc<RwLock<Scope>> = Arc::new(RwLock::new(Scope::new(format!(""), ScopeType::BasicScope)));
+                let name = format!("{}-{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
+                let mut if_block: IfScope = IfScope::new(name.clone(), Arc::new(RwLock::new(Variable::new_bool(String::from(""), true))));
                 for item in single_stat.clone().into_inner().into_iter() {
                     match item.as_rule() {
                         Rule::Exp => {
                             {
-                                let result = scope.write().unwrap().new_if_block(if_stat.clone(), Arc::new(RwLock::new(Variable::new(String::from(""), DataType::BoolType, item.as_str().to_string()))));
-                                if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
-                                if_scope = result.ok().unwrap();
+                                if_block.set_if_exp(Arc::new(RwLock::new(Variable::new(String::from(""), DataType::BoolType, item.as_str().to_string()))));
                             }
                         },
                         Rule::ImplementationBody => {
-                            let result = parse_implement_body(item.into_inner(), if_scope.clone());
+                            let result = parse_implement_body(item.into_inner(), if_block.get_scope().clone());
                             if result.is_err() { return Err(result.err().unwrap()); }
                         },
                         Rule::ElifBlock => {
-                            let name = format!("elif_{}-{}", item.clone().as_span().start(), item.clone().as_span().end());
+                            let name = format!("{}-{}", item.clone().as_span().start(), item.clone().as_span().end());
                             let mut elif_block = ElifScope::new(name);
-
+                            let result = parse_elif_block(item.into_inner(), elif_block.get_scope(), &mut elif_block);
+                            if result.is_err() { return Err(result.err().unwrap()); }
+                            let mut previous_elifs = if_block.get_elif();
+                            previous_elifs.push(elif_block);
+                            if_block.set_elif(previous_elifs);
                         },
                         Rule::ElseBlock => {
-
+                            let name = format!("{}-{}", item.clone().as_span().start(), item.clone().as_span().end());
+                            let mut else_block = ElseScope::new(name);
+                            let result = parse_else_block(item.into_inner(), else_block.get_scope().clone());
+                            if result.is_err() { return Err(result.err().unwrap()); }
+                            if_block.set_else(Some(else_block));
                         },
                         _ => { unreachable!() }
                     }
                 }
-
-
+                let parent_scope_name = scope.read().unwrap().get_name();
+                {
+                    scope.write().unwrap().with_if_block(Arc::new(RwLock::new( if_block)), parent_scope_name);
+                }
             },
             Rule::ImplementationBodyForBlock => {
-
+                let name = format!("{}-{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
+                let temp_var = Arc::new(RwLock::new(Variable::new_bool(String::from(""), true)));
+                let mut for_block: ForScope = ForScope::new(name.clone(), temp_var.clone(), temp_var.clone());
+                for item in single_stat.clone().into_inner().into_iter() {
+                    match item.as_rule() {
+                        Rule::ID => {
+                            let var_name = item.as_str().to_string();
+                            let for_scope = for_block.get_scope();
+                            let mut for_scope = for_scope.write().unwrap();
+                            let result = for_scope.new_variable(var_name.clone(), DataType::UnknownType, format!("$arg${}", var_name.clone()));
+                            if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
+                            for_block.set_var_exp(Arc::new(RwLock::new(Variable::new(var_name.clone(), DataType::UnknownType, var_name.clone()))));
+                        }
+                        Rule::Exp => {
+                            for_block.set_array_exp(Arc::new(RwLock::new(Variable::new(String::from(""), DataType::UnknownType, item.as_str().to_string()))));
+                        }
+                        Rule::ImplementationBody => {
+                            let result = parse_implement_body(item.into_inner(), for_block.get_scope().clone());
+                            if result.is_err() { return Err(result.err().unwrap()); }
+                        }
+                        _ => { unreachable!() }
+                    }
+                }
+                let parent_scope_name = scope.read().unwrap().get_name();
+                {
+                    scope.write().unwrap().with_for_block(Arc::new(RwLock::new( for_block)), parent_scope_name);
+                }
             },
             Rule::ImplementationBodyDeclareProcess => {
                 // todo!()

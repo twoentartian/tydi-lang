@@ -34,10 +34,36 @@ impl ElifScope {
     }
 }
 
+impl PrettyPrint for ElifScope {
+    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
+        let mut output = String::new();
+
+        // elif
+        output.push_str(&format!("{}Elif({}){{\n", generate_padding(depth), String::from((*self.elif_exp.read().unwrap()).clone())));
+        output.push_str(&format!("{}", self.scope.read().unwrap().pretty_print(depth+1, verbose)));
+        output.push_str(&format!("{}}}", generate_padding(depth)));
+
+        return output;
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct ElseScope {
     name: String,
     scope: Arc<RwLock<Scope>>,
+}
+
+impl PrettyPrint for ElseScope {
+    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
+        let mut output = String::new();
+
+        // elif
+        output.push_str(&format!("{}Else{{\n", generate_padding(depth)));
+        output.push_str(&format!("{}", self.scope.read().unwrap().pretty_print(depth+1, verbose)));
+        output.push_str(&format!("{}}}", generate_padding(depth)));
+
+        return output;
+    }
 }
 
 impl ElseScope {
@@ -98,11 +124,23 @@ impl PrettyPrint for IfScope {
     fn pretty_print(&self, depth: u32, verbose: bool) -> String {
         let mut output = String::new();
 
-        //enter group
+        // if
         output.push_str(&format!("{}If({}){{\n", generate_padding(depth), String::from((*self.if_exp.read().unwrap()).clone())));
-        //enter scope
         output.push_str(&format!("{}", self.scope.read().unwrap().pretty_print(depth+1, verbose)));
-        //leave group
+
+        // elif
+        for elif_element in self.elif_elements.clone() {
+            output.push_str(&format!("{}\n", elif_element.pretty_print(depth+1, verbose)));
+        }
+
+        // else
+        match self.else_element.clone() {
+            Some(else_element) => {
+                output.push_str(&format!("{}\n", else_element.pretty_print(depth+1, verbose)));
+            }
+            None => {}
+        }
+
         output.push_str(&format!("{}}}", generate_padding(depth)));
 
         return output;
@@ -110,10 +148,10 @@ impl PrettyPrint for IfScope {
 }
 
 impl Scope {
-    pub fn new_if_block(&mut self, name_: String, if_exp_: Arc<RwLock<Variable>>) -> Result<Arc<RwLock<Scope>>, ErrorCode> {
+    pub fn new_if_block(&mut self, name_: String, if_exp_: Arc<RwLock<Variable>>, parent_scope_name: String) -> Result<Arc<RwLock<Scope>>, ErrorCode> {
         if !(self.scope_type == ScopeType::ImplementScope || self.scope_type == ScopeType::IfForScope) { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define if block outside of if/for/implement scope"))); }
 
-        match self.streamlets.get(&name_) {
+        match self.if_blocks.get(&name_) {
             None => {}
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("if block {} already defined", name_.clone()))); }
         };
@@ -121,12 +159,46 @@ impl Scope {
         let if_scope = IfScope::new(name_.clone(), if_exp_.clone());
         {
             let parent_scope = self.self_ref.clone().unwrap();
-            if_scope.scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), String::from("base"), ScopeRelationType::IfForScopeRela);
+            if_scope.scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), parent_scope_name.clone(), ScopeRelationType::IfForScopeRela);
         }
 
         let scope_clone = if_scope.scope.clone();
         self.if_blocks.insert(name_.clone(), Arc::new(RwLock::new(if_scope)));
         return Ok(scope_clone);
+    }
+
+    pub fn with_if_block(&mut self, target: Arc<RwLock<IfScope>>, parent_scope_name: String) -> Result<(), ErrorCode> {
+        if !(self.scope_type == ScopeType::ImplementScope || self.scope_type == ScopeType::IfForScope) { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define if block outside of if/for/implement scope"))); }
+        let name_ = target.read().unwrap().get_name();
+        match self.if_blocks.get(&name_) {
+            None => {}
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("if block {} already defined", name_.clone()))); }
+        };
+
+        // update scope
+        let parent_scope = self.self_ref.clone().unwrap();
+        {
+            let if_scope = target.read().unwrap().get_scope();
+            if_scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), parent_scope_name.clone(), ScopeRelationType::IfForScopeRela);
+        }
+        {
+            let elifs = target.read().unwrap().get_elif();
+            for elif in elifs {
+                elif.get_scope().write().unwrap().new_relationship_with_name(parent_scope.clone(), parent_scope_name.clone(), ScopeRelationType::IfForScopeRela);
+            }
+        }
+        {
+            let else_scope = target.read().unwrap().get_else();
+            match else_scope {
+                None => {},
+                Some(else_scope) => {
+                    else_scope.get_scope().write().unwrap().new_relationship_with_name(parent_scope.clone(), parent_scope_name.clone(), ScopeRelationType::IfForScopeRela);
+                }
+            }
+        }
+
+        self.if_blocks.insert(name_.clone(), target);
+        return Ok(());
     }
 }
 
@@ -142,8 +214,8 @@ pub struct ForScope {
 
 impl ForScope {
     generate_get!(name, String, get_name);
-    generate_get!(for_var_exp, Arc<RwLock<Variable>>, get_var_exp);
-    generate_get!(for_array_exp, Arc<RwLock<Variable>>, get_array_exp);
+    generate_access!(for_var_exp, Arc<RwLock<Variable>>, get_var_exp, set_var_exp);
+    generate_access!(for_array_exp, Arc<RwLock<Variable>>, get_array_exp, set_array_exp);
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
 
     pub fn new(name_: String, for_var_exp_: Arc<RwLock<Variable>>, for_array_exp_: Arc<RwLock<Variable>>) -> Self {
@@ -186,7 +258,7 @@ impl Scope {
     pub fn new_for_block(&mut self, name_: String, for_var_exp_: Arc<RwLock<Variable>>, for_array_exp_: Arc<RwLock<Variable>>) -> Result<Arc<RwLock<Scope>>, ErrorCode> {
         if !(self.scope_type == ScopeType::ImplementScope || self.scope_type == ScopeType::IfForScope) { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define for block outside of if/for/implement scope"))); }
 
-        match self.streamlets.get(&name_) {
+        match self.for_blocks.get(&name_) {
             None => {}
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("for block {} already defined", name_.clone()))); }
         };
@@ -200,5 +272,25 @@ impl Scope {
         let scope_clone = for_scope.scope.clone();
         self.for_blocks.insert(name_.clone(), Arc::new(RwLock::new(for_scope)));
         return Ok(scope_clone);
+    }
+
+    pub fn with_for_block(&mut self, target: Arc<RwLock<ForScope>>, parent_scope_name: String) -> Result<(), ErrorCode> {
+        if !(self.scope_type == ScopeType::ImplementScope || self.scope_type == ScopeType::IfForScope) { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define for block outside of if/for/implement scope"))); }
+        let name_ = target.read().unwrap().get_name();
+
+        match self.for_blocks.get(&name_) {
+            None => {}
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("for block {} already defined", name_.clone()))); }
+        };
+
+        // update scope
+        let parent_scope = self.self_ref.clone().unwrap();
+        {
+            let for_scope = target.read().unwrap().get_scope();
+            for_scope.write().unwrap().new_relationship_with_name(parent_scope.clone(), parent_scope_name.clone(), ScopeRelationType::IfForScopeRela);
+        }
+
+        self.for_blocks.insert(name_.clone(), target);
+        return Ok(());
     }
 }

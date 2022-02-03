@@ -39,8 +39,11 @@ ArrayRange = { "(" ~ Exp ~ "=" ~ Exp ~ "=>" ~ Exp ~ ")" }
 Var = { ID }
 ExternalVar = { ID ~ "." ~ ID }
 
-Term = _{ ( "(" ~ Exp ~ ")") | (UnaryOp ~ Exp) |
-            IntExp | StringExp | BoolExp | FloatExp | ExternalVar | Var }
+Term = { ( "(" ~ Exp ~ ")") |
+            ExpLog | ExpBitWiseNot | ExpConstInType | ExpRound | ExpFloor | ExpCeil | ExpIndex |
+            ArrayRange | ArrayExp | IntExp | StringExp | BoolExp | FloatExp | ExternalVar | Var |
+            ExpConstInStreamlet | ExpExternalConstInStreamlet | ExpConstInImplement | ExpExternalConstInStreamlet |
+            (UnaryOp ~ Exp) }
 
 SingleTermExp = _{ Term }
 OpExp = { Term ~ (InfixOp  ~ Term)+ }
@@ -55,7 +58,7 @@ ExpRound = { "round" ~ "(" ~ Exp ~ ")" }
 ExpFloor = { "floor" ~ "(" ~ Exp ~ ")" }
 ExpCeil = { "ceil" ~ "(" ~ Exp ~ ")" }
 
-Exp = { ArrayRange | ArrayExp | OpExp | ExpLog | ExpBitWiseNot | ExpConstInType | ExpRound | ExpFloor | ExpCeil | ExpIndex | ExpConstInStreamlet | ExpExternalConstInStreamlet | ExpConstInImplement | ExpExternalConstInStreamlet | SingleTermExp}
+Exp = { OpExp | SingleTermExp}
 
 ///////////////////////  end of exp.sdf3  ///////////////////////
 
