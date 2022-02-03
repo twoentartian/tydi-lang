@@ -47,8 +47,31 @@ Term = { ( "(" ~ Exp ~ ")") |
 
 SingleTermExp = _{ Term }
 OpExp = { Term ~ (InfixOp  ~ Term)+ }
-UnaryOp = { "-" | "!"  }
-InfixOp = { "<<" | ">>" | "&&" | "||" | "==" | "!=" | ">=" | "<=" | ">" | "<" | "+" | "-" | "*" | "./" | "%" | "^" | "&" | "|" }
+UnaryOp = { OP_UnaryMinus | OP_UnaryNot  }
+    OP_UnaryMinus = { "-" }
+    OP_UnaryNot = { "!" }
+InfixOp = { OP_LeftShift | OP_RightShift | OP_LogicalAnd | OP_LogicalOr | OP_LogicalEq | OP_LogicalNotEq |
+            OP_GreaterEq | OP_LessEq | OP_Greater | OP_Less |
+            OP_Add | OP_Minus | OP_Multiply | OP_Divide | OP_Mod | OP_Power | OP_BitAnd | OP_BitOr }
+    OP_LeftShift = { "<<" }
+    OP_RightShift = { ">>" }
+    OP_LogicalAnd = { "&&" }
+    OP_LogicalOr = { "||" }
+    OP_LogicalEq = { "==" }
+    OP_LogicalNotEq = { "!=" }
+    OP_GreaterEq = { ">=" }
+    OP_LessEq = { "<=" }
+    OP_Greater = { ">" }
+    OP_Less = { "<" }
+    OP_Add = { "+" }
+    OP_Minus = { "-" }
+    OP_Multiply = { "*" }
+    OP_Divide = { "./" }
+    OP_Mod = { "%" }
+    OP_Power = { "^" }
+    OP_BitAnd = { "&" }
+    OP_BitOr = { "|" }
+
 
 ExpLog = { "log" ~ Exp ~ "(" ~ Exp ~ ")"}
 ExpBitWiseNot = { "~" ~ "(" ~ Exp ~ ")" ~ Exp }

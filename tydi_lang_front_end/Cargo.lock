@@ -244,6 +244,7 @@ dependencies = [
 name = "tydi_lang_parser"
 version = "0.1.0"
 dependencies = [
+ "lazy_static",
  "pest",
  "pest_derive",
  "tydi_lang_raw_ast",

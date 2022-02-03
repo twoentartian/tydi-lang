@@ -1,6 +1,8 @@
 extern crate pest;
 #[macro_use]
 extern crate pest_derive;
+#[macro_use]
+extern crate lazy_static;
 
 use std::fs;
 use std::sync::{Arc, RwLock};
@@ -20,6 +22,7 @@ use tydi_lang_raw_ast::{};
 use tydi_lang_raw_ast::implement::ImplementType;
 
 mod lex_test;
+mod precedence;
 
 #[derive(Parser)]
 #[grammar = "tydi_lang_syntax.pest"]
