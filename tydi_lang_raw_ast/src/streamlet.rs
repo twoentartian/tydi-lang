@@ -37,7 +37,7 @@ impl From<StreamletType> for String {
 }
 
 impl PrettyPrint for StreamletType {
-    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
+    fn pretty_print(&self, _: u32, _: bool) -> String {
         return String::from(self.clone());
     }
 }

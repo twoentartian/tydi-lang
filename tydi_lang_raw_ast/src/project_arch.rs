@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use error::ErrorCode;
 use crate::{generate_get};
 use crate::scope::{Scope, ScopeType};
 use crate::util::*;
@@ -18,10 +19,10 @@ impl Project {
         }
     }
 
-    pub fn new_package(&mut self, name_: String) -> Result<Arc<RwLock<Scope>>,String> {
+    pub fn new_package(&mut self, name_: String) -> Result<Arc<RwLock<Scope>>,ErrorCode> {
         match self.packages.get(&name_) {
             None => {}
-            Some(_) => {return Err(format!("package name: {} already exists", name_));}
+            Some(_) => {return Err(ErrorCode::ProjectArchError(format!("package name: {} already exists", name_)));}
         }
 
         let new_package = Package::new(name_.clone());
@@ -31,9 +32,20 @@ impl Project {
         return Ok(new_package_scope);
     }
 
-    pub fn find_package(&mut self, name_: String) -> Result<Arc<RwLock<Package>>,String> {
+    pub fn with_package(&mut self, package: Package) -> Result<(),ErrorCode> {
+        let name_ = package.get_name();
         match self.packages.get(&name_) {
-            None => {return Err(format!("package name: {} already exists", name_)); }
+            None => {}
+            Some(_) => {return Err(ErrorCode::ProjectArchError(format!("package name: {} already exists", name_)));}
+        }
+
+        self.packages.insert(name_.clone(), Arc::new(RwLock::new(package)));
+        return Ok(());
+    }
+
+    pub fn find_package(&mut self, name_: String) -> Result<Arc<RwLock<Package>>,ErrorCode> {
+        match self.packages.get(&name_) {
+            None => {return Err(ErrorCode::IdNotFound(format!("package name: {} already exists", name_))); }
             Some(package) => {return Ok(package.clone()); }
         }
     }

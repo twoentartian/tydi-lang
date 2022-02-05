@@ -1,7 +1,6 @@
 pub use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-
 pub use crate::logical_data_type::*;
 pub use crate::variable::*;
 pub use crate::data_type::*;
@@ -20,7 +19,6 @@ pub use crate::error::ErrorCode;
 pub use crate::util::*;
 
 use crate::{generate_get, generate_set, generate_access};
-
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 pub enum ScopeRelationType {
@@ -295,10 +293,8 @@ mod tests {
             Ok(()) => {}
             Err(err_code) => {
                 match err_code {
-                    ErrorCode::UnknownError(_) => {assert!(false)}
+                    _ => {assert!(false)}
                     ErrorCode::IdRedefined(_) => {assert!(true)}
-                    ErrorCode::IdNotFound(_) => {assert!(false)}
-                    ErrorCode::ScopeNotAllowed(_) => {assert!(false)}
                 }
             }
         }
@@ -366,13 +362,13 @@ mod tests {
 
             {
                 let mut impl_scope = implement_scope.write().unwrap();
-                impl_scope.new_instance(String::from("instance"), Some(String::from("external_package")), not_inferred!(infer_streamlet!(), String::from("streamlet_unknown"))).unwrap();
+                impl_scope.new_instance(String::from("instance"), Some(String::from("external_package")), not_inferred!(infer_streamlet!(), String::from("streamlet_unknown")), vec![]).unwrap();
                 impl_scope.new_connection(String::from("connection0"),
                                           not_inferred!(infer_port!(), String::from("a.b")),
                                           not_inferred!(infer_port!(), String::from("a.b")),
                                           Variable::new(String::from("temp"), DataType::IntType, String::from("1"))).unwrap();
 
-                let if_scope = impl_scope.new_if_block(String::from("if_block0"), Arc::new(RwLock::new(Variable::new(String::from(""), DataType::BoolType, String::from("true"))))).unwrap();
+                let if_scope = impl_scope.new_if_block(String::from("if_block0"), Arc::new(RwLock::new(Variable::new(String::from(""), DataType::BoolType, String::from("true")))), String::from("parent")).unwrap();
                 {
                     if_scope.write().unwrap().new_for_block(String::from("for_block0"), Arc::new(RwLock::new(Variable::new(String::from(""), DataType::IntType, String::from("i")))),
                                                             Arc::new(RwLock::new(Variable::new(String::from(""), DataType::ArrayType(Arc::new(RwLock::new(DataType::BoolType))), String::from("i_array"))))).unwrap();

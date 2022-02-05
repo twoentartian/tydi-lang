@@ -38,7 +38,7 @@ impl From<ImplementType> for String {
 }
 
 impl PrettyPrint for ImplementType {
-    fn pretty_print(&self, depth: u32, verbose: bool) -> String {
+    fn pretty_print(&self, _: u32, _: bool) -> String {
         return String::from(self.clone());
     }
 }
@@ -78,9 +78,9 @@ impl Implement {
         }
     }
 
-    pub fn new_instance(& self, name_: String, package_: Option<String>, streamlet_: Inferable<Arc<RwLock<Streamlet>>>) -> Result<(), ErrorCode> {
+    pub fn new_instance(& self, name_: String, package_: Option<String>, streamlet_: Inferable<Arc<RwLock<Streamlet>>>, template_argexp: Vec<Arc<RwLock<Variable>>>) -> Result<(), ErrorCode> {
         let mut scope = self.scope.write().unwrap();
-        return scope.new_instance(name_.clone(), package_, streamlet_.clone());
+        return scope.new_instance(name_.clone(), package_, streamlet_.clone(), template_argexp);
     }
 
     pub fn new_connection(& self, name_: String, lhs_port_: Inferable<Arc<RwLock<Port>>>, rhs_port_: Inferable<Arc<RwLock<Port>>>, delay_: Variable) -> Result<(), ErrorCode> {

@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
-use crate::scope::Implement;
-use crate::streamlet::Streamlet;
 use crate::error::ErrorCode;
 use crate::logical_data_type::LogicalDataType;
 use crate::scope::{Scope, ScopeRelationType, TypeAlias};

@@ -3,11 +3,14 @@ extern crate pest;
 extern crate pest_derive;
 #[macro_use]
 extern crate lazy_static;
+extern crate num_cpus;
+extern crate threadpool;
 
 use std::fs;
 use std::sync::{Arc, RwLock};
-use ParserErrorCode::AnalysisCodeStructureFail;
-use pest::{Parser, RuleType};
+
+use ParserErrorCode::{AnalysisCodeStructureFail, FileError};
+use pest::{Parser};
 use pest::iterators::{Pairs};
 use tydi_lang_raw_ast::bit_null_type::LogicalBit;
 use tydi_lang_raw_ast::data_type::DataType;
@@ -18,7 +21,6 @@ extern crate tydi_lang_raw_ast;
 use tydi_lang_raw_ast::{project_arch};
 use tydi_lang_raw_ast::scope::*;
 use tydi_lang_raw_ast::{not_inferred, inferred, infer_logical_data_type, infer_streamlet, infer_port};
-use tydi_lang_raw_ast::{};
 use tydi_lang_raw_ast::implement::ImplementType;
 
 mod lex_test;
@@ -28,7 +30,9 @@ mod precedence;
 #[grammar = "tydi_lang_syntax.pest"]
 pub struct TydiParser;
 
+#[derive(Clone, Debug)]
 pub enum ParserErrorCode {
+    Unknown,
     ParserError(String),
     FileError(String),
     AnalysisCodeStructureFail(String),
@@ -37,10 +41,114 @@ pub enum ParserErrorCode {
 impl From<ParserErrorCode> for String {
     fn from(e: ParserErrorCode) -> Self {
         return match e {
+            ParserErrorCode::Unknown => { format!("UnknownError") }
             ParserErrorCode::ParserError(s) => { format!("ParserError:{}", s) }
             ParserErrorCode::FileError(s) => { format!("FileError:{}", s) }
             ParserErrorCode::AnalysisCodeStructureFail(s) => { format!("AnalysisCodeStructureFail:{}", s) }
         }
+    }
+}
+
+
+pub fn parse_multi_files_st(project_name: String, file_paths: Vec<String>) -> Result<Arc<RwLock<project_arch::Project>>, Vec<Result<(),ParserErrorCode>>> {
+    use std::path::Path;
+    use std::ffi::OsStr;
+
+    let mut error_flag = false;
+    let output_project = Arc::new(RwLock::new(project_arch::Project::new(project_name.clone())));
+    let mut errors:Vec<Result<(),ParserErrorCode>>  = vec![];
+    for file_path in file_paths {
+        let result = parse_to_memory(file_path.clone());
+        if result.is_err() {
+            error_flag = true;
+            errors.push(Err(result.err().unwrap()));
+            continue;
+        }
+        let package = result.ok().unwrap();
+        let file_path_fs= Path::new(&file_path);
+        if Some(OsStr::new(&format!("{}.td", package.get_name()))) != file_path_fs.file_name() {
+            error_flag = true;
+            errors.push(Err(FileError(format!("{} has a different package name", file_path.clone()))));
+        }
+        let result = output_project.write().unwrap().with_package(package);
+        if result.is_err() {
+            error_flag = true;
+            errors.push(Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))));
+        }
+        else { errors.push(Ok(())); }
+    }
+
+    if !error_flag {
+        return Ok(output_project);
+    }
+    else {
+        return Err(errors);
+    }
+}
+
+pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worker: Option<usize>) -> Result<Arc<RwLock<project_arch::Project>>, Vec<Result<(),ParserErrorCode>>> {
+    use threadpool::ThreadPool;
+    use std::sync::mpsc;
+    use std::path::Path;
+    use std::ffi::OsStr;
+
+    let output_project = Arc::new(RwLock::new(project_arch::Project::new(project_name.clone())));
+    let worker_u32 = match worker {
+        None => { num_cpus::get() }
+        Some(v) => { v }
+    };
+
+    let pool = ThreadPool::new(worker_u32);
+    let (tx, rx) = mpsc::channel();
+    for file_path_index in 0..file_paths.len() {
+        let output_project = output_project.clone();
+        let tx_temp = mpsc::Sender::clone(&tx);
+        let file_path = file_paths[file_path_index].clone();
+
+        pool.execute(move|| {
+            let result = parse_to_memory(file_path.clone());
+            if result.is_err() {
+                let result = tx_temp.send(Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))));
+                result.unwrap();
+                return;
+            }
+            let package = result.ok().unwrap();
+            let file_path_fs= Path::new(&file_path);
+            if Some(OsStr::new(&format!("{}.td", package.get_name()))) != file_path_fs.file_name() {
+                let result = tx_temp.send(Err(FileError(format!("{} has a different package name", file_path.clone()))));
+                result.unwrap();
+                return;
+            }
+            {
+                let result = output_project.write().unwrap().with_package(package);
+                if result.is_err() {
+                    let result = tx_temp.send(Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))));
+                    result.unwrap();
+                    return;
+                }
+            }
+            let result = tx_temp.send(Ok(()));
+            result.unwrap();
+            return;
+        });
+    }
+    pool.join();
+
+    let mut errors: Vec<Result<(),ParserErrorCode>>  = vec![];
+    let mut error_flag = false;
+    for single_rx in rx.try_iter() {
+        errors.push(single_rx.clone());
+        match single_rx.clone() {
+            Ok(_) => {}
+            Err(_) => { error_flag = true }
+        }
+    }
+
+    if !error_flag {
+        return Ok(output_project);
+    }
+    else {
+        return Err(errors);
     }
 }
 
@@ -57,7 +165,7 @@ pub fn parse_to_memory(file_path: String) -> Result<project_arch::Package, Parse
     let tydi_ast = tydi_ast_result.next().unwrap();
     match tydi_ast.as_rule() {
         Rule::Start => {
-            let mut inner_rules = tydi_ast.into_inner();
+            let inner_rules = tydi_ast.into_inner();
             let result = parse_start(inner_rules, &mut output_package);
             if result.is_err() { return Err(result.err().unwrap()); }
         }
@@ -161,10 +269,12 @@ pub fn parse_implement_body_declare_instance(statement: Pairs<Rule>, scope: Arc<
 
     match instance_array_type {
         InstanceArray::ArrayInstance(array_) => {
-            scope.write().unwrap().new_instance_array(instance_name, derived_streamlet_package, not_inferred!(infer_streamlet!(), derived_streamlet_name), array_.clone());
+            let result = scope.write().unwrap().new_instance_array(instance_name, derived_streamlet_package, not_inferred!(infer_streamlet!(), derived_streamlet_name), derived_streamlet_argexps, array_.clone());
+            if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
         },
         InstanceArray::SingleInstance => {
-            scope.write().unwrap().new_instance(instance_name, derived_streamlet_package, not_inferred!(infer_streamlet!(), derived_streamlet_name));
+            let result = scope.write().unwrap().new_instance(instance_name, derived_streamlet_package, not_inferred!(infer_streamlet!(), derived_streamlet_name), derived_streamlet_argexps);
+            if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
         },
         _ => { unreachable!() }
     }
@@ -222,7 +332,7 @@ pub fn parse_logical_type_slice(slice: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
             },
             Rule::LogicalTypeSliceSelf => {
                 let mut port_exp = not_inferred!(infer_port!(), String::from(""));
-                let mut port_owner = PortOwner::SelfOwner;
+                let port_owner = PortOwner::SelfOwner;
                 let mut port_array = PortArray::SinglePort;
                 for element in single_slice.into_inner().into_iter() {
                     match element.as_rule() {
@@ -312,7 +422,7 @@ pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
                         },
                         Rule::ElseBlock => {
                             let name = format!("{}-{}", item.clone().as_span().start(), item.clone().as_span().end());
-                            let mut else_block = ElseScope::new(name);
+                            let else_block = ElseScope::new(name);
                             let result = parse_else_block(item.into_inner(), else_block.get_scope().clone());
                             if result.is_err() { return Err(result.err().unwrap()); }
                             if_block.set_else(Some(else_block));
@@ -322,7 +432,8 @@ pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
                 }
                 let parent_scope_name = scope.read().unwrap().get_name();
                 {
-                    scope.write().unwrap().with_if_block(Arc::new(RwLock::new( if_block)), parent_scope_name);
+                    let result = scope.write().unwrap().with_if_block(Arc::new(RwLock::new( if_block)), parent_scope_name);
+                    if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
                 }
             },
             Rule::ImplementationBodyForBlock => {
@@ -351,7 +462,8 @@ pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
                 }
                 let parent_scope_name = scope.read().unwrap().get_name();
                 {
-                    scope.write().unwrap().with_for_block(Arc::new(RwLock::new( for_block)), parent_scope_name);
+                    let result = scope.write().unwrap().with_for_block(Arc::new(RwLock::new( for_block)), parent_scope_name);
+                    if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
                 }
             },
             Rule::ImplementationBodyDeclareProcess => {
@@ -453,7 +565,7 @@ pub fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
         }
     }
 
-    /// set implement type
+    // set implement type
     if implement_args.is_empty() {
         implement.set_type(ImplementType::NormalImplement);
     }
@@ -465,16 +577,16 @@ pub fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
         implement.set_type(ImplementType::TemplateImplement(templates_args));
     }
 
-    /// set implement scope
+    // set implement scope
     {
         implement.get_scope().write().unwrap().new_relationship(scope.read().unwrap().self_ref.clone().unwrap(), ScopeRelationType::ImplementScopeRela);
     }
 
-    /// set derived streamlet
+    // set derived streamlet
     let derived_streamlet = Variable::new(String::from(""), derived_streamlet_type, String::from(""));
     implement.set_derived_streamlet(Arc::new(RwLock::new(derived_streamlet)));
 
-    /// arrach implement
+    // arrach implement
     {
         let result = scope.write().unwrap().with_implement(implement);
         if result.is_err() { return Err(ParserErrorCode::AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
@@ -543,7 +655,7 @@ pub fn parse_argexps(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Vec
                             let logical_type_result = get_logical_type(exp.clone().into_inner(), String::from(""),scope.clone());
                             if logical_type_result.is_err() { return Err(logical_type_result.err().unwrap()); }
                             let logical_type_result = logical_type_result.ok().unwrap();
-                            let mut output_var = Variable::new(String::from(""), DataType::LogicalDataType(Arc::new(RwLock::new(logical_type_result))), exp.clone().as_str().to_string());
+                            let output_var = Variable::new(String::from(""), DataType::LogicalDataType(Arc::new(RwLock::new(logical_type_result))), exp.clone().as_str().to_string());
                             output.push(Arc::new(RwLock::new(output_var)));
                         },
                         _ => { unreachable!() },
@@ -566,7 +678,7 @@ pub fn parse_argexps(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Vec
                         _ => { unreachable!() },
                     }
                 }
-                let mut output_var = Variable::new(String::from(""), DataType::ExternalProxyType(package_id.clone(), Arc::new(RwLock::new(logical_type))), exp.clone().as_str().to_string());
+                let output_var = Variable::new(String::from(""), DataType::ExternalProxyType(package_id.clone(), Arc::new(RwLock::new(logical_type))), exp.clone().as_str().to_string());
                 output.push(Arc::new(RwLock::new(output_var)));
             },
             Rule::ArgExpImplementExp => {
@@ -576,7 +688,7 @@ pub fn parse_argexps(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Vec
                 output.push(result);
             },
             Rule::ArgExpConstExp => {
-                let mut output_var = Variable::new(String::from(""), DataType::UnknownType, exp.clone().as_str().to_string());
+                let output_var = Variable::new(String::from(""), DataType::UnknownType, exp.clone().as_str().to_string());
                 output.push(Arc::new(RwLock::new(output_var)));
             },
             _ => { unreachable!() }
@@ -602,7 +714,7 @@ pub fn parse_arg_to_var(arg_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
                     }
                 }
 
-                /// shadow var
+                // shadow var
                 let shadow_var_name = format!("$arg${}", var_name.clone());
                 let var_type = DataType::LogicalDataType(Arc::new(RwLock::new(LogicalDataType::DummyLogicalData)));
                 {
@@ -625,7 +737,7 @@ pub fn parse_arg_to_var(arg_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
                 let result = convert_type_str_to_type(type_exp);
                 if result.is_err() { return Err(result.err().unwrap()); }
 
-                /// shadow var
+                // shadow var
                 let var_name = id_exp;
                 let shadow_var_name = format!("$arg${}", var_name.clone());
                 let var_type = result.ok().unwrap();
@@ -666,7 +778,7 @@ pub fn parse_arg_to_var(arg_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
                     }
                 }
 
-                /// shadow var
+                // shadow var
                 let var_name = id_exp.clone();
                 let shadow_var_name = format!("$arg${}", var_name.clone());
                 let var_type = data_type.clone();
@@ -776,7 +888,7 @@ pub fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
         }
     }
 
-    /// set streamlet type
+    // set streamlet type
     if streamlet_args.is_empty() {
         streamlet.set_type(StreamletType::NormalStreamlet);
     }
@@ -788,7 +900,7 @@ pub fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
         streamlet.set_type(StreamletType::TemplateStreamlet(templates_args));
     }
 
-    /// set streamlet scope
+    // set streamlet scope
     {
         streamlet.get_scope().write().unwrap().new_relationship(scope.read().unwrap().self_ref.clone().unwrap(), ScopeRelationType::StreamletScopeRela);
     }
@@ -801,7 +913,7 @@ pub fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
 }
 
 pub fn convert_type_str_to_type(type_exp: String) -> Result<DataType, ParserErrorCode> {
-    let mut data_type ;
+    let data_type ;
     if type_exp == String::from("") { data_type = DataType::UnknownType; }
     else if type_exp == String::from("int") { data_type = DataType::IntType; }
     else if type_exp == String::from("float") { data_type = DataType::FloatType; }
@@ -1104,11 +1216,36 @@ fn parse_test0() {
     let base_dir = env::current_dir().expect("not found path");
     println!("The base dir: {}", base_dir.to_str().expect(""));
 
-    let result = parse_to_memory(String::from("D:/git/tydi-lang/tydi_lang_parser/tydi_source/test0.td"));
+    let result = parse_to_memory(String::from("./tydi_source/test0.td"));
     match result {
         Ok(package) => {
             println!("{}", package.pretty_print(0, false));
         }
         Err(e) => { println!("{}", String::from(e))}
+    }
+}
+
+#[test]
+fn parse_test0_mt() {
+    use tydi_lang_raw_ast::util::PrettyPrint;
+    use std::env;
+    let base_dir = env::current_dir().expect("not found path");
+    println!("The base dir: {}", base_dir.to_str().expect(""));
+
+    let paths = vec![String::from("./tydi_source/test0.td"), String::from("./tydi_source/test1.td")];
+    let result = parse_multi_files_mt(String::from("test_project"), paths.clone(), None);
+
+    match result {
+        Ok(project) => {
+            println!("{}", project.read().unwrap().pretty_print(0, false));
+        }
+        Err(errors) => {
+            for index in 0..errors.len() {
+                match errors[index].clone() {
+                    Ok(_) => { println!("{}:no error", paths[index]) }
+                    Err(e) => println!("{}: error: {}", paths[index], String::from(e))
+                }
+            }
+        }
     }
 }

@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
-use crate::{generate_get, generate_set, generate_access, inferred};
+use crate::{generate_get, inferred};
 use crate::scope::{Scope, ScopeRelationType, ScopeType, TypeAlias};
 use crate::util::{generate_padding, PrettyPrint};
 use crate::inferable::{Inferable, NewInferable};
