@@ -665,15 +665,15 @@ impl adder_8b <n:int> of adder<8> {
 
 streamlet adder <N: int> {
   inputs: Bit(8) [N] in,
-  overflow: Bit(1) [N ./ 2] out,
-  out : Bit(8) [N ./ 2] out,
+  overflow: Bit(1) [N / 2] out,
+  out : Bit(8) [N / 2] out,
   global_overflow : Bit(1) out,
 };
 
 impl adder_ <N:int> of adder <N> {
-  instance adders(adder_8b) [N ./ 2],
-  instance and_gate(std_and_gate<N ./ 2>),
-  for i in (0=1=>N./2) {
+  instance adders(adder_8b) [N / 2],
+  instance and_gate(std_and_gate<N / 2>),
+  for i in (0=1=>N/2) {
     self.inputs[i*2] => adders[i].a,
     self.inputs[i*2+1] => adders[i].b,
     adders[i].overflow => self.overflow[i],
@@ -707,14 +707,14 @@ impl adder_ <N:int> of adder <N> {
             let code = "package test;
 streamlet adder<N:int> {
   inputs: Bit(8) [N] in,
-  out : Bit(8) [N./2] in,
+  out : Bit(8) [N/2] in,
   overflow : Bit(1) out,
 };
 
 impl adder_ <N:int> of adder <N> {
-  instance adders(adder_8b) [N ./ 2],
-  instance and_gate(std_and_gate<N ./ 2>),
-  for i in (0=1=>N./2) {
+  instance adders(adder_8b) [N / 2],
+  instance and_gate(std_and_gate<N / 2>),
+  for i in (0=1=>N/2) {
     self.inputs[i*2] => adders[i].a,
     self.inputs[i*2+1] => adders[i].b,
     adders[i].overflow => self.overflow[i],
@@ -748,9 +748,9 @@ impl adder_ <N:int> of adder <N> {
             let code = "package test;
 
 impl adder_ <N:int> of adder <N> {
-  instance adders(adder_8b) [N ./ 2],
-  instance and_gate(std_and_gate<N ./ 2>),
-  for i in (0=1=>N./2) {
+  instance adders(adder_8b) [N / 2],
+  instance and_gate(std_and_gate<N / 2>),
+  for i in (0=1=>N/2) {
     self.inputs[i*2] => adders[i].a,
     self.inputs[i*2+1] => adders[i].b,
     adders[i].overflow => self.overflow[i],
@@ -834,8 +834,8 @@ const num_stream = 2;
 const external_var = pack.a;
 const f = 1.0;
 const g = 1;
-//const v = f./g;
-const v = g./f;
+//const v = f/g;
+const v = g/f;
 
 type f = Bit(1);
 
@@ -918,13 +918,13 @@ streamlet sl4<i:int> {
 impl temp_impl3 of sl4<1> {
 
 };
-impl tmux3<n: int, ts: external. impl of sl4<1> > of sl0<n, type stream0> {
+impl tmux3<n: int, ts: impl of external.sl4<1> > of sl0<n, type stream0> {
   instance test_inst(ts),
   test_inst.out => test_inst.in,
   process{},
 };
 impl test3 of sl1 {
-  instance inst0(tmux3<1,  e. impl temp_impl3>),
+  instance inst0(tmux3<1, impl e.temp_impl3>),
 };";
             let mut parse_result = TydiParser::parse(Rule::Start, code).expect("unsuccessful parse");
             println!("{}", parse_result);

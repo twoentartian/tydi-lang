@@ -24,7 +24,8 @@ use tydi_lang_raw_ast::{not_inferred, inferred, infer_logical_data_type, infer_s
 use tydi_lang_raw_ast::implement::ImplementType;
 
 mod lex_test;
-mod precedence;
+mod parse_project_test;
+mod evaluation_infer;
 
 #[derive(Parser)]
 #[grammar = "tydi_lang_syntax.pest"]
@@ -36,6 +37,7 @@ pub enum ParserErrorCode {
     ParserError(String),
     FileError(String),
     AnalysisCodeStructureFail(String),
+    ExpressionEvaluationFail(String),
 }
 
 impl From<ParserErrorCode> for String {
@@ -45,6 +47,7 @@ impl From<ParserErrorCode> for String {
             ParserErrorCode::ParserError(s) => { format!("ParserError:{}", s) }
             ParserErrorCode::FileError(s) => { format!("FileError:{}", s) }
             ParserErrorCode::AnalysisCodeStructureFail(s) => { format!("AnalysisCodeStructureFail:{}", s) }
+            ParserErrorCode::ExpressionEvaluationFail(s) => { format!("ExpressionEvaluationFail:{}", s) }
         }
     }
 }
@@ -282,7 +285,7 @@ pub fn parse_implement_body_declare_instance(statement: Pairs<Rule>, scope: Arc<
     return Ok(());
 }
 
-pub fn parse_logical_type_slice(slice: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(Inferable<Arc<RwLock<Port>>>, PortOwner, PortArray), ParserErrorCode> {
+pub fn parse_logical_type_slice(slice: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Result<(Inferable<Arc<RwLock<Port>>>, PortOwner, PortArray), ParserErrorCode> {
     for single_slice in slice.into_iter() {
         match single_slice.as_rule() {
             Rule::LogicalTypeSliceCompound => {
@@ -595,7 +598,7 @@ pub fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
     return Ok(());
 }
 
-pub fn parse_internal_external_id(ids: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(Option<String>, String),ParserErrorCode> {
+pub fn parse_internal_external_id(ids: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Result<(Option<String>, String),ParserErrorCode> {
     for id in ids.into_iter() {
         match id.as_rule() {
             Rule::ExternalId => {
@@ -796,7 +799,7 @@ pub fn parse_arg_to_var(arg_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
     return Ok(output);
 }
 
-pub fn parse_direction(dir: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<PortDirection, ParserErrorCode> {
+pub fn parse_direction(dir: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Result<PortDirection, ParserErrorCode> {
     let mut output_dir = PortDirection::Unknown;
     for d in dir.into_iter() {
         match d.clone().as_rule() {
@@ -1040,7 +1043,6 @@ pub fn get_logical_type(exp: Pairs<Rule>, id: String, scope: Arc<RwLock<Scope>>)
                 for e in element.into_inner() {
                     match e.clone().as_rule() {
                         Rule::LogicalType => {
-                            let exp = e.as_str().to_string();
                             let result = get_logical_type(e.into_inner(), String::from(""), scope.clone());
                             if result.is_err() { return result; }
                             logical_stream.set_data_type(inferred!(infer_logical_data_type!(), Arc::new(RwLock::new(result.ok().unwrap()))));
@@ -1207,45 +1209,4 @@ pub fn get_logical_union(items: Pairs<Rule>) -> Result<LogicalUnion, ParserError
         }
     }
     return Ok(union_type);
-}
-
-#[test]
-fn parse_test0() {
-    use tydi_lang_raw_ast::util::PrettyPrint;
-    use std::env;
-    let base_dir = env::current_dir().expect("not found path");
-    println!("The base dir: {}", base_dir.to_str().expect(""));
-
-    let result = parse_to_memory(String::from("./tydi_source/test0.td"));
-    match result {
-        Ok(package) => {
-            println!("{}", package.pretty_print(0, false));
-        }
-        Err(e) => { println!("{}", String::from(e))}
-    }
-}
-
-#[test]
-fn parse_test0_mt() {
-    use tydi_lang_raw_ast::util::PrettyPrint;
-    use std::env;
-    let base_dir = env::current_dir().expect("not found path");
-    println!("The base dir: {}", base_dir.to_str().expect(""));
-
-    let paths = vec![String::from("./tydi_source/test0.td"), String::from("./tydi_source/test1.td")];
-    let result = parse_multi_files_mt(String::from("test_project"), paths.clone(), None);
-
-    match result {
-        Ok(project) => {
-            println!("{}", project.read().unwrap().pretty_print(0, false));
-        }
-        Err(errors) => {
-            for index in 0..errors.len() {
-                match errors[index].clone() {
-                    Ok(_) => { println!("{}:no error", paths[index]) }
-                    Err(e) => println!("{}: error: {}", paths[index], String::from(e))
-                }
-            }
-        }
-    }
 }

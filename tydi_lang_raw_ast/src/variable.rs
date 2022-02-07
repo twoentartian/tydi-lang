@@ -9,10 +9,14 @@ use crate::inferable::{Inferable, NewInferable};
 #[derive(Clone, Debug, PartialEq)]
 pub enum VariableValue {
     Unknown,
-    Int(u32),
+    Int(i32),
     Bool(bool),
     Float(f32),
     Str(String),
+    ArrayInt(Vec<i32>),
+    ArrayBool(Vec<bool>),
+    ArrayFloat(Vec<f32>),
+    ArrayStr(Vec<String>),
 }
 
 impl From<VariableValue> for String {
@@ -23,6 +27,54 @@ impl From<VariableValue> for String {
             VariableValue::Bool(v) => { format!("{}", v) }
             VariableValue::Float(v) => { format!("{}", v) }
             VariableValue::Str(v) => { format!("{}", v) }
+            VariableValue::ArrayInt(v) => {
+                let mut output = String::from("");
+                if v.len() == 0 { output = String::from(""); }
+                else if v.len() == 1 { output = format!("{}", v[0]); }
+                else {
+                    output.push_str(&format!("{}", v[0]));
+                    for i in 1 .. v.len() {
+                        output.push_str(&format!(",{}", v[i]));
+                    }
+                }
+                format!("{{{}}}", output)
+            },
+            VariableValue::ArrayBool(v) => {
+                let mut output = String::from("");
+                if v.len() == 0 { output = String::from(""); }
+                else if v.len() == 1 { output = format!("{}", v[0]); }
+                else {
+                    output.push_str(&format!("{}", v[0]));
+                    for i in 1 .. v.len() {
+                        output.push_str(&format!(",{}", v[i]));
+                    }
+                }
+                format!("{{{}}}", output)
+            },
+            VariableValue::ArrayFloat(v) => {
+                let mut output = String::from("");
+                if v.len() == 0 { output = String::from(""); }
+                else if v.len() == 1 { output = format!("{}", v[0]); }
+                else {
+                    output.push_str(&format!("{}", v[0]));
+                    for i in 1 .. v.len() {
+                        output.push_str(&format!(",{}", v[i]));
+                    }
+                }
+                format!("{{{}}}", output)
+            },
+            VariableValue::ArrayStr(v) => {
+                let mut output = String::from("");
+                if v.len() == 0 { output = String::from(""); }
+                else if v.len() == 1 { output = format!("{}", v[0]); }
+                else {
+                    output.push_str(&format!("{}", v[0]));
+                    for i in 1 .. v.len() {
+                        output.push_str(&format!(",{}", v[i]));
+                    }
+                }
+                format!("{{{}}}", output)
+            },
         }
     }
 }
@@ -43,7 +95,7 @@ pub struct Variable {
 
 impl Variable {
     generate_get!(name, String, get_name);
-    generate_get!(var_type, Arc<RwLock<DataType>>, get_type);
+    generate_access!(var_type, Arc<RwLock<DataType>>, get_type, set_type);
     generate_access!(var_value, Inferable<VariableValue>, get_var_value, set_var_value);
 
     pub fn new(name_: String, type_: DataType, exp_: String) -> Self {
@@ -54,7 +106,7 @@ impl Variable {
         }
     }
 
-    pub fn new_int(name_: String, v: u32) -> Self {
+    pub fn new_int(name_: String, v: i32) -> Self {
         Self {
             name: name_.clone(),
             var_type: Arc::new(RwLock::new(DataType::IntType)),
@@ -83,6 +135,38 @@ impl Variable {
             name: name_.clone(),
             var_type: Arc::new(RwLock::new(DataType::StringType)),
             var_value: <Inferable<VariableValue> as NewInferable<VariableValue>>::_new_inferred(name_.clone(), VariableValue::Str(v)),
+        }
+    }
+
+    pub fn new_int_array(name_: String, v: Vec<i32>) -> Self {
+        Self {
+            name: name_.clone(),
+            var_type: Arc::new(RwLock::new(DataType::ArrayType(Arc::new(RwLock::new(DataType::IntType))))),
+            var_value: <Inferable<VariableValue> as NewInferable<VariableValue>>::_new_inferred(name_.clone(), VariableValue::ArrayInt(v)),
+        }
+    }
+
+    pub fn new_float_array(name_: String, v: Vec<f32>) -> Self {
+        Self {
+            name: name_.clone(),
+            var_type: Arc::new(RwLock::new(DataType::ArrayType(Arc::new(RwLock::new(DataType::FloatType))))),
+            var_value: <Inferable<VariableValue> as NewInferable<VariableValue>>::_new_inferred(name_.clone(), VariableValue::ArrayFloat(v)),
+        }
+    }
+
+    pub fn new_bool_array(name_: String, v: Vec<bool>) -> Self {
+        Self {
+            name: name_.clone(),
+            var_type: Arc::new(RwLock::new(DataType::ArrayType(Arc::new(RwLock::new(DataType::BoolType))))),
+            var_value: <Inferable<VariableValue> as NewInferable<VariableValue>>::_new_inferred(name_.clone(), VariableValue::ArrayBool(v)),
+        }
+    }
+
+    pub fn new_str_array(name_: String, v: Vec<String>) -> Self {
+        Self {
+            name: name_.clone(),
+            var_type: Arc::new(RwLock::new(DataType::ArrayType(Arc::new(RwLock::new(DataType::StringType))))),
+            var_value: <Inferable<VariableValue> as NewInferable<VariableValue>>::_new_inferred(name_.clone(), VariableValue::ArrayStr(v)),
         }
     }
 

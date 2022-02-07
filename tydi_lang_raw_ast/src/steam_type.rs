@@ -102,7 +102,7 @@ impl LogicalStream {
     generate_get!(keep, Arc<RwLock<Variable>>, get_keep);generate_set_in_arc_rwlock!(keep, Variable, set_keep);
 
     pub fn new(name_: String, data_type_: Inferable<Arc<RwLock<LogicalDataType>>>) -> Self {
-        let default_clone: Arc<RwLock<LogicalStream>> = DefaultLogicalStream.clone();
+        let default_clone: Arc<RwLock<LogicalStream>> = DEFAULT_LOGICAL_STREAM.clone();
         let mut output = default_clone.read().unwrap().clone();
         output.name = name_.clone();
         output.data_type = data_type_.clone();
@@ -165,7 +165,7 @@ impl Scope {
 }
 
 lazy_static! {
-    pub static ref DefaultLogicalStream: Arc<RwLock<LogicalStream>> = {
+    pub static ref DEFAULT_LOGICAL_STREAM: Arc<RwLock<LogicalStream>> = {
         let default = Arc::new(RwLock::new(LogicalStream::new_raw()));
         return default;
     };

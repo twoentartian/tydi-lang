@@ -8,7 +8,7 @@ INT_RAW_OCT = @{ "0o" ~ ASCII_OCT_DIGIT  ~ (ASCII_OCT_DIGIT | "_")* ~ !(ASCII_OC
 INT = _{ (((INT_RAW_BIN | INT_RAW_OCT | INT_RAW_HEX | INT_RAW_NORAML) ~ "u")
         | (INT_RAW_BIN | INT_RAW_OCT | INT_RAW_HEX | INT_RAW_NORAML)) ~ !(ASCII_DIGIT | ".") }
 
-BOOL = @{ ("true" | "false") }
+BOOL = @{ ("true" | "false") ~ !(ASCII_ALPHA | ASCII_DIGIT | "_") }
 FLOAT = @{ ('1'..'9' ~ ASCII_DIGIT* ~ "." ~ ASCII_DIGIT*) | ("0" ~ "." ~ ASCII_DIGIT*) ~ !(ASCII_DIGIT) }
 
 LINE_COMMENT = _{ "//" ~  (!NEWLINE ~ ANY)* ~ (NEWLINE | EOI)}
@@ -45,12 +45,11 @@ Term = { ( "(" ~ Exp ~ ")") |
             ExpConstInStreamlet | ExpExternalConstInStreamlet | ExpConstInImplement | ExpExternalConstInStreamlet |
             (UnaryOp ~ Exp) }
 
-SingleTermExp = _{ Term }
-OpExp = { Term ~ (InfixOp  ~ Term)+ }
+Exp = { Term ~ (InfixOp  ~ Term)* }
 UnaryOp = { OP_UnaryMinus | OP_UnaryNot  }
     OP_UnaryMinus = { "-" }
     OP_UnaryNot = { "!" }
-InfixOp = { OP_LeftShift | OP_RightShift | OP_LogicalAnd | OP_LogicalOr | OP_LogicalEq | OP_LogicalNotEq |
+InfixOp = _{ OP_LeftShift | OP_RightShift | OP_LogicalAnd | OP_LogicalOr | OP_LogicalEq | OP_LogicalNotEq |
             OP_GreaterEq | OP_LessEq | OP_Greater | OP_Less |
             OP_Add | OP_Minus | OP_Multiply | OP_Divide | OP_Mod | OP_Power | OP_BitAnd | OP_BitOr }
     OP_LeftShift = { "<<" }
@@ -66,7 +65,7 @@ InfixOp = { OP_LeftShift | OP_RightShift | OP_LogicalAnd | OP_LogicalOr | OP_Log
     OP_Add = { "+" }
     OP_Minus = { "-" }
     OP_Multiply = { "*" }
-    OP_Divide = { "./" }
+    OP_Divide = { "/" }
     OP_Mod = { "%" }
     OP_Power = { "^" }
     OP_BitAnd = { "&" }
@@ -80,8 +79,6 @@ ExpConstInType = { "type" ~ ID ~ "." ~ ID }
 ExpRound = { "round" ~ "(" ~ Exp ~ ")" }
 ExpFloor = { "floor" ~ "(" ~ Exp ~ ")" }
 ExpCeil = { "ceil" ~ "(" ~ Exp ~ ")" }
-
-Exp = { OpExp | SingleTermExp}
 
 ///////////////////////  end of exp.sdf3  ///////////////////////
 

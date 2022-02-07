@@ -23,6 +23,21 @@ pub enum LogicalDataType {
     DataUserDefinedVarType(String),
 }
 
+impl PartialEq for LogicalDataType {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            LogicalDataType::DummyLogicalData => return true,
+            LogicalDataType::UnknownLogicalDataType => {
+                match other {
+                    LogicalDataType::UnknownLogicalDataType => return true,
+                    _ => return false,
+                }
+            },
+            _ => { todo!() }
+        }
+    }
+}
+
 impl From<LogicalDataType> for String {
     fn from(logical_data_type: LogicalDataType) -> Self {
         return match logical_data_type {

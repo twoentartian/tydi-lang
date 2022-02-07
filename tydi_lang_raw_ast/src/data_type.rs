@@ -33,6 +33,84 @@ pub enum DataType {
     ExternalProxyImplementOfStreamlet(String, String, Vec<Arc<RwLock<Variable>>>),
 }
 
+impl PartialEq for DataType {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            DataType::UnknownType => {
+                match other {
+                    DataType::UnknownType => return true,
+                    _ => return false,
+                }
+            },
+            DataType::UnableToInfer => {
+                match other {
+                    DataType::UnableToInfer => return true,
+                    _ => return false,
+                }
+            },
+            DataType::PackageType => {
+                match other {
+                    DataType::PackageType => return true,
+                    _ => return false,
+                }
+            },
+
+            DataType::IntType => {
+                match other {
+                    DataType::IntType => return true,
+                    _ => return false,
+                }
+            },
+            DataType::StringType => {
+                match other {
+                    DataType::StringType => return true,
+                    _ => return false,
+                }
+            },
+            DataType::BoolType => {
+                match other {
+                    DataType::BoolType => return true,
+                    _ => return false,
+                }
+            },
+            DataType::FloatType => {
+                match other {
+                    DataType::FloatType => return true,
+                    _ => return false,
+                }
+            },
+
+            DataType::ArrayType(t0) => {
+                match other {
+                    DataType::ArrayType(t1) => {
+                        let t0 = (*(t0.read().unwrap())).clone();
+                        let t1 = (*(t1.read().unwrap())).clone();
+                        return t0 == t1;
+                    },
+                    _ => return false,
+                }
+            },
+            DataType::EmptyLogicalDataType => {
+                match other {
+                    DataType::EmptyLogicalDataType => return true,
+                    _ => return false,
+                }
+            },
+            DataType::LogicalDataType(t0) => {
+                match other {
+                    DataType::LogicalDataType(t1) => {
+                        let t0 = (*(t0.read().unwrap())).clone();
+                        let t1 = (*(t1.read().unwrap())).clone();
+                        return t0 == t1;
+                    },
+                    _ => return false,
+                }
+            },
+            _ => { unreachable!(); }
+        }
+    }
+}
+
 impl From<DataType> for String {
     fn from(t: DataType) -> Self {
         return match t {
@@ -111,7 +189,7 @@ impl PrettyPrint for DataType {
             DataType::ArrayType(inner_data_type) => {
                 let inner_type = inner_data_type.read().unwrap();
                 let inner_type_str = inner_type.pretty_print(depth, verbose);
-                format!("array({})", inner_type_str)
+                format!("[{}]", inner_type_str)
             }
             DataType::EmptyLogicalDataType => { String::from(self.clone()) }
             DataType::LogicalDataType(logical_data_type) => {

@@ -9,8 +9,8 @@ const num_stream:int = 2;
 const external_var = pack.a;
 const f = 1.0;
 const g = 1;
-//const v = f./g;
-const v = g./f;
+//const v = f/g;
+const v = g/f;
 
 type f = Bit(1);
 type f1 = pack.t;
