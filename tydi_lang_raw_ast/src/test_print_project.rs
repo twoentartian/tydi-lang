@@ -12,6 +12,27 @@ mod tests {
     use crate::scope::*;
 
     #[test]
+    fn project_and_package() {
+        let mut project0 = Project::new(String::from("project0"));
+        let package_name = String::from("package0");
+        let result = project0.new_package(package_name.clone());
+        match result {
+            Ok(_) => {}
+            Err(_) => {assert!(false)}
+        }
+        let result = project0.find_package(package_name.clone());
+        match result {
+            Ok(package) => {
+                let package = package.write().unwrap();
+                println!("{}", package.get_name());
+            }
+            Err(_) => {assert!(false)}
+        }
+
+
+    }
+
+    #[test]
     fn var_scope() {
         let mut project0 = Project::new(String::from("project0"));
         let package_name = String::from("package0");

@@ -38,12 +38,13 @@ ArrayExp = { "{" ~ Exp ~ ("," ~ Exp)* ~ "}" }
 ArrayRange = { "(" ~ Exp ~ "=" ~ Exp ~ "=>" ~ Exp ~ ")" }
 Var = { ID }
 ExternalVar = { ID ~ "." ~ ID }
+UnaryExp = { UnaryOp ~ Exp }
 
 Term = { ( "(" ~ Exp ~ ")") |
             ExpLog | ExpBitWiseNot | ExpConstInType | ExpRound | ExpFloor | ExpCeil | ExpIndex |
             ArrayRange | ArrayExp | IntExp | StringExp | BoolExp | FloatExp | ExternalVar | Var |
             ExpConstInStreamlet | ExpExternalConstInStreamlet | ExpConstInImplement | ExpExternalConstInStreamlet |
-            (UnaryOp ~ Exp) }
+            UnaryExp }
 
 Exp = { Term ~ (InfixOp  ~ Term)* }
 UnaryOp = { OP_UnaryMinus | OP_UnaryNot  }

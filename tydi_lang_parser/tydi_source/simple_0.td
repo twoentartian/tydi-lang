@@ -57,3 +57,22 @@ const array_exp_3 = {1.1,2.1,3.1};
 const array_exp_4 = array_exp_3 + 50.5;
 const array_exp_5 = 50.5 + array_exp_3;
 const array_exp_6 = true + {true,false};
+
+const bitwise_not_0 = ~(4)16;
+const bitwise_not_0_correct = 0 == bitwise_not_0;
+
+const round_0 = round(3.4);
+const ceil_0 = ceil(3.4);
+const floor_0 = floor(3.4);
+
+const array_int_0 = {1,2,3,4};
+const array_float_0 = {1.0,2.0,3.0,4.0};
+const array_str_0 = {"1","2","3","4"};
+const array_bool_0 = {true,true,false,false};
+const array_int_0_correct = array_int_0[3] == 4;
+const array_float_0_correct = array_float_0[3] == 4.0;
+const array_str_0_correct = array_str_0[3] == "4";
+const array_bool_0_correct = array_bool_0[3] == false;
+
+const unary_0 = -divide1;
+const unary_1 = !array_int_0_correct;

@@ -17,9 +17,8 @@ pub mod instances;
 pub mod connection;
 pub mod if_for;
 
-mod print_project_tests;
+mod test_print_project;
 
 #[macro_use]
 extern crate lazy_static;
 extern crate rand;
-extern crate proc_macro;

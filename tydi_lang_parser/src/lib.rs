@@ -23,9 +23,11 @@ use tydi_lang_raw_ast::scope::*;
 use tydi_lang_raw_ast::{not_inferred, inferred, infer_logical_data_type, infer_streamlet, infer_port};
 use tydi_lang_raw_ast::implement::ImplementType;
 
-mod lex_test;
-mod parse_project_test;
+mod test_lex;
+mod test_parse_project;
+mod test_evaluation_simple;
 mod evaluation_infer;
+
 
 #[derive(Parser)]
 #[grammar = "tydi_lang_syntax.pest"]

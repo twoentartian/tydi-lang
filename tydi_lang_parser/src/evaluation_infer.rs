@@ -6,10 +6,8 @@ use pest::prec_climber::{PrecClimber};
 use pest::prec_climber::Assoc::{Left, Right};
 use pest::prec_climber as pcl;
 use tydi_lang_raw_ast::project_arch::Project;
-use tydi_lang_raw_ast::scope::{Scope, Variable, DataType, InferState, VariableValue, PrettyPrint};
-use tydi_lang_raw_ast::variable::VariableValue::Bool;
+use tydi_lang_raw_ast::scope::{Scope, Variable, DataType, InferState, VariableValue};
 use crate::ParserErrorCode;
-use crate::parse_multi_files_mt;
 
 #[derive(Parser)]
 #[grammar = "tydi_lang_syntax.pest"]
@@ -35,7 +33,7 @@ lazy_static! {
     };
 }
 
-pub fn eval_explog(explog: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
+fn eval_explog(explog: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
     let mut base_var = Variable::new_float(String::from(""), 0.0);
     let mut log_var = Variable::new_float(String::from(""), 0.0);
     let mut is_base = true;
@@ -108,7 +106,47 @@ pub fn eval_explog(explog: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<
     return Ok(Variable::new_float(String::from(""), output_val));
 }
 
-pub fn eval_int(int_exp: Pairs<Rule>, _: Arc<RwLock<Scope>>, _: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
+fn eval_exp_bitwisenot(exp_bitwisenot: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
+    let mut base_var = Variable::new_int(String::from(""), 0);
+    let mut value_var = Variable::new_int(String::from(""), 0);
+    let mut is_base = true;
+    for exp in exp_bitwisenot.into_iter() {
+        match exp.clone().as_rule() {
+            Rule::Exp => {
+                if is_base {
+                    is_base = false;
+                    let result = eval_exp(exp.into_inner(), scope.clone(), project.clone());
+                    if result.is_err() { return Err(result.err().unwrap()); }
+                    base_var = result.ok().unwrap();
+                }
+                else {
+                    let result = eval_exp(exp.into_inner(), scope.clone(), project.clone());
+                    if result.is_err() { return Err(result.err().unwrap()); }
+                    value_var = result.ok().unwrap();
+                }
+            }
+            _ => unreachable!()
+        }
+    }
+
+    //check
+    let base = match base_var.get_var_value().get_raw_value() {
+        VariableValue::Int(i) => { i }
+        _ => { return Err(ExpressionEvaluationFail(format!("bitwiseNot only acceptes integers"))); }
+    };
+    let value = match value_var.get_var_value().get_raw_value() {
+        VariableValue::Int(i) => { i }
+        _ => { return Err(ExpressionEvaluationFail(format!("bitwiseNot only acceptes integers"))); }
+    };
+    if base <= 0 { return Err(ExpressionEvaluationFail(format!("the base of BitwiseNot operation must be positive"))); }
+    if value < 0 { return Err(ExpressionEvaluationFail(format!("the value of BitwiseNot operation must be positive or zero"))); }
+
+    let output_value = (2 as i32).pow(base as u32) - value;
+    if output_value < 0 { return Err(ExpressionEvaluationFail(format!("the value of BitwiseNot operation has larger bit width than the base width"))); }
+    return Ok(Variable::new_int(String::from(""), output_value));
+}
+
+fn eval_exp_int(int_exp: Pairs<Rule>, _: Arc<RwLock<Scope>>, _: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
     for i in int_exp.into_iter() {
         let int_val = i.as_str().to_string().replace('_', "");
         match i.as_rule() {
@@ -141,12 +179,346 @@ pub fn eval_int(int_exp: Pairs<Rule>, _: Arc<RwLock<Scope>>, _: Arc<RwLock<Proje
     unreachable!()
 }
 
+fn eval_exp_Unary(unary_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
+    let mut unary_op = String::from("");
+    let mut var = Variable::new_int(String::from(""), 0);
+    for item in unary_exp.into_iter() {
+        match item.as_rule() {
+            Rule::UnaryOp => {
+                unary_op = item.as_str().to_string();
+            }
+            Rule::Exp => {
+                let result = eval_exp(item.into_inner(), scope.clone(), project.clone());
+                if result.is_err() { return Err(result.err().unwrap()); }
+                var = result.ok().unwrap();
+            }
+            _ => unreachable!()
+        }
+    }
+    if unary_op == "-" {
+        match var.get_var_value().get_raw_value() {
+            VariableValue::Int(v) => {
+                return Ok(Variable::new_int(String::from(""), -v));
+            }
+            VariableValue::Float(v) => {
+                return Ok(Variable::new_float(String::from(""), -v));
+            }
+            _ => return Err(ExpressionEvaluationFail(format!("- operator only supports int and float")))
+        }
+    }
+    else if unary_op == "!" {
+        match var.get_var_value().get_raw_value() {
+            VariableValue::Bool(v) => {
+                return Ok(Variable::new_bool(String::from(""), !v));
+            }
+            _ => return Err(ExpressionEvaluationFail(format!("! operator only supports bool")))
+        }
+    }
+    else {
+        unreachable!()
+    }
+}
+
+fn eval_op_equal(lhs:Variable, rhs: Variable, lhs_type: DataType, rhs_type: DataType) -> Result<bool, ParserErrorCode> {
+    if lhs_type == DataType::IntType && rhs_type == DataType::IntType {
+        let lhs_value = lhs.get_var_value().get_raw_value();
+        let rhs_value = rhs.get_var_value().get_raw_value();
+        let lhs;
+        let rhs;
+        match lhs_value {
+            VariableValue::Int(i0) => { lhs = i0; }
+            _ => unreachable!()
+        }
+        match rhs_value {
+            VariableValue::Int(i1) => { rhs = i1; }
+            _ => unreachable!()
+        }
+        return Ok(lhs == rhs);
+    }
+    else if lhs_type == DataType::BoolType && rhs_type == DataType::BoolType {
+        let lhs_value = lhs.get_var_value().get_raw_value();
+        let rhs_value = rhs.get_var_value().get_raw_value();
+        let lhs;
+        let rhs;
+        match lhs_value {
+            VariableValue::Bool(i0) => { lhs = i0; }
+            _ => unreachable!()
+        }
+        match rhs_value {
+            VariableValue::Bool(i1) => { rhs = i1; }
+            _ => unreachable!()
+        }
+        return Ok(lhs == rhs);
+    }
+    else if lhs_type == DataType::StringType && rhs_type == DataType::StringType {
+        let lhs_value = lhs.get_var_value().get_raw_value();
+        let rhs_value = rhs.get_var_value().get_raw_value();
+        let lhs;
+        let rhs;
+        match lhs_value {
+            VariableValue::Str(i0) => { lhs = i0; }
+            _ => unreachable!()
+        }
+        match rhs_value {
+            VariableValue::Str(i1) => { rhs = i1; }
+            _ => unreachable!()
+        }
+        return Ok(lhs == rhs);
+    }
+    else if lhs_type == DataType::FloatType && rhs_type == DataType::FloatType {
+        let lhs_value = lhs.get_var_value().get_raw_value();
+        let rhs_value = rhs.get_var_value().get_raw_value();
+        let lhs;
+        let rhs;
+        match lhs_value {
+            VariableValue::Float(i0) => { lhs = i0; }
+            _ => unreachable!()
+        }
+        match rhs_value {
+            VariableValue::Float(i1) => { rhs = i1; }
+            _ => unreachable!()
+        }
+        return Ok(lhs == rhs);
+    }
+    else {
+        return Err(ExpressionEvaluationFail(format!("== / != operator does not support {} + {}", String::from(lhs_type), String::from(rhs_type))));
+    }
+}
+
+fn eval_op_greater(lhs:Variable, rhs: Variable, lhs_type: DataType, rhs_type: DataType) -> Result<bool, ParserErrorCode> {
+    if lhs_type == DataType::IntType && rhs_type == DataType::IntType {
+        let lhs_value = lhs.get_var_value().get_raw_value();
+        let rhs_value = rhs.get_var_value().get_raw_value();
+        let lhs;
+        let rhs;
+        match lhs_value {
+            VariableValue::Int(i0) => { lhs = i0; }
+            _ => unreachable!()
+        }
+        match rhs_value {
+            VariableValue::Int(i1) => { rhs = i1; }
+            _ => unreachable!()
+        }
+        return Ok(lhs > rhs);
+    }
+    else if (lhs_type == DataType::FloatType && rhs_type == DataType::FloatType) ||
+        (lhs_type == DataType::FloatType && rhs_type == DataType::IntType) ||
+        (lhs_type == DataType::IntType && rhs_type == DataType::FloatType) {
+        let lhs_value = lhs.get_var_value().get_raw_value();
+        let rhs_value = rhs.get_var_value().get_raw_value();
+        let lhs;
+        let rhs;
+        match lhs_value {
+            VariableValue::Int(v) => { lhs = v as f32; }
+            VariableValue::Float(v) => { lhs = v; }
+            _ => unreachable!()
+        }
+        match rhs_value {
+            VariableValue::Int(v) => { rhs = v as f32; }
+            VariableValue::Float(v) => { rhs = v; }
+            _ => unreachable!()
+        }
+        return Ok(lhs > rhs);
+    }
+    else {
+        return Err(ExpressionEvaluationFail(format!("> / <= operator does not support {} + {}", String::from(lhs_type), String::from(rhs_type))));
+    }
+}
+
+fn eval_op_less(lhs:Variable, rhs: Variable, lhs_type: DataType, rhs_type: DataType) -> Result<bool, ParserErrorCode> {
+    if lhs_type == DataType::IntType && rhs_type == DataType::IntType {
+        let lhs_value = lhs.get_var_value().get_raw_value();
+        let rhs_value = rhs.get_var_value().get_raw_value();
+        let lhs;
+        let rhs;
+        match lhs_value {
+            VariableValue::Int(i0) => { lhs = i0; }
+            _ => unreachable!()
+        }
+        match rhs_value {
+            VariableValue::Int(i1) => { rhs = i1; }
+            _ => unreachable!()
+        }
+        return Ok(lhs < rhs);
+    }
+    else if (lhs_type == DataType::FloatType && rhs_type == DataType::FloatType) ||
+        (lhs_type == DataType::FloatType && rhs_type == DataType::IntType) ||
+        (lhs_type == DataType::IntType && rhs_type == DataType::FloatType) {
+        let lhs_value = lhs.get_var_value().get_raw_value();
+        let rhs_value = rhs.get_var_value().get_raw_value();
+        let lhs;
+        let rhs;
+        match lhs_value {
+            VariableValue::Int(v) => { lhs = v as f32; }
+            VariableValue::Float(v) => { lhs = v; }
+            _ => unreachable!()
+        }
+        match rhs_value {
+            VariableValue::Int(v) => { rhs = v as f32; }
+            VariableValue::Float(v) => { rhs = v; }
+            _ => unreachable!()
+        }
+        return Ok(lhs < rhs);
+    }
+    else {
+        return Err(ExpressionEvaluationFail(format!("< / >= operator does not support {} + {}", String::from(lhs_type), String::from(rhs_type))));
+    }
+}
+
 pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
     for term_inner in term.clone().into_iter() {
         match term_inner.clone().as_rule() {
-            Rule::Exp => { return eval_exp(term_inner.into_inner(), scope.clone(), project.clone()); }
+            Rule::Exp => {
+                return eval_exp(term_inner.into_inner(), scope.clone(), project.clone());
+            }
 
-            Rule::ExpLog => { return eval_explog(term_inner.into_inner(), scope.clone(), project.clone()); }
+            Rule::ExpLog => {
+                return eval_explog(term_inner.into_inner(), scope.clone(), project.clone());
+            }
+            Rule::ExpBitWiseNot => {
+                return eval_exp_bitwisenot(term_inner.into_inner(), scope.clone(), project.clone());
+            }
+            Rule::ExpConstInType => {
+                todo!()
+            }
+            Rule::ExpRound => {
+                let mut input_exp = Variable::new_int(String::from(""), 0);
+                for exp in term_inner.into_inner().into_iter() {
+                    match exp.as_rule() {
+                        Rule::Exp => {
+                            let result = eval_exp(exp.into_inner(), scope.clone(), project.clone());
+                            if result.is_err() { return Err(result.err().unwrap()); }
+                            input_exp = result.ok().unwrap();
+                        }
+                        _ => unreachable!()
+                    }
+                }
+                let mut output_value: i32 = 0;
+                match input_exp.get_var_value().get_raw_value() {
+                    VariableValue::Int(v) => {
+                        output_value = v;
+                    }
+                    VariableValue::Float(v) => {
+                        output_value = v.round() as i32;
+                    }
+                    _ => { return Err(ExpressionEvaluationFail(format!("Round only acceptes float and int"))); }
+                }
+                return Ok(Variable::new_int(String::from(""), output_value));
+            }
+            Rule::ExpFloor => {
+                let mut input_exp = Variable::new_int(String::from(""), 0);
+                for exp in term_inner.into_inner().into_iter() {
+                    match exp.as_rule() {
+                        Rule::Exp => {
+                            let result = eval_exp(exp.into_inner(), scope.clone(), project.clone());
+                            if result.is_err() { return Err(result.err().unwrap()); }
+                            input_exp = result.ok().unwrap();
+                        }
+                        _ => unreachable!()
+                    }
+                }
+                let mut output_value: i32 = 0;
+                match input_exp.get_var_value().get_raw_value() {
+                    VariableValue::Int(v) => {
+                        output_value = v;
+                    }
+                    VariableValue::Float(v) => {
+                        output_value = v.floor() as i32;
+                    }
+                    _ => { return Err(ExpressionEvaluationFail(format!("Round only acceptes float and int"))); }
+                }
+                return Ok(Variable::new_int(String::from(""), output_value));
+            }
+            Rule::ExpCeil => {
+                let mut input_exp = Variable::new_int(String::from(""), 0);
+                for exp in term_inner.into_inner().into_iter() {
+                    match exp.as_rule() {
+                        Rule::Exp => {
+                            let result = eval_exp(exp.into_inner(), scope.clone(), project.clone());
+                            if result.is_err() { return Err(result.err().unwrap()); }
+                            input_exp = result.ok().unwrap();
+                        }
+                        _ => unreachable!()
+                    }
+                }
+                let mut output_value: i32 = 0;
+                match input_exp.get_var_value().get_raw_value() {
+                    VariableValue::Int(v) => {
+                        output_value = v;
+                    }
+                    VariableValue::Float(v) => {
+                        output_value = v.ceil() as i32;
+                    }
+                    _ => { return Err(ExpressionEvaluationFail(format!("Round only acceptes float and int"))); }
+                }
+                return Ok(Variable::new_int(String::from(""), output_value));
+            }
+            Rule::ExpIndex => {
+                let mut input_exp = Variable::new_int(String::from(""), 0);
+                let mut input_index = Variable::new_int(String::from(""), 0);
+                for exp in term_inner.into_inner().into_iter() {
+                    match exp.as_rule() {
+                        Rule::ID => {
+                            let var_name = exp.as_str().to_string();
+                            let result = scope.read().unwrap().resolve_variable_from_scope(var_name);
+                            if result.is_err() { return Err(ExpressionEvaluationFail(String::from(result.err().unwrap()))); }
+                            let result = result.ok().unwrap();
+                            let infer_result = infer_variable(result.clone(), scope.clone(), project.clone());
+                            if infer_result.is_err() { return Err(infer_result.err().unwrap()); }
+                            input_exp = (*result.read().unwrap()).clone();
+                        }
+                        Rule::Exp => {
+                            let result = eval_exp(exp.into_inner(), scope.clone(), project.clone());
+                            if result.is_err() { return Err(result.err().unwrap()); }
+                            input_index = result.ok().unwrap();
+                        }
+                        _ => unreachable!()
+                    }
+                }
+
+                let index = match input_index.get_var_value().get_raw_value() {
+                    VariableValue::Int(i) => {
+                        if i < 0 { return Err(ExpressionEvaluationFail(format!("the index of [] operator must be positive integer"))) }
+                        i as usize
+                    },
+                    _ => return Err(ExpressionEvaluationFail(format!("the index of [] operator must be positive integer")))
+                };
+
+                match input_exp.get_var_value().get_raw_value() {
+                    VariableValue::ArrayStr(array) => {
+                        if index >= array.len() { return Err(ExpressionEvaluationFail(format!("index({}) out of array length({})", index, array.len()))); }
+                        return Ok(Variable::new_str(String::from(""), array.get(index).unwrap().clone()));
+                    }
+                    VariableValue::ArrayInt(array) => {
+                        if index >= array.len() { return Err(ExpressionEvaluationFail(format!("index({}) out of array length({})", index, array.len()))); }
+                        return Ok(Variable::new_int(String::from(""), array.get(index).unwrap().clone()));
+                    }
+                    VariableValue::ArrayFloat(array) => {
+                        if index >= array.len() { return Err(ExpressionEvaluationFail(format!("index({}) out of array length({})", index, array.len()))); }
+                        return Ok(Variable::new_float(String::from(""), array.get(index).unwrap().clone()));
+                    }
+                    VariableValue::ArrayBool(array) => {
+                        if index >= array.len() { return Err(ExpressionEvaluationFail(format!("index({}) out of array length({})", index, array.len()))); }
+                        return Ok(Variable::new_bool(String::from(""), array.get(index).unwrap().clone()));
+                    }
+                    _ => return Err(ExpressionEvaluationFail(format!("[] operator only accepts array")))
+                }
+            }
+            Rule::ExpConstInStreamlet => {
+                todo!()
+            }
+            Rule::ExpExternalConstInStreamlet => {
+                todo!()
+            }
+            Rule::ExpConstInImplement => {
+                todo!()
+            }
+            Rule::ExpExternalConstInStreamlet => {
+                todo!()
+            }
+            Rule::UnaryExp => {
+                return eval_exp_Unary(term_inner.into_inner(), scope.clone(), project.clone());
+            }
 
             Rule::Var => {
                 let var_name = term_inner.as_str().to_string();
@@ -198,7 +570,7 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
             }
 
             Rule::IntExp => {
-                return eval_int(term_inner.into_inner(), scope.clone(), project.clone());
+                return eval_exp_int(term_inner.into_inner(), scope.clone(), project.clone());
             }
             Rule::FloatExp => {
                 let result = term_inner.clone().as_str().parse::<f32>();
@@ -338,156 +710,10 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
 
 pub fn parse_eval_exp(expression: String, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
     if expression.is_empty() { unreachable!() }
-    let mut parse_result = TydiParser::parse(Rule::Exp, &expression);
+    let parse_result = TydiParser::parse(Rule::Exp, &expression);
     if parse_result.is_err() { return Err(ExpressionEvaluationFail(format!("{}", parse_result.err().unwrap()))); }
     let parse_result = parse_result.ok().unwrap().next().unwrap();
     return eval_exp(parse_result.into_inner(), scope.clone(), project.clone());
-}
-
-fn eval_exp_equal(lhs:Variable, rhs: Variable, lhs_type: DataType, rhs_type: DataType) -> Result<bool, ParserErrorCode> {
-    if lhs_type == DataType::IntType && rhs_type == DataType::IntType {
-        let lhs_value = lhs.get_var_value().get_raw_value();
-        let rhs_value = rhs.get_var_value().get_raw_value();
-        let lhs;
-        let rhs;
-        match lhs_value {
-            VariableValue::Int(i0) => { lhs = i0; }
-            _ => unreachable!()
-        }
-        match rhs_value {
-            VariableValue::Int(i1) => { rhs = i1; }
-            _ => unreachable!()
-        }
-        return Ok(lhs == rhs);
-    }
-    else if lhs_type == DataType::BoolType && rhs_type == DataType::BoolType {
-        let lhs_value = lhs.get_var_value().get_raw_value();
-        let rhs_value = rhs.get_var_value().get_raw_value();
-        let lhs;
-        let rhs;
-        match lhs_value {
-            VariableValue::Bool(i0) => { lhs = i0; }
-            _ => unreachable!()
-        }
-        match rhs_value {
-            VariableValue::Bool(i1) => { rhs = i1; }
-            _ => unreachable!()
-        }
-        return Ok(lhs == rhs);
-    }
-    else if lhs_type == DataType::StringType && rhs_type == DataType::StringType {
-        let lhs_value = lhs.get_var_value().get_raw_value();
-        let rhs_value = rhs.get_var_value().get_raw_value();
-        let lhs;
-        let rhs;
-        match lhs_value {
-            VariableValue::Str(i0) => { lhs = i0; }
-            _ => unreachable!()
-        }
-        match rhs_value {
-            VariableValue::Str(i1) => { rhs = i1; }
-            _ => unreachable!()
-        }
-        return Ok(lhs == rhs);
-    }
-    else if lhs_type == DataType::FloatType && rhs_type == DataType::FloatType {
-        let lhs_value = lhs.get_var_value().get_raw_value();
-        let rhs_value = rhs.get_var_value().get_raw_value();
-        let lhs;
-        let rhs;
-        match lhs_value {
-            VariableValue::Float(i0) => { lhs = i0; }
-            _ => unreachable!()
-        }
-        match rhs_value {
-            VariableValue::Float(i1) => { rhs = i1; }
-            _ => unreachable!()
-        }
-        return Ok(lhs == rhs);
-    }
-    else {
-        return Err(ExpressionEvaluationFail(format!("==/!= operator does not support {} + {}", String::from(lhs_type), String::from(rhs_type))));
-    }
-}
-
-fn eval_exp_greater(lhs:Variable, rhs: Variable, lhs_type: DataType, rhs_type: DataType) -> Result<bool, ParserErrorCode> {
-    if lhs_type == DataType::IntType && rhs_type == DataType::IntType {
-        let lhs_value = lhs.get_var_value().get_raw_value();
-        let rhs_value = rhs.get_var_value().get_raw_value();
-        let lhs;
-        let rhs;
-        match lhs_value {
-            VariableValue::Int(i0) => { lhs = i0; }
-            _ => unreachable!()
-        }
-        match rhs_value {
-            VariableValue::Int(i1) => { rhs = i1; }
-            _ => unreachable!()
-        }
-        return Ok(lhs > rhs);
-    }
-    else if (lhs_type == DataType::FloatType && rhs_type == DataType::FloatType) ||
-        (lhs_type == DataType::FloatType && rhs_type == DataType::IntType) ||
-        (lhs_type == DataType::IntType && rhs_type == DataType::FloatType) {
-        let lhs_value = lhs.get_var_value().get_raw_value();
-        let rhs_value = rhs.get_var_value().get_raw_value();
-        let lhs;
-        let rhs;
-        match lhs_value {
-            VariableValue::Int(v) => { lhs = v as f32; }
-            VariableValue::Float(v) => { lhs = v; }
-            _ => unreachable!()
-        }
-        match rhs_value {
-            VariableValue::Int(v) => { rhs = v as f32; }
-            VariableValue::Float(v) => { rhs = v; }
-            _ => unreachable!()
-        }
-        return Ok(lhs > rhs);
-    }
-    else {
-        return Err(ExpressionEvaluationFail(format!(">/<= operator does not support {} + {}", String::from(lhs_type), String::from(rhs_type))));
-    }
-}
-
-fn eval_exp_less(lhs:Variable, rhs: Variable, lhs_type: DataType, rhs_type: DataType) -> Result<bool, ParserErrorCode> {
-    if lhs_type == DataType::IntType && rhs_type == DataType::IntType {
-        let lhs_value = lhs.get_var_value().get_raw_value();
-        let rhs_value = rhs.get_var_value().get_raw_value();
-        let lhs;
-        let rhs;
-        match lhs_value {
-            VariableValue::Int(i0) => { lhs = i0; }
-            _ => unreachable!()
-        }
-        match rhs_value {
-            VariableValue::Int(i1) => { rhs = i1; }
-            _ => unreachable!()
-        }
-        return Ok(lhs < rhs);
-    }
-    else if (lhs_type == DataType::FloatType && rhs_type == DataType::FloatType) ||
-        (lhs_type == DataType::FloatType && rhs_type == DataType::IntType) ||
-        (lhs_type == DataType::IntType && rhs_type == DataType::FloatType) {
-        let lhs_value = lhs.get_var_value().get_raw_value();
-        let rhs_value = rhs.get_var_value().get_raw_value();
-        let lhs;
-        let rhs;
-        match lhs_value {
-            VariableValue::Int(v) => { lhs = v as f32; }
-            VariableValue::Float(v) => { lhs = v; }
-            _ => unreachable!()
-        }
-        match rhs_value {
-            VariableValue::Int(v) => { rhs = v as f32; }
-            VariableValue::Float(v) => { rhs = v; }
-            _ => unreachable!()
-        }
-        return Ok(lhs < rhs);
-    }
-    else {
-        return Err(ExpressionEvaluationFail(format!("</>= operator does not support {} + {}", String::from(lhs_type), String::from(rhs_type))));
-    }
 }
 
 pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
@@ -529,33 +755,33 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
             let rhs_type = (*rhs.get_type().read().unwrap()).clone();
             match op.as_rule() {
                 Rule::OP_LogicalEq => {
-                    let result = eval_exp_equal(lhs.clone(), rhs.clone(), lhs_type.clone(), rhs_type.clone());
+                    let result = eval_op_equal(lhs.clone(), rhs.clone(), lhs_type.clone(), rhs_type.clone());
                     if result.is_err() { return Err(result.err().unwrap()); }
                     return Ok(Variable::new_bool(String::from(""), result.ok().unwrap()));
                 },
                 Rule::OP_LogicalNotEq => {
-                    let result = eval_exp_equal(lhs.clone(), rhs.clone(), lhs_type.clone(), rhs_type.clone());
+                    let result = eval_op_equal(lhs.clone(), rhs.clone(), lhs_type.clone(), rhs_type.clone());
                     if result.is_err() { return Err(result.err().unwrap()); }
                     return Ok(Variable::new_bool(String::from(""), !result.ok().unwrap()));
                 },
 
                 Rule::OP_Greater => {
-                    let result = eval_exp_greater(lhs.clone(), rhs.clone(), lhs_type.clone(), rhs_type.clone());
+                    let result = eval_op_greater(lhs.clone(), rhs.clone(), lhs_type.clone(), rhs_type.clone());
                     if result.is_err() { return Err(result.err().unwrap()); }
                     return Ok(Variable::new_bool(String::from(""), result.ok().unwrap()));
                 },
                 Rule::OP_GreaterEq => {
-                    let result = eval_exp_less(lhs.clone(), rhs.clone(), lhs_type.clone(), rhs_type.clone());
+                    let result = eval_op_less(lhs.clone(), rhs.clone(), lhs_type.clone(), rhs_type.clone());
                     if result.is_err() { return Err(result.err().unwrap()); }
                     return Ok(Variable::new_bool(String::from(""), !result.ok().unwrap()));
                 },
                 Rule::OP_Less => {
-                    let result = eval_exp_less(lhs.clone(), rhs.clone(), lhs_type.clone(), rhs_type.clone());
+                    let result = eval_op_less(lhs.clone(), rhs.clone(), lhs_type.clone(), rhs_type.clone());
                     if result.is_err() { return Err(result.err().unwrap()); }
                     return Ok(Variable::new_bool(String::from(""), result.ok().unwrap()));
                 },
                 Rule::OP_LessEq => {
-                    let result = eval_exp_greater(lhs.clone(), rhs.clone(), lhs_type.clone(), rhs_type.clone());
+                    let result = eval_op_greater(lhs.clone(), rhs.clone(), lhs_type.clone(), rhs_type.clone());
                     if result.is_err() { return Err(result.err().unwrap()); }
                     return Ok(Variable::new_bool(String::from(""), !result.ok().unwrap()));
                 },
@@ -671,8 +897,8 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
                             DataType::ArrayType(inner_type) => {
                                 let inner_type = (*inner_type.read().unwrap()).clone();
                                 if rhs_type == inner_type || (rhs_type == DataType::IntType && inner_type == DataType::FloatType) {
-                                    let mut variable_value_infer = lhs.get_var_value();
-                                    let mut variable_value = variable_value_infer.get_raw_value();
+                                    let variable_value_infer = lhs.get_var_value();
+                                    let variable_value = variable_value_infer.get_raw_value();
                                     let mut output_variable = Variable::new(String::from(""), DataType::UnknownType, String::from(""));
                                     match variable_value.clone() {
                                         VariableValue::ArrayBool(var) => {
@@ -719,8 +945,8 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
                             DataType::ArrayType(inner_type) => {
                                 let inner_type = (*inner_type.read().unwrap()).clone();
                                 if lhs_type == inner_type || (lhs_type == DataType::IntType && inner_type == DataType::FloatType) {
-                                    let mut variable_value_infer = rhs.get_var_value();
-                                    let mut variable_value = variable_value_infer.get_raw_value();
+                                    let variable_value_infer = rhs.get_var_value();
+                                    let variable_value = variable_value_infer.get_raw_value();
                                     let mut output_variable = Variable::new(String::from(""), DataType::UnknownType, String::from(""));
                                     match variable_value.clone() {
                                         VariableValue::ArrayBool(var) => {
@@ -1098,49 +1324,4 @@ pub fn infer_variable(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, pro
         var_write.set_type(value_result.get_type());
     }
     return Ok(());
-}
-
-#[test]
-fn simple0() {
-    use std::env;
-    let base_dir = env::current_dir().expect("not found path");
-    let paths:Vec<String>;
-    if base_dir.ends_with("tydi-lang") {
-        paths = vec![String::from("./tydi_lang_parser/tydi_source/simple_0.td"),
-                     String::from("./tydi_lang_parser/tydi_source/simple_1.td")];
-    }
-    else if base_dir.ends_with("tydi_lang_parser") {
-        paths = vec![String::from("./tydi_source/simple_0.td"),
-                     String::from("./tydi_source/simple_1.td")];
-    }
-    else { todo!() }
-
-    let result = parse_multi_files_mt(String::from("test_project"), paths.clone(), None);
-    match result {
-        Ok(project) => {
-            {
-                println!("{}", project.read().unwrap().pretty_print(0, false));
-            }
-            {
-                let package = project.read().unwrap().packages["simple_0"].clone();
-                let package_scope = package.read().unwrap().get_scope().clone();
-                for (_, var) in package_scope.read().unwrap().vars.clone() {
-                    let result = infer_variable(var, package_scope.clone(), project.clone());
-                    if result.is_err() { println!("{}", String::from(result.err().unwrap()));return; }
-                }
-            }
-            {
-                println!("{}", project.read().unwrap().pretty_print(0, false));
-            }
-        }
-        Err(errors) => {
-            for index in 0..errors.len() {
-                match errors[index].clone() {
-                    Ok(_) => { println!("{}:no error", paths[index]) }
-                    Err(e) => println!("{}: error: {}", paths[index], String::from(e))
-                }
-            }
-        }
-    }
-    assert!(true);
 }
