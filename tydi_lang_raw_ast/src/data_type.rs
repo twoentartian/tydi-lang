@@ -251,7 +251,7 @@ impl Scope {
             }
         }
 
-        return Err(ErrorCode::IdNotFound(format!("variable {} not found", name_.clone())));
+        return Err(ErrorCode::IdNotFound(format!("type {} not found", name_.clone())));
     }
 
     pub fn resolve_type_from_scope(& self, name_: String) -> Result<Arc<RwLock<TypeAlias>>, ErrorCode> {

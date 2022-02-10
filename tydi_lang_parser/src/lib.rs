@@ -8,6 +8,7 @@ extern crate threadpool;
 
 use std::fs;
 use std::sync::{Arc, RwLock};
+use std::sync::atomic::AtomicBool;
 
 use ParserErrorCode::{AnalysisCodeStructureFail, FileError};
 use pest::{Parser};
@@ -26,7 +27,8 @@ use tydi_lang_raw_ast::implement::ImplementType;
 mod test_lex;
 mod test_parse_project;
 mod test_evaluation_simple;
-mod evaluation_infer;
+mod evaluation_var;
+mod evaluation_type;
 
 
 #[derive(Parser)]
@@ -40,6 +42,7 @@ pub enum ParserErrorCode {
     FileError(String),
     AnalysisCodeStructureFail(String),
     ExpressionEvaluationFail(String),
+    TypeEvaluationFail(String),
 }
 
 impl From<ParserErrorCode> for String {
@@ -50,6 +53,7 @@ impl From<ParserErrorCode> for String {
             ParserErrorCode::FileError(s) => { format!("FileError:{}", s) }
             ParserErrorCode::AnalysisCodeStructureFail(s) => { format!("AnalysisCodeStructureFail:{}", s) }
             ParserErrorCode::ExpressionEvaluationFail(s) => { format!("ExpressionEvaluationFail:{}", s) }
+            ParserErrorCode::TypeEvaluationFail(s) => { format!("TypeEvaluationFail:{}", s) }
         }
     }
 }
@@ -853,6 +857,7 @@ pub fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
                         _ => { unreachable!() }
                     }
                 }
+
                 let result = streamlet.new_port(exp.clone(), inferred!(infer_logical_data_type!(), Arc::new(RwLock::new(logical_type))), port_dir);
                 if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
             },
@@ -1041,15 +1046,30 @@ pub fn get_logical_type(exp: Pairs<Rule>, id: String, scope: Arc<RwLock<Scope>>)
                 output = LogicalDataType::DataBitType(logical_bit);
             },
             Rule::LogicalStreamType => {
+                let mut flag_logical_type = false;
+                let mut flag_dimension = false;
+                let mut flag_user = false;
+                let mut flag_throughput = false;
+                let mut flag_sync = false;
+                let mut flag_complexity = false;
+                let mut flag_direction = false;
+                let mut flag_keep = false;
+
                 let mut logical_stream = LogicalStream::new(id.clone(), inferred!(infer_logical_data_type!(), Arc::new(RwLock::new(LogicalDataType::DataNull))));
                 for e in element.into_inner() {
                     match e.clone().as_rule() {
                         Rule::LogicalType => {
+                            if !flag_logical_type { flag_logical_type = true; }
+                            else { return Err(ParserErrorCode::ParserError(format!("stream logical type override"))); }
+
                             let result = get_logical_type(e.into_inner(), String::from(""), scope.clone());
                             if result.is_err() { return result; }
                             logical_stream.set_data_type(inferred!(infer_logical_data_type!(), Arc::new(RwLock::new(result.ok().unwrap()))));
                         },
                         Rule::StreamPropertyDimension => {
+                            if !flag_dimension { flag_dimension = true; }
+                            else { return Err(ParserErrorCode::ParserError(format!("stream dimension override"))); }
+
                             let mut exp = String::from("");
                             for e in e.clone().into_inner() {
                                 match e.as_rule() {
@@ -1062,6 +1082,9 @@ pub fn get_logical_type(exp: Pairs<Rule>, id: String, scope: Arc<RwLock<Scope>>)
                             logical_stream.set_dimension(Variable::new(String::from("$dimension$"), DataType::IntType, exp));
                         },
                         Rule::StreamPropertyUserType => {
+                            if !flag_user { flag_user = true; }
+                            else { return Err(ParserErrorCode::ParserError(format!("stream user type override"))); }
+
                             for e in e.clone().into_inner() {
                                 match e.as_rule() {
                                     Rule::LogicalType => {
@@ -1074,6 +1097,9 @@ pub fn get_logical_type(exp: Pairs<Rule>, id: String, scope: Arc<RwLock<Scope>>)
                             }
                         },
                         Rule::StreamPropertyThroughput => {
+                            if !flag_throughput { flag_throughput = true; }
+                            else { return Err(ParserErrorCode::ParserError(format!("stream throughput override"))); }
+
                             let mut exp = String::from("");
                             for e in e.clone().into_inner() {
                                 match e.as_rule() {
@@ -1086,6 +1112,9 @@ pub fn get_logical_type(exp: Pairs<Rule>, id: String, scope: Arc<RwLock<Scope>>)
                             logical_stream.set_throughput(Variable::new(String::from("$throughput$"), DataType::FloatType, exp));
                         },
                         Rule::StreamPropertySynchronicity => {
+                            if !flag_sync { flag_sync = true; }
+                            else { return Err(ParserErrorCode::ParserError(format!("stream synchronicity override"))); }
+
                             let mut exp = String::from("");
                             for e in e.clone().into_inner() {
                                 match e.as_rule() {
@@ -1096,10 +1125,12 @@ pub fn get_logical_type(exp: Pairs<Rule>, id: String, scope: Arc<RwLock<Scope>>)
                                 }
                             }
                             let sync = LogicalStreamSynchronicity::from(exp.clone());
-                            if sync == LogicalStreamSynchronicity::Unknown { return Err(AnalysisCodeStructureFail(format!("{} cannot be resolve as a valid stream synchronicity", exp.clone()))); }
                             logical_stream.set_synchronicity(sync);
                         },
                         Rule::StreamPropertyComplexity => {
+                            if !flag_complexity { flag_complexity = true; }
+                            else { return Err(ParserErrorCode::ParserError(format!("stream complexity override"))); }
+
                             let mut exp = String::from("");
                             for e in e.clone().into_inner() {
                                 match e.as_rule() {
@@ -1112,6 +1143,9 @@ pub fn get_logical_type(exp: Pairs<Rule>, id: String, scope: Arc<RwLock<Scope>>)
                             logical_stream.set_complexity(Variable::new(String::from("$complexity$"), DataType::IntType, exp));
                         },
                         Rule::StreamPropertyDirection => {
+                            if !flag_direction { flag_direction = true; }
+                            else { return Err(ParserErrorCode::ParserError(format!("stream direction override"))); }
+
                             let mut exp = String::from("");
                             for e in e.clone().into_inner() {
                                 match e.as_rule() {
@@ -1122,10 +1156,12 @@ pub fn get_logical_type(exp: Pairs<Rule>, id: String, scope: Arc<RwLock<Scope>>)
                                 }
                             }
                             let dir = LogicalStreamDirection::from(exp.clone());
-                            if dir == LogicalStreamDirection::Unknown { return Err(AnalysisCodeStructureFail(format!("{} cannot be resolve as a valid stream direction", exp.clone()))); }
                             logical_stream.set_direction(dir);
                         },
                         Rule::StreamPropertyKeep => {
+                            if !flag_keep { flag_keep = true; }
+                            else { return Err(ParserErrorCode::ParserError(format!("stream keep override"))); }
+
                             let mut exp = String::from("");
                             for e in e.clone().into_inner() {
                                 match e.as_rule() {

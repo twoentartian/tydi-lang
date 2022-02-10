@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
-use crate::{generate_get, inferred, infer_logical_data_type};
+use crate::{generate_get, generate_access, generate_set, inferred, infer_logical_data_type};
 use crate::logical_data_type::LogicalDataType;
 use crate::scope::{Scope, ScopeType};
 use crate::type_alias::TypeAlias;
@@ -31,7 +31,7 @@ pub struct LogicalBit {
 
 impl LogicalBit {
     generate_get!(name, String, get_name);
-    generate_get!(bit, Arc<RwLock<Variable>>, get_bit);
+    generate_access!(bit, Arc<RwLock<Variable>>, get_bit, set_bit);
 
     pub fn new(name_: String, exp_: String) -> Self {
         Self {

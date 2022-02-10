@@ -43,7 +43,7 @@ UnaryExp = { UnaryOp ~ Exp }
 Term = { ( "(" ~ Exp ~ ")") |
             ExpLog | ExpBitWiseNot | ExpConstInType | ExpRound | ExpFloor | ExpCeil | ExpIndex |
             ArrayRange | ArrayExp | IntExp | StringExp | BoolExp | FloatExp | ExternalVar | Var |
-            ExpConstInStreamlet | ExpExternalConstInStreamlet | ExpConstInImplement | ExpExternalConstInStreamlet |
+            ExpConstInStreamlet | ExpExternalConstInStreamlet | ExpConstInImplement | ExpExternalConstInImplement |
             UnaryExp }
 
 Exp = { Term ~ (InfixOp  ~ Term)* }

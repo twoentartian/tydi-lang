@@ -261,11 +261,6 @@ dependencies = [
 [[package]]
 name = "tydi-lang"
 version = "0.1.0"
-dependencies = [
- "tydi_lang_front_end",
- "tydi_lang_parser",
- "tydi_lang_raw_ast",
-]
 
 [[package]]
 name = "tydi_lang_front_end"

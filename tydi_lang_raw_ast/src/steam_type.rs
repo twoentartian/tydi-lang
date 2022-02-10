@@ -9,7 +9,7 @@ use crate::inferable::{NewInferable, Inferable};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LogicalStreamSynchronicity {
-    Unknown,
+    Unknown(String),
     Sync,
     Flatten,
     Desync,
@@ -19,7 +19,7 @@ pub enum LogicalStreamSynchronicity {
 impl From<LogicalStreamSynchronicity> for String {
     fn from(s: LogicalStreamSynchronicity) -> Self {
         match s {
-            LogicalStreamSynchronicity::Unknown => { String::from("Unknown") }
+            LogicalStreamSynchronicity::Unknown(s) => { format!("Unknown({})", s.clone()) }
             LogicalStreamSynchronicity::Sync => { String::from("Sync") }
             LogicalStreamSynchronicity::Flatten => { String::from("Flatten") }
             LogicalStreamSynchronicity::Desync => { String::from("Desync") }
@@ -34,7 +34,7 @@ impl From<String> for LogicalStreamSynchronicity {
         else if s == String::from("Flatten") || s == String::from("flatten") { return LogicalStreamSynchronicity::Flatten; }
         else if s == String::from("Desync") || s == String::from("desync") { return LogicalStreamSynchronicity::Desync; }
         else if s == String::from("FlatDesync") || s == String::from("flatdesync") { return LogicalStreamSynchronicity::FlatDesync; }
-        else { return LogicalStreamSynchronicity::Unknown; }
+        else { return LogicalStreamSynchronicity::Unknown(s.clone()); }
     }
 }
 
@@ -46,7 +46,7 @@ impl PrettyPrint for LogicalStreamSynchronicity {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LogicalStreamDirection {
-    Unknown,
+    Unknown(String),
     Forward,
     Reverse,
 }
@@ -54,7 +54,7 @@ pub enum LogicalStreamDirection {
 impl From<LogicalStreamDirection> for String {
     fn from(d: LogicalStreamDirection) -> Self {
         match d {
-            LogicalStreamDirection::Unknown => { String::from("Unknown") }
+            LogicalStreamDirection::Unknown(s) => { format!("Unknown({})", s.clone()) }
             LogicalStreamDirection::Forward => { String::from("Forward") }
             LogicalStreamDirection::Reverse => { String::from("Reverse") }
         }
@@ -65,7 +65,7 @@ impl From<String> for LogicalStreamDirection {
     fn from(s: String) -> Self {
         if s == String::from("Forward") || s == String::from("forward") { return LogicalStreamDirection::Forward; }
         else if s == String::from("Reverse") || s == String::from("reverse") { return LogicalStreamDirection::Reverse; }
-        else { return LogicalStreamDirection::Unknown; }
+        else { return LogicalStreamDirection::Unknown(s.clone()); }
     }
 }
 

@@ -179,7 +179,7 @@ fn eval_exp_int(int_exp: Pairs<Rule>, _: Arc<RwLock<Scope>>, _: Arc<RwLock<Proje
     unreachable!()
 }
 
-fn eval_exp_Unary(unary_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
+fn eval_exp_unary(unary_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
     let mut unary_op = String::from("");
     let mut var = Variable::new_int(String::from(""), 0);
     for item in unary_exp.into_iter() {
@@ -513,11 +513,11 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
             Rule::ExpConstInImplement => {
                 todo!()
             }
-            Rule::ExpExternalConstInStreamlet => {
+            Rule::ExpExternalConstInImplement => {
                 todo!()
             }
             Rule::UnaryExp => {
-                return eval_exp_Unary(term_inner.into_inner(), scope.clone(), project.clone());
+                return eval_exp_unary(term_inner.into_inner(), scope.clone(), project.clone());
             }
 
             Rule::Var => {
@@ -1296,8 +1296,8 @@ pub fn infer_variable(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, pro
     let origin_var_type = var.read().unwrap().get_type();
     if *origin_var_type.read().unwrap() == DataType::PackageType { return Ok(()); }
 
-    //not user variable
-    if var.read().unwrap().get_name().contains("$") { return Ok(()); }
+    //import package var
+    if var.read().unwrap().get_name().contains("$package$") { return Ok(()); }
 
     let value_result = parse_eval_exp(var.read().unwrap().get_var_value().get_raw_exp(), scope.clone(), project.clone());
     if value_result.is_err() {
@@ -1325,3 +1325,4 @@ pub fn infer_variable(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, pro
     }
     return Ok(());
 }
+

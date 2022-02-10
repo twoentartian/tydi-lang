@@ -3,7 +3,11 @@ name = "tydi-lang"
 version = "0.1.0"
 description = "Tydi-lang complier front end"
 
+[workspace]
+members = [
+    "tydi_lang_raw_ast",
+    "tydi_lang_parser",
+    "tydi_lang_front_end",
+]
+
 [dependencies]
-tydi_lang_parser = { path = "tydi_lang_parser" }
-tydi_lang_raw_ast = { path = "tydi_lang_raw_ast" }
-tydi_lang_front_end = { path = "tydi_lang_front_end" }
