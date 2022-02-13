@@ -86,7 +86,7 @@ ExpCeil = { "ceil" ~ "(" ~ Exp ~ ")" }
 
 ///////////////////////  start of logical_type.sdf3  ///////////////////////
 TypeIndicatorBasicType = { BasicType }
-TypeIndicatorBasicArrayType = { BasicType ~ "[]" }
+TypeIndicatorBasicArrayType = { "[" ~ BasicType ~ "]" }
 TypeIndicator = _{ ( (":"  ~ TypeIndicatorBasicArrayType) | ( ":" ~ TypeIndicatorBasicType) )? }
 
 LogicalExternalType = { ID ~ "." ~ ID }

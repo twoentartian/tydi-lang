@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 use crate::variable::Variable;
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
@@ -15,23 +16,30 @@ pub enum StreamletType {
     UnknownType,
     NormalStreamlet,
     TemplateStreamlet(Vec<Arc<RwLock<Variable>>>),
-    DummyStremlet,
+}
+
+impl DeepClone for StreamletType {
+    fn deep_clone(&self) -> Self {
+        return match self {
+            StreamletType::TemplateStreamlet(var_vec) => StreamletType::TemplateStreamlet(var_vec.deep_clone()),
+            _ => self.clone(),
+        }
+    }
 }
 
 impl From<StreamletType> for String {
     fn from(type_: StreamletType) -> Self {
-        match type_ {
-            StreamletType::UnknownType => { return String::from("UnknownType"); },
-            StreamletType::NormalStreamlet => { return String::from("NormalStreamlet"); },
+        return match type_ {
+            StreamletType::UnknownType => { String::from("UnknownType") },
+            StreamletType::NormalStreamlet => { String::from("NormalStreamlet") },
             StreamletType::TemplateStreamlet(vars) => {
                 let mut output = String::from("");
                 for v in vars {
                     let type_ = v.read().unwrap().get_type();
-                    output.push_str(&format!("@{}", String::from((*(type_.read().unwrap())).clone()) ));
+                    output.push_str(&format!("@{}", String::from((*(type_.read().unwrap())).clone())));
                 }
-                return output;
+                output
             },
-            StreamletType::DummyStremlet => { return String::from("DummyStremlet"); },
         }
     }
 }
@@ -48,6 +56,20 @@ pub struct Streamlet {
 
     streamlet_type: StreamletType,
     scope: Arc<RwLock<Scope>>,
+}
+
+impl DeepClone for Streamlet {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            streamlet_type: self.streamlet_type.deep_clone(),
+            scope: self.scope.deep_clone(),
+        };
+        {
+            output.scope.write().unwrap().set_self_ref(output.scope.clone());
+        }
+        return output;
+    }
 }
 
 impl Streamlet {

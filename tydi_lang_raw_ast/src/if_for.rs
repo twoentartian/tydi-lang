@@ -1,5 +1,6 @@
 use std::sync::{Arc, RwLock};
 use data_type::DataType;
+use deep_clone::DeepClone;
 
 use crate::error::ErrorCode;
 use crate::{generate_get, generate_access, generate_set};
@@ -14,6 +15,20 @@ pub struct ElifScope {
     name: String,
     elif_exp: Arc<RwLock<Variable>>,
     scope: Arc<RwLock<Scope>>,
+}
+
+impl DeepClone for ElifScope {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            elif_exp: self.elif_exp.deep_clone(),
+            scope: self.scope.deep_clone(),
+        };
+        {
+            output.scope.write().unwrap().set_self_ref(output.scope.clone());
+        }
+        return output;
+    }
 }
 
 impl ElifScope {
@@ -51,6 +66,19 @@ impl PrettyPrint for ElifScope {
 pub struct ElseScope {
     name: String,
     scope: Arc<RwLock<Scope>>,
+}
+
+impl DeepClone for ElseScope {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            scope: self.scope.deep_clone(),
+        };
+        {
+            output.scope.write().unwrap().set_self_ref(output.scope.clone());
+        }
+        return output;
+    }
 }
 
 impl PrettyPrint for ElseScope {
@@ -91,6 +119,22 @@ pub struct IfScope {
     else_element: Option<ElseScope>,
 }
 
+impl DeepClone for IfScope {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            if_exp: self.if_exp.deep_clone(),
+            scope: self.scope.deep_clone(),
+            elif_elements: self.elif_elements.deep_clone(),
+            else_element: self.else_element.deep_clone(),
+        };
+        {
+            output.scope.write().unwrap().set_self_ref(output.scope.clone());
+        }
+        return output;
+    }
+}
+
 impl IfScope {
     generate_get!(name, String, get_name);
     generate_access!(if_exp, Arc<RwLock<Variable>>, get_if_exp, set_if_exp);
@@ -111,7 +155,6 @@ impl IfScope {
             else_element: None,
         }
     }
-
 }
 
 impl From<IfScope> for String {
@@ -210,6 +253,21 @@ pub struct ForScope {
     for_var_exp: Arc<RwLock<Variable>>,
     for_array_exp: Arc<RwLock<Variable>>,
     scope: Arc<RwLock<Scope>>,
+}
+
+impl DeepClone for ForScope {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            for_var_exp: self.for_var_exp.deep_clone(),
+            for_array_exp: self.for_array_exp.deep_clone(),
+            scope: self.scope.deep_clone(),
+        };
+        {
+            output.scope.write().unwrap().set_self_ref(output.scope.clone());
+        }
+        return output;
+    }
 }
 
 impl ForScope {

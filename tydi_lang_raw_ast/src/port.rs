@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 use variable::Variable;
 use crate::logical_data_type::LogicalDataType;
 use crate::util::{generate_padding, PrettyPrint};
@@ -13,6 +14,12 @@ pub enum PortDirection {
     Input,
     Output,
     Unknown,
+}
+
+impl DeepClone for PortDirection {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
 }
 
 impl From<PortDirection> for String {
@@ -32,12 +39,21 @@ pub enum PortArray {
     ArrayPort(Arc<RwLock<Variable>>),
 }
 
+impl DeepClone for PortArray {
+    fn deep_clone(&self) -> Self {
+        return match self {
+            PortArray::ArrayPort(var) => PortArray::ArrayPort(var.deep_clone()),
+            _ => self.clone(),
+        }
+    }
+}
+
 impl From<PortArray> for String {
     fn from(arr: PortArray) -> Self {
         return match arr {
             PortArray::UnknownPortArray => { String::from("UnknownPortArray") }
-            PortArray::SinglePort => { String::from("SinglePort") }
-            PortArray::ArrayPort(p) => { format!("ArrayPort({})", String::from((*p.read().unwrap()).clone())) }
+            PortArray::SinglePort => { String::from("") }
+            PortArray::ArrayPort(p) => { format!("[{}]", String::from((*p.read().unwrap()).clone())) }
         }
     }
 }
@@ -48,6 +64,17 @@ pub struct Port {
     port_type: Inferable<Arc<RwLock<LogicalDataType>>>,
     direction: PortDirection,
     array_type: PortArray,
+}
+
+impl DeepClone for Port {
+    fn deep_clone(&self) -> Self {
+        return Self {
+            name: self.name.deep_clone(),
+            port_type: self.port_type.deep_clone(),
+            direction: self.direction.deep_clone(),
+            array_type: self.array_type.deep_clone(),
+        }
+    }
 }
 
 impl Port {
@@ -107,6 +134,20 @@ impl Scope {
         };
         let port = Port::new(name_.clone(), type_.clone(), dir.clone());
         self.ports.insert(name_.clone(), Arc::new(RwLock::new(port)));
+
+        return Ok(());
+    }
+
+    pub fn with_port(&mut self, port: Arc<RwLock<Port>>) -> Result<(), ErrorCode> {
+        if self.scope_type != ScopeType::StreamletScope { return Err(ErrorCode::ScopeNotAllowed(String::from("port is only allowed to define in streamlet"))); }
+
+        let name_ = port.read().unwrap().get_name();
+        match self.types.get(&name_) {
+            None => {}
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("port {} already defined", name_.clone()))); }
+        };
+
+        self.ports.insert(name_.clone(), port.clone());
 
         return Ok(());
     }

@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 use crate::logical_data_type::LogicalDataType;
 use crate::error::ErrorCode;
 use crate::{generate_access, generate_get, generate_set, generate_set_in_arc_rwlock, inferred, infer_logical_data_type};
@@ -14,6 +15,12 @@ pub enum LogicalStreamSynchronicity {
     Flatten,
     Desync,
     FlatDesync,
+}
+
+impl DeepClone for LogicalStreamSynchronicity {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
 }
 
 impl From<LogicalStreamSynchronicity> for String {
@@ -49,6 +56,12 @@ pub enum LogicalStreamDirection {
     Unknown(String),
     Forward,
     Reverse,
+}
+
+impl DeepClone for LogicalStreamDirection {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
 }
 
 impl From<LogicalStreamDirection> for String {
@@ -88,6 +101,22 @@ pub struct LogicalStream {
     complexity: Arc<RwLock<Variable>>,
     direction: LogicalStreamDirection,
     keep: Arc<RwLock<Variable>>,
+}
+
+impl DeepClone for LogicalStream {
+    fn deep_clone(&self) -> Self {
+        return Self {
+            name: self.name.deep_clone(),
+            data_type: self.data_type.deep_clone(),
+            dimension: self.dimension.deep_clone(),
+            user_type: self.user_type.deep_clone(),
+            throughput: self.throughput.deep_clone(),
+            synchronicity: self.synchronicity.deep_clone(),
+            complexity: self.complexity.deep_clone(),
+            direction: self.direction.deep_clone(),
+            keep: self.keep.deep_clone(),
+        }
+    }
 }
 
 impl LogicalStream {

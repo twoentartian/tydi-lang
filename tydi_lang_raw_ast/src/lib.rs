@@ -16,6 +16,7 @@ pub mod inferable;
 pub mod instances;
 pub mod connection;
 pub mod if_for;
+pub mod deep_clone;
 
 mod test_print_project;
 

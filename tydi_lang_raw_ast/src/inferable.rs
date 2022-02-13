@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 use crate::logical_data_type::LogicalDataType;
 use crate::{generate_get, generate_set, generate_access, infer_logical_data_type, not_inferred};
 use crate::port::PortDirection;
@@ -13,15 +14,31 @@ pub enum InferState {
     NotInferred,
 }
 
+impl DeepClone for InferState {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
+}
+
 #[derive(Clone, Debug)]
-pub struct Inferable<T> where T: Clone {
+pub struct Inferable<T> where T: Clone + DeepClone {
     raw_exp: String,
 
     infer_state: InferState,
     raw_value: T,
 }
 
-impl<T> Inferable<T> where T:Clone {
+impl<T> DeepClone for Inferable<T> where T: Clone + DeepClone {
+    fn deep_clone(&self) -> Self {
+        return Self {
+            raw_exp: self.raw_exp.deep_clone(),
+            infer_state: self.infer_state.deep_clone(),
+            raw_value: self.raw_value.deep_clone(),
+        }
+    }
+}
+
+impl<T> Inferable<T> where T: Clone + DeepClone {
     generate_get!(raw_exp, String, get_raw_exp);
     generate_access!(infer_state, InferState, get_infer_state, set_infer_state);
     generate_access!(raw_value, T, get_raw_value, set_raw_value);
@@ -139,7 +156,7 @@ inferable_new_wrapper!(VariableValue);
 inferable_new_wrapper!(Arc<RwLock<Streamlet>>);
 
 /// From Inferable to String
-impl<T> From< Inferable<Arc<RwLock<T>>> > for String where T: Clone, String: From<T> {
+impl<T> From< Inferable<Arc<RwLock<T>>> > for String where T: Clone + DeepClone, String: From<T> {
     fn from(t: Inferable<Arc<RwLock<T>>>) -> Self {
         return match t.infer_state {
             InferState::Inferred => { String::from( (*t.raw_value.read().unwrap()).clone()) }
@@ -158,7 +175,7 @@ impl From< Inferable<VariableValue> > for String {
 }
 
 /// PrettyPrint for Inferable
-impl<T> PrettyPrint for Inferable<Arc<RwLock<T>>> where T: PrettyPrint {
+impl<T> PrettyPrint for Inferable<Arc<RwLock<T>>> where T: PrettyPrint + DeepClone + Clone {
     fn pretty_print(&self, depth: u32, verbose: bool) -> String {
         return match self.infer_state {
             InferState::Inferred => { self.raw_value.read().unwrap().pretty_print(depth, verbose) }

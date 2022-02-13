@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 use crate::bit_null_type::LogicalBit;
 use crate::group_union_type::{LogicalGroup, LogicalUnion};
 use crate::steam_type::LogicalStream;
@@ -21,6 +22,26 @@ pub enum LogicalDataType {
     DataUnionType(String, Arc<RwLock<LogicalUnion>>),
     DataStreamType(String, Arc<RwLock<LogicalStream>>),
     DataUserDefinedVarType(String),
+}
+
+impl DeepClone for LogicalDataType {
+    fn deep_clone(&self) -> Self {
+        return match self {
+            LogicalDataType::DataBitType(logical_bit) => {
+                LogicalDataType::DataBitType(logical_bit.deep_clone())
+            }
+            LogicalDataType::DataGroupType(name, target) => {
+                LogicalDataType::DataGroupType(name.clone(), Arc::new(RwLock::new(target.read().unwrap().deep_clone())))
+            }
+            LogicalDataType::DataUnionType(name, target) => {
+                LogicalDataType::DataUnionType(name.clone(), Arc::new(RwLock::new(target.read().unwrap().deep_clone())))
+            }
+            LogicalDataType::DataStreamType(name, target) => {
+                LogicalDataType::DataStreamType(name.clone(), Arc::new(RwLock::new(target.read().unwrap().deep_clone())))
+            }
+            _ => { self.clone() }
+        }
+    }
 }
 
 impl PartialEq for LogicalDataType {

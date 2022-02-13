@@ -393,7 +393,7 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
                         _ => unreachable!()
                     }
                 }
-                let mut output_value: i32 = 0;
+                let output_value: i32;
                 match input_exp.get_var_value().get_raw_value() {
                     VariableValue::Int(v) => {
                         output_value = v;
@@ -417,7 +417,7 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
                         _ => unreachable!()
                     }
                 }
-                let mut output_value: i32 = 0;
+                let output_value: i32;
                 match input_exp.get_var_value().get_raw_value() {
                     VariableValue::Int(v) => {
                         output_value = v;
@@ -441,7 +441,7 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
                         _ => unreachable!()
                     }
                 }
-                let mut output_value: i32 = 0;
+                let output_value: i32;
                 match input_exp.get_var_value().get_raw_value() {
                     VariableValue::Int(v) => {
                         output_value = v;
@@ -899,7 +899,7 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
                                 if rhs_type == inner_type || (rhs_type == DataType::IntType && inner_type == DataType::FloatType) {
                                     let variable_value_infer = lhs.get_var_value();
                                     let variable_value = variable_value_infer.get_raw_value();
-                                    let mut output_variable = Variable::new(String::from(""), DataType::UnknownType, String::from(""));
+                                    let output_variable;
                                     match variable_value.clone() {
                                         VariableValue::ArrayBool(var) => {
                                             let mut var = var.clone();
@@ -947,7 +947,7 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
                                 if lhs_type == inner_type || (lhs_type == DataType::IntType && inner_type == DataType::FloatType) {
                                     let variable_value_infer = rhs.get_var_value();
                                     let variable_value = variable_value_infer.get_raw_value();
-                                    let mut output_variable = Variable::new(String::from(""), DataType::UnknownType, String::from(""));
+                                    let output_variable;
                                     match variable_value.clone() {
                                         VariableValue::ArrayBool(var) => {
                                             let mut var = var.clone();

@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 use crate::inferable::{Inferable};
 use crate::logical_data_type::LogicalDataType;
 use crate::util::PrettyPrint;
@@ -8,6 +9,15 @@ use crate::{generate_get, generate_set, generate_access};
 pub struct TypeAlias {
     name: String,
     type_infer: Inferable<Arc<RwLock<LogicalDataType>>>,
+}
+
+impl DeepClone for TypeAlias {
+    fn deep_clone(&self) -> Self {
+        return Self {
+            name: self.name.clone(),
+            type_infer: self.type_infer.deep_clone(),
+        }
+    }
 }
 
 impl TypeAlias {

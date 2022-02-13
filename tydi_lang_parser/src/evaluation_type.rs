@@ -1,11 +1,9 @@
-use std::sync::{Arc, RwLock, RwLockReadGuard};
+use std::sync::{Arc, RwLock};
 use ParserErrorCode::TypeEvaluationFail;
-use tydi_lang_raw_ast::{inferred, infer_logical_data_type};
 use tydi_lang_raw_ast::data_type::DataType;
-use tydi_lang_raw_ast::inferable::{NewInferable, Inferable};
 
 use tydi_lang_raw_ast::project_arch::Project;
-use tydi_lang_raw_ast::scope::{InferState, LogicalDataType, LogicalStreamDirection, LogicalStreamSynchronicity, Scope, TypeAlias, Variable, VariableValue};
+use tydi_lang_raw_ast::scope::{LogicalDataType, LogicalStreamDirection, LogicalStreamSynchronicity, Scope, TypeAlias, Variable, VariableValue};
 
 use crate::{ParserErrorCode};
 use crate::evaluation_var::infer_variable;
@@ -16,9 +14,7 @@ pub fn infer_logical_type(logical_type: Arc<RwLock<LogicalDataType>>, scope: Arc
         LogicalDataType::DummyLogicalData => {
 
         }
-        LogicalDataType::UnknownLogicalDataType => {
-
-        }
+        LogicalDataType::UnknownLogicalDataType => { unreachable!() }
         LogicalDataType::ExternalLogicalDataType(package_id, type_name) => {
             //check import
             {
@@ -202,11 +198,40 @@ pub fn infer_logical_type(logical_type: Arc<RwLock<LogicalDataType>>, scope: Arc
         }
         LogicalDataType::DataUserDefinedVarType(name) => {
             let result = scope.read().unwrap().resolve_type_from_scope(name.clone());
-            if result.is_err() { return Err(TypeEvaluationFail(String::from(result.err().unwrap()))); }
-            let result = result.ok().unwrap();
-            let result_logical_type = result.read().unwrap().get_type_infer().get_raw_value();
-            *logical_type.write().unwrap() = (*result_logical_type.read().unwrap()).clone();
-            //type_alias.write().unwrap().set_type_infer(inferred!(infer_logical_data_type!(), result_logical_type.clone()));
+            if result.is_err() {
+                //resolve in var, it might be a dummy logical type
+                let result_in_dummy = scope.read().unwrap().resolve_variable_from_scope(name.clone());
+                if result_in_dummy.is_err() { return Err(TypeEvaluationFail(format!("type {} not found", name.clone()))); }
+                let result_in_dummy = result_in_dummy.ok().unwrap();
+                let result_in_dummy_type = result_in_dummy.read().unwrap().get_type();
+                match (*result_in_dummy_type.read().unwrap()).clone() {
+                    DataType::LogicalDataType(logical_type) => {
+                        match (*logical_type.read().unwrap()) .clone() {
+                            LogicalDataType::DummyLogicalData => {
+                                //resolve the variable expression as a VarType
+                                let var_type_expression = result_in_dummy.read().unwrap().get_var_value().get_raw_exp();
+                                let temp_type_var = Arc::new(RwLock::new(LogicalDataType::DataUserDefinedVarType(var_type_expression)));
+                                let result = infer_logical_type(temp_type_var.clone(), scope.clone(), project.clone());
+                                if result.is_err() { return Err(TypeEvaluationFail(format!("type {} is declared as template arg but not found its instantiation", name.clone()))); }
+                                //assign to the original type arc
+                                *logical_type.write().unwrap() = (*temp_type_var.read().unwrap()).clone();
+                            }
+                            _ => { return Err(TypeEvaluationFail(format!("type {} not found", name.clone()))); }
+                        }
+                    }
+                    _ => { return Err(TypeEvaluationFail(format!("type {} not found", name.clone()))); }
+                };
+            }
+            else {
+                let resolve_result = result.ok().unwrap();
+                let result_logical_type = resolve_result.read().unwrap().get_type_infer().get_raw_value();
+
+                //infer the inner logical type
+                let result = infer_logical_type(result_logical_type.clone(), scope.clone(), project.clone());
+                if result.is_err() { return Err(result.err().unwrap()); }
+                //assign to the original type arc
+                *logical_type.write().unwrap() = (*result_logical_type.read().unwrap()).clone();
+            }
         }
     }
 

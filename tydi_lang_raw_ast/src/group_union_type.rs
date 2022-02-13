@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
 use crate::{generate_get, inferred};
@@ -12,6 +13,19 @@ pub struct LogicalGroup {
     name: String,
 
     scope: Arc<RwLock<Scope>>,
+}
+
+impl DeepClone for LogicalGroup {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            scope: self.scope.deep_clone(),
+        };
+        {
+            output.scope.write().unwrap().set_self_ref(output.scope.clone());
+        }
+        return output;
+    }
 }
 
 impl LogicalGroup {
@@ -61,6 +75,19 @@ pub struct LogicalUnion {
     name: String,
 
     scope: Arc<RwLock<Scope>>,
+}
+
+impl DeepClone for LogicalUnion {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+            scope: self.scope.deep_clone(),
+        };
+        {
+            output.scope.write().unwrap().set_self_ref(output.scope.clone());
+        }
+        return output;
+    }
 }
 
 impl LogicalUnion {

@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
 use crate::{generate_get, generate_access, generate_set};
@@ -16,6 +17,17 @@ pub enum ImplementType {
     AnyImplementOfStreamlet(String, Option<Arc<RwLock<Streamlet>>>),
     TemplateImplement(Vec<Arc<RwLock<Variable>>>),
     DummyImplement,
+}
+
+impl DeepClone for ImplementType {
+    fn deep_clone(&self) -> Self {
+        return match self {
+            // not deep clone for ImplementType::AnyImplementOfStreamlet because parent streamlet shouldn't be cloned
+            ImplementType::AnyImplementOfStreamlet(name, streamlet) => { ImplementType::AnyImplementOfStreamlet(name.deep_clone(), streamlet.clone()) }
+            ImplementType::TemplateImplement(template_exps) => { ImplementType::TemplateImplement(template_exps.deep_clone()) }
+            _ => { self.clone() }
+        }
+    }
 }
 
 impl From<ImplementType> for String {
@@ -50,14 +62,33 @@ pub struct Implement {
     implement_type: ImplementType,
     scope: Arc<RwLock<Scope>>,
 
-    derived_streamlet: Arc<RwLock<Variable>>,
+    derived_streamlet_var: Arc<RwLock<Variable>>,
+    derived_streamlet: Option<Arc<RwLock<Streamlet>>>,
+}
+
+impl DeepClone for Implement {
+    fn deep_clone(&self) -> Self {
+        let output = Self {
+            name: self.name.deep_clone(),
+
+            implement_type: self.implement_type.deep_clone(),
+            scope: self.scope.deep_clone(),
+            derived_streamlet_var: self.derived_streamlet_var.deep_clone(),
+            derived_streamlet: self.derived_streamlet.deep_clone(),
+        };
+        {
+            output.scope.write().unwrap().set_self_ref(output.scope.clone());
+        }
+        return output;
+    }
 }
 
 impl Implement {
     generate_get!(name, String, get_name);
     generate_access!(implement_type, ImplementType, get_type, set_type);
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
-    generate_access!(derived_streamlet, Arc<RwLock<Variable>>, get_derived_streamlet, set_derived_streamlet);
+    generate_access!(derived_streamlet_var, Arc<RwLock<Variable>>, get_derived_streamlet_var, set_derived_streamlet_var);
+    generate_access!(derived_streamlet, Option<Arc<RwLock<Streamlet>>>, get_derived_streamlet, set_derived_streamlet);
 
     pub fn set_name(&mut self, name_: String) {
         self.name = name_.clone();
@@ -74,7 +105,8 @@ impl Implement {
             implement_type: type_,
             scope: scope_,
 
-            derived_streamlet: Arc::new(RwLock::new(Variable::new(String::from(""), DataType::UnknownType, String::from("")))),
+            derived_streamlet_var: Arc::new(RwLock::new(Variable::new(String::from(""), DataType::UnknownType, String::from("")))),
+            derived_streamlet: None,
         }
     }
 
@@ -92,7 +124,6 @@ impl Implement {
         let mut scope = self.scope.write().unwrap();
         return scope.new_variable(name_.clone(), type_.clone(), exp_.clone());
     }
-
 }
 
 impl From<Implement> for String {
@@ -106,8 +137,13 @@ impl PrettyPrint for Implement {
         let mut output = String::new();
 
         //enter Implement
-        let derived_streamlet = self.derived_streamlet.read().unwrap().get_type();
-        output.push_str(&format!("{}Implement({})<{}> -> {}{{\n", generate_padding(depth), self.name.clone(), String::from(self.implement_type.clone()), String::from((*derived_streamlet.read().unwrap()).clone() )));
+        let derived_streamlet_var = self.derived_streamlet_var.read().unwrap().get_type();
+        let derived_streamlet = self.derived_streamlet.clone();
+        let derived_streamlet_representation = match derived_streamlet {
+            None => String::from((*derived_streamlet_var.read().unwrap()).clone()),
+            Some(streamlet) => return String::from((*streamlet.read().unwrap()).clone() ),
+        };
+        output.push_str(&format!("{}Implement({})<{}> -> {}{{\n", generate_padding(depth), self.name.clone(), String::from(self.implement_type.clone()), derived_streamlet_representation));
         //enter scope
         output.push_str(&format!("{}", self.scope.read().unwrap().pretty_print(depth+1, verbose)));
         //leave Implement

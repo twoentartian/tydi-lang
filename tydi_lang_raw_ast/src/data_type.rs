@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 use crate::error::ErrorCode;
 use crate::logical_data_type::LogicalDataType;
 use crate::scope::{Scope, ScopeRelationType, TypeAlias};
@@ -33,77 +34,94 @@ pub enum DataType {
     ExternalProxyImplementOfStreamlet(String, String, Vec<Arc<RwLock<Variable>>>),
 }
 
+impl DeepClone for DataType {
+    fn deep_clone(&self) -> Self {
+        return match self {
+            DataType::ArrayType(datatype) => { DataType::ArrayType(datatype.deep_clone()) }
+            DataType::LogicalDataType(logical_type) => { DataType::LogicalDataType(logical_type.deep_clone()) }
+            DataType::ExternalProxyType(package, proxy) => { DataType::ExternalProxyType(package.deep_clone(), proxy.deep_clone()) }
+            DataType::ProxyStreamlet(name, proxy) => { DataType::ProxyStreamlet(name.deep_clone(), proxy.deep_clone()) }
+            DataType::ExternalProxyStreamlet(package, name, proxy) => { DataType::ExternalProxyStreamlet(package.deep_clone(), name.deep_clone(), proxy.deep_clone()) }
+            DataType::ProxyImplement(name, proxy) => { DataType::ProxyImplement(name.deep_clone(), proxy.deep_clone()) }
+            DataType::ExternalProxyImplement(package, name, proxy) => { DataType::ExternalProxyImplement(package.deep_clone(), name.deep_clone(), proxy.deep_clone()) }
+            DataType::ProxyImplementOfStreamlet(name, proxy) => { DataType::ProxyImplementOfStreamlet(name.deep_clone(), proxy.deep_clone()) }
+            DataType::ExternalProxyImplementOfStreamlet(package, name, proxy) => { DataType::ExternalProxyImplementOfStreamlet(package.deep_clone(), name.deep_clone(), proxy.deep_clone()) }
+            _ => return self.clone(),
+        }
+    }
+}
+
 impl PartialEq for DataType {
     fn eq(&self, other: &Self) -> bool {
         match self {
             DataType::UnknownType => {
-                match other {
-                    DataType::UnknownType => return true,
-                    _ => return false,
+                return match other {
+                    DataType::UnknownType => true,
+                    _ => false,
                 }
             },
             DataType::UnableToInfer => {
-                match other {
-                    DataType::UnableToInfer => return true,
-                    _ => return false,
+                return match other {
+                    DataType::UnableToInfer => true,
+                    _ => false,
                 }
             },
             DataType::PackageType => {
-                match other {
-                    DataType::PackageType => return true,
-                    _ => return false,
+                return match other {
+                    DataType::PackageType => true,
+                    _ => false,
                 }
             },
 
             DataType::IntType => {
-                match other {
-                    DataType::IntType => return true,
-                    _ => return false,
+                return match other {
+                    DataType::IntType => true,
+                    _ => false,
                 }
             },
             DataType::StringType => {
-                match other {
-                    DataType::StringType => return true,
-                    _ => return false,
+                return match other {
+                    DataType::StringType => true,
+                    _ => false,
                 }
             },
             DataType::BoolType => {
-                match other {
-                    DataType::BoolType => return true,
-                    _ => return false,
+                return match other {
+                    DataType::BoolType => true,
+                    _ => false,
                 }
             },
             DataType::FloatType => {
-                match other {
-                    DataType::FloatType => return true,
-                    _ => return false,
+                return match other {
+                    DataType::FloatType => true,
+                    _ => false,
                 }
             },
 
             DataType::ArrayType(t0) => {
-                match other {
+                return match other {
                     DataType::ArrayType(t1) => {
                         let t0 = (*(t0.read().unwrap())).clone();
                         let t1 = (*(t1.read().unwrap())).clone();
-                        return t0 == t1;
+                        t0 == t1
                     },
-                    _ => return false,
+                    _ => false,
                 }
             },
             DataType::EmptyLogicalDataType => {
-                match other {
-                    DataType::EmptyLogicalDataType => return true,
-                    _ => return false,
+                return match other {
+                    DataType::EmptyLogicalDataType => true,
+                    _ => false,
                 }
             },
             DataType::LogicalDataType(t0) => {
-                match other {
+                return match other {
                     DataType::LogicalDataType(t1) => {
                         let t0 = (*(t0.read().unwrap())).clone();
                         let t1 = (*(t1.read().unwrap())).clone();
-                        return t0 == t1;
+                        t0 == t1
                     },
-                    _ => return false,
+                    _ => false,
                 }
             },
             _ => { unreachable!(); }

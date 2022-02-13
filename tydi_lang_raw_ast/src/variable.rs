@@ -1,5 +1,6 @@
 use std::sync::{Arc, RwLock};
 use std::collections::HashSet;
+use deep_clone::DeepClone;
 use crate::scope::{DataType, ScopeRelationType, Scope};
 use crate::util::{generate_padding, PrettyPrint};
 use crate::{generate_get, generate_set, generate_access};
@@ -17,6 +18,12 @@ pub enum VariableValue {
     ArrayBool(Vec<bool>),
     ArrayFloat(Vec<f32>),
     ArrayStr(Vec<String>),
+}
+
+impl DeepClone for VariableValue {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
 }
 
 impl From<VariableValue> for String {
@@ -91,6 +98,16 @@ pub struct Variable {
     var_type: Arc<RwLock<DataType>>,
 
     var_value: Inferable<VariableValue>,
+}
+
+impl DeepClone for Variable {
+    fn deep_clone(&self) -> Self {
+        return Self {
+            name: self.name.clone(),
+            var_type: self.var_type.deep_clone(),
+            var_value: self.var_value.deep_clone(),
+        }
+    }
 }
 
 impl Variable {

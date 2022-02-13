@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
+use port::PortArray;
 use streamlet::Streamlet;
 use crate::error::ErrorCode;
 use crate::{generate_get, generate_access, generate_set};
@@ -10,27 +12,16 @@ use crate::util::{generate_padding, PrettyPrint};
 use crate::variable::Variable;
 
 #[derive(Clone, Debug)]
-pub enum PortArray {
-    UnknownPortArray,
-    SinglePort,
-    ArrayPort(Arc<RwLock<Variable>>),
-}
-
-impl From<PortArray> for String {
-    fn from(arr: PortArray) -> Self {
-        return match arr {
-            PortArray::UnknownPortArray => { String::from("UnknownPortArray") }
-            PortArray::SinglePort => { String::from("") }
-            PortArray::ArrayPort(p) => { format!("[{}]", String::from((*p.read().unwrap()).clone())) }
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
 pub enum PortOwner {
     UnknownPortOwner,
     SelfOwner,
     ExternalOwner(String, Option<Arc<RwLock<Streamlet>>>, Option<Arc<RwLock<Variable>>>),
+}
+
+impl DeepClone for PortOwner {
+    fn deep_clone(&self) -> Self {
+        return self.clone();//clone() rather than deep clone: the streamlet/variable is a ref of parent instance
+    }
 }
 
 impl From<PortOwner> for String {
@@ -60,6 +51,23 @@ pub struct Connection {
     rhs_port_owner: PortOwner,
     rhs_port_array_type: PortArray,
     delay: Arc<RwLock<Variable>>,
+}
+
+impl DeepClone for Connection {
+    fn deep_clone(&self) -> Self {
+        return Self {
+            name: self.name.deep_clone(),
+
+            lhs_port: self.lhs_port.deep_clone(),
+            lhs_port_owner: self.lhs_port_owner.deep_clone(),
+            lhs_port_array_type: self.lhs_port_array_type.deep_clone(),
+
+            rhs_port: self.rhs_port.deep_clone(),
+            rhs_port_owner: self.rhs_port_owner.deep_clone(),
+            rhs_port_array_type: self.rhs_port_array_type.deep_clone(),
+            delay: self.delay.deep_clone(),
+        }
+    }
 }
 
 impl Connection {

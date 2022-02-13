@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
 use crate::{generate_get, generate_access, generate_set, inferred, infer_logical_data_type};
@@ -13,12 +14,18 @@ pub struct LogicalNull {
     name: String,
 }
 
+impl DeepClone for LogicalNull {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
+}
+
 impl LogicalNull {
     generate_get!(name, String, get_name);
 
     pub fn new(name_: String) -> Self {
         Self {
-            name: name_.clone(),
+            name: name_.deep_clone(),
         }
     }
 }
@@ -27,6 +34,15 @@ impl LogicalNull {
 pub struct LogicalBit {
     name: String,
     bit: Arc<RwLock<Variable>>,
+}
+
+impl DeepClone for LogicalBit {
+    fn deep_clone(&self) -> Self {
+        return Self {
+            name: self.name.deep_clone(),
+            bit: self.bit.deep_clone(),
+        }
+    }
 }
 
 impl LogicalBit {

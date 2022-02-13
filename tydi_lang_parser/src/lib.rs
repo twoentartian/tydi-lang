@@ -8,7 +8,6 @@ extern crate threadpool;
 
 use std::fs;
 use std::sync::{Arc, RwLock};
-use std::sync::atomic::AtomicBool;
 
 use ParserErrorCode::{AnalysisCodeStructureFail, FileError};
 use pest::{Parser};
@@ -29,6 +28,8 @@ mod test_parse_project;
 mod test_evaluation_simple;
 mod evaluation_var;
 mod evaluation_type;
+mod evaluation_streamlet;
+mod evaluation_impl;
 
 
 #[derive(Parser)]
@@ -43,6 +44,8 @@ pub enum ParserErrorCode {
     AnalysisCodeStructureFail(String),
     ExpressionEvaluationFail(String),
     TypeEvaluationFail(String),
+    StreamletEvaluationFail(String),
+    ImplementEvaluationFail(String),
 }
 
 impl From<ParserErrorCode> for String {
@@ -54,10 +57,11 @@ impl From<ParserErrorCode> for String {
             ParserErrorCode::AnalysisCodeStructureFail(s) => { format!("AnalysisCodeStructureFail:{}", s) }
             ParserErrorCode::ExpressionEvaluationFail(s) => { format!("ExpressionEvaluationFail:{}", s) }
             ParserErrorCode::TypeEvaluationFail(s) => { format!("TypeEvaluationFail:{}", s) }
+            ParserErrorCode::StreamletEvaluationFail(s) => { format!("StreamletEvaluationFail:{}", s) }
+            ParserErrorCode::ImplementEvaluationFail(s) => { format!("ImplementEvaluationFail:{}", s) }
         }
     }
 }
-
 
 pub fn parse_multi_files_st(project_name: String, file_paths: Vec<String>) -> Result<Arc<RwLock<project_arch::Project>>, Vec<Result<(),ParserErrorCode>>> {
     use std::path::Path;
@@ -593,7 +597,7 @@ pub fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
 
     // set derived streamlet
     let derived_streamlet = Variable::new(String::from(""), derived_streamlet_type, String::from(""));
-    implement.set_derived_streamlet(Arc::new(RwLock::new(derived_streamlet)));
+    implement.set_derived_streamlet_var(Arc::new(RwLock::new(derived_streamlet)));
 
     // arrach implement
     {
@@ -845,7 +849,7 @@ pub fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
                             exp = item.as_str().to_string();
                         },
                         Rule::LogicalType => {
-                            let result = get_logical_type(item.clone().into_inner(), String::from(""),streamlet.get_scope());
+                            let result = get_logical_type(item.clone().into_inner(), format!("$generated${}", item.as_str().to_string()),streamlet.get_scope());
                             if result.is_err() { return Err(result.err().unwrap()); }
                             logical_type = result.ok().unwrap();
                         },

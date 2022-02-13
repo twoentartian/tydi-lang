@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 use crate::error::ErrorCode;
 use crate::streamlet::Streamlet;
 use crate::{generate_get, generate_set, generate_access};
@@ -13,6 +14,15 @@ pub enum InstanceArray {
     UnknownInstanceArray,
     SingleInstance,
     ArrayInstance(Arc<RwLock<Variable>>),
+}
+
+impl DeepClone for InstanceArray {
+    fn deep_clone(&self) -> Self {
+        return match self {
+            InstanceArray::ArrayInstance(var) => InstanceArray::ArrayInstance(var.deep_clone()),
+            _ => self.clone(),
+        }
+    }
 }
 
 impl From<InstanceArray> for String {
@@ -33,6 +43,19 @@ pub struct Instance {
     streamlet_type: Inferable<Arc<RwLock<Streamlet>>>,
     streamlet_template_argexp: Vec<Arc<RwLock<Variable>>>,
     array_type: InstanceArray,
+}
+
+impl DeepClone for Instance {
+    fn deep_clone(&self) -> Self {
+        return Self {
+            name: self.name.deep_clone(),
+            package: self.package.deep_clone(),
+
+            streamlet_type: self.streamlet_type.deep_clone(),
+            streamlet_template_argexp: self.streamlet_template_argexp.deep_clone(),
+            array_type: self.array_type.deep_clone(),
+        }
+    }
 }
 
 impl Instance {

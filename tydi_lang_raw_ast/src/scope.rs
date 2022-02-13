@@ -1,5 +1,6 @@
 pub use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 
 pub use crate::logical_data_type::*;
 pub use crate::variable::*;
@@ -12,7 +13,7 @@ pub use crate::implement::Implement;
 pub use crate::type_alias::TypeAlias;
 pub use crate::instances::{Instance, InstanceArray};
 pub use crate::if_for::{IfScope, ForScope, ElifScope, ElseScope};
-pub use crate::connection::{Connection, PortOwner, PortArray};
+pub use crate::connection::{Connection, PortOwner};
 
 pub use crate::inferable::*;
 pub use crate::error::ErrorCode;
@@ -30,6 +31,12 @@ pub enum ScopeRelationType {
     IfForScopeRela,
 
     ParentScopeRela, // a placeholder, should never be used
+}
+
+impl DeepClone for ScopeRelationType {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
 }
 
 impl From<ScopeRelationType> for String {
@@ -51,6 +58,16 @@ pub struct ScopeRelationship {
     name: String,
     target_scope: Arc<RwLock<Scope>>,
     relationship: ScopeRelationType,
+}
+
+impl DeepClone for ScopeRelationship {
+    fn deep_clone(&self) -> Self {
+        return Self{
+            name: self.name.clone(),
+            target_scope: self.target_scope.clone(),
+            relationship: self.relationship.deep_clone(),
+        }
+    }
 }
 
 impl ScopeRelationship {
@@ -96,6 +113,12 @@ pub enum ScopeType {
     ParentScope, // a placeholder, should never be used
 }
 
+impl DeepClone for ScopeType {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
+}
+
 impl From<ScopeType> for String {
     fn from(scope_type: ScopeType) -> Self {
         match scope_type {
@@ -129,6 +152,29 @@ pub struct Scope {
 
     pub if_blocks: HashMap<String, Arc<RwLock<IfScope>>>,
     pub for_blocks: HashMap<String, Arc<RwLock<ForScope>>>,
+}
+
+impl DeepClone for Scope {
+    fn deep_clone(&self) -> Self {
+        return Self {
+            name: self.name.clone(),
+            scope_type: self.scope_type.deep_clone(),
+            self_ref: None,
+
+            scope_relationships: self.scope_relationships.deep_clone(),
+            types: self.types.deep_clone(),
+            vars: self.vars.deep_clone(),
+
+            streamlets: self.streamlets.deep_clone(),
+            ports: self.ports.deep_clone(),
+            implements: self.implements.deep_clone(),
+            instances: self.instances.deep_clone(),
+            connections: self.connections.deep_clone(),
+
+            if_blocks: self.if_blocks.deep_clone(),
+            for_blocks: self.for_blocks.deep_clone(),
+        }
+    }
 }
 
 impl Scope {

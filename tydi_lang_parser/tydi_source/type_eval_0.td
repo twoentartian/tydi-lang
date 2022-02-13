@@ -12,7 +12,7 @@ type bit16 = Bit(16);
 
 type Group group0 {
     const value_2 = 4,
-    a : Bit(value_2 * 16),
+    a : Bit(4 * 16),
 
 };
 
