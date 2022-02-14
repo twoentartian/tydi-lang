@@ -5,9 +5,13 @@ use pest::iterators::{Pairs, Pair};
 use pest::prec_climber::{PrecClimber};
 use pest::prec_climber::Assoc::{Left, Right};
 use pest::prec_climber as pcl;
+use tydi_lang_raw_ast::deep_clone::DeepClone;
+use tydi_lang_raw_ast::{inferred, infer_logical_data_type};
+use tydi_lang_raw_ast::inferable::{NewInferable, Inferable};
 use tydi_lang_raw_ast::project_arch::Project;
 use tydi_lang_raw_ast::scope::{Scope, Variable, DataType, InferState, VariableValue};
 use crate::ParserErrorCode;
+use crate::evaluation_type;
 
 #[derive(Parser)]
 #[grammar = "tydi_lang_syntax.pest"]
@@ -1299,16 +1303,29 @@ pub fn infer_variable(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, pro
     //import package var
     if var.read().unwrap().get_name().contains("$package$") { return Ok(()); }
 
-    let value_result = parse_eval_exp(var.read().unwrap().get_var_value().get_raw_exp(), scope.clone(), project.clone());
-    if value_result.is_err() {
-        return Err(value_result.err().unwrap());
-    }
-    let value_result = value_result.ok().unwrap();
+    let var_type = var.read().unwrap().get_type();
+    let mut inferred_value;
+    match (*var_type.read().unwrap()).clone() {
+        DataType::UnknownType | DataType::IntType | DataType::StringType | DataType::BoolType | DataType::FloatType | DataType::ArrayType(_) => {
+            let value_result = parse_eval_exp(var.read().unwrap().get_var_value().get_raw_exp(), scope.clone(), project.clone());
+            if value_result.is_err() {
+                return Err(value_result.err().unwrap());
+            }
+            inferred_value = value_result.ok().unwrap();
+        }
+        DataType::LogicalDataType(logical_data_type) => {
+            let result = evaluation_type::infer_logical_type(logical_data_type.clone(), scope.clone(), project.clone());
+            if result.is_err() { return Err(result.err().unwrap()); }
+            inferred_value = Variable::new_with_value(String::from(""), DataType::LogicalDataType(logical_data_type.clone()), VariableValue::LogicalDataType(logical_data_type));
+        }
+
+        _ => unreachable!(),
+    };
 
     //type check
     {
         if *origin_var_type.read().unwrap() != DataType::UnknownType {
-            let inferred_type = value_result.get_type();
+            let inferred_type = inferred_value.get_type();
             let origin_type = (*origin_var_type.read().unwrap()).clone();
             let inferred_type = (*inferred_type.read().unwrap()).clone();
             if origin_type != inferred_type {
@@ -1320,8 +1337,8 @@ pub fn infer_variable(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, pro
     //assign value
     {
         let mut var_write = var.write().unwrap();
-        var_write.set_var_value(value_result.get_var_value());
-        var_write.set_type(value_result.get_type());
+        var_write.set_var_value(inferred_value.get_var_value());
+        var_write.set_type(inferred_value.get_type());
     }
     return Ok(());
 }

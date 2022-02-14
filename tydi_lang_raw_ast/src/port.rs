@@ -128,7 +128,7 @@ impl Scope {
     pub fn new_port(&mut self, name_: String, type_: Inferable<Arc<RwLock<LogicalDataType>>>, dir: PortDirection) -> Result<(), ErrorCode> {
         if self.scope_type != ScopeType::StreamletScope { return Err(ErrorCode::ScopeNotAllowed(String::from("port is only allowed to define in streamlet"))); }
 
-        match self.types.get(&name_) {
+        match self.ports.get(&name_) {
             None => {}
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("port {} already defined", name_.clone()))); }
         };
@@ -142,7 +142,7 @@ impl Scope {
         if self.scope_type != ScopeType::StreamletScope { return Err(ErrorCode::ScopeNotAllowed(String::from("port is only allowed to define in streamlet"))); }
 
         let name_ = port.read().unwrap().get_name();
-        match self.types.get(&name_) {
+        match self.ports.get(&name_) {
             None => {}
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("port {} already defined", name_.clone()))); }
         };
@@ -155,7 +155,7 @@ impl Scope {
     pub fn new_port_array(&mut self, name_: String, type_: Inferable<Arc<RwLock<LogicalDataType>>>, dir: PortDirection, array_: Arc<RwLock<Variable>>) -> Result<(), ErrorCode> {
         if self.scope_type != ScopeType::StreamletScope { return Err(ErrorCode::ScopeNotAllowed(String::from("port is only allowed to define in streamlet"))); }
 
-        match self.types.get(&name_) {
+        match self.ports.get(&name_) {
             None => {}
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("port {} already defined", name_.clone()))); }
         };

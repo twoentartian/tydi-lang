@@ -46,15 +46,58 @@ impl DeepClone for LogicalDataType {
 
 impl PartialEq for LogicalDataType {
     fn eq(&self, other: &Self) -> bool {
-        match self {
-            LogicalDataType::DummyLogicalData => return true,
+        return match self {
+            LogicalDataType::DummyLogicalData => true,
             LogicalDataType::UnknownLogicalDataType => {
                 match other {
-                    LogicalDataType::UnknownLogicalDataType => return true,
-                    _ => return false,
+                    LogicalDataType::UnknownLogicalDataType => true,
+                    _ => false,
                 }
             },
-            _ => { todo!() }
+            LogicalDataType::ExternalLogicalDataType(package, type_name) => {
+                match other {
+                    LogicalDataType::ExternalLogicalDataType(other_package, other_type_name) => {
+                        other_package == package && other_type_name == type_name
+                    },
+                    _ => false,
+                }
+            }
+            LogicalDataType::DataNull => {
+                match other {
+                    LogicalDataType::DataNull => true,
+                    _ => false,
+                }
+            }
+            LogicalDataType::DataBitType(bit) => {
+                match other {
+                    LogicalDataType::DataBitType(other_bit) => bit == other_bit,
+                    _ => false,
+                }
+            }
+            LogicalDataType::DataGroupType(name, _) => {
+                match other {
+                    LogicalDataType::DataGroupType(other_name, _) => name == other_name,
+                    _ => false,
+                }
+            }
+            LogicalDataType::DataUnionType(name, _) => {
+                match other {
+                    LogicalDataType::DataUnionType(other_name, _) => name == other_name,
+                    _ => false,
+                }
+            }
+            LogicalDataType::DataStreamType(name, _) => {
+                match other {
+                    LogicalDataType::DataStreamType(other_name, _) => name == other_name,
+                    _ => false,
+                }
+            }
+            LogicalDataType::DataUserDefinedVarType(type_name) => {
+                match other {
+                    LogicalDataType::DataUserDefinedVarType(other_type_name) => type_name == other_type_name,
+                    _ => false,
+                }
+            }
         }
     }
 }

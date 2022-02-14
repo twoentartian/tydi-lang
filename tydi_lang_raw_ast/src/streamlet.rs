@@ -148,17 +148,17 @@ impl Scope {
         return Ok(scope_clone);
     }
 
-    pub fn with_streamlet(&mut self, streamlet: Streamlet) -> Result<Arc<RwLock<Scope>>, ErrorCode> {
+    pub fn with_streamlet(&mut self, streamlet: Arc<RwLock<Streamlet>>) -> Result<(), ErrorCode> {
         if self.scope_type != ScopeType::BasicScope { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define streamlet outside of base scope"))); }
 
-        match self.streamlets.get(&streamlet.name) {
+        let name_ = streamlet.read().unwrap().get_name();
+        match self.streamlets.get(&name_) {
             None => {}
-            Some(_) => { return Err(ErrorCode::IdRedefined(format!("streamlet {} already defined", streamlet.get_name()))); }
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("streamlet {} already defined", name_.clone()))); }
         };
 
-        let scope_clone = streamlet.scope.clone();
-        self.streamlets.insert(streamlet.get_name(), Arc::new(RwLock::new(streamlet)));
-        return Ok(scope_clone);
+        self.streamlets.insert(name_.clone(), streamlet.clone());
+        return Ok(());
     }
 
     pub fn resolve_streamlet_in_current_scope(& self, name_: String) -> Result<Arc<RwLock<Streamlet>>, ErrorCode> {

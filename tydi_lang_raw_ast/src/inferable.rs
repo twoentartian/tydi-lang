@@ -5,6 +5,7 @@ use crate::{generate_get, generate_set, generate_access, infer_logical_data_type
 use crate::port::PortDirection;
 use crate::scope::Port;
 use crate::streamlet::{Streamlet,StreamletType};
+use crate::implement::{Implement, ImplementType};
 use crate::util::PrettyPrint;
 use crate::variable::VariableValue;
 
@@ -119,6 +120,24 @@ impl NewInferable<Arc<RwLock<Streamlet>>> for Inferable<Arc<RwLock<Streamlet>>> 
     }
 }
 
+impl NewInferable<Arc<RwLock<Implement>>> for Inferable<Arc<RwLock<Implement>>> {
+    fn _new(exp: String) -> Self {
+        Self {
+            raw_exp: exp,
+            infer_state: InferState::NotInferred,
+            raw_value: Arc::new(RwLock::new(Implement::new(String::from(""), ImplementType::UnknownType))),
+        }
+    }
+
+    fn _new_inferred(exp: String, type_: Arc<RwLock<Implement>>) -> Self {
+        Self {
+            raw_exp: exp,
+            infer_state: InferState::Inferred,
+            raw_value: type_.clone(),
+        }
+    }
+}
+
 impl NewInferable<Arc<RwLock<Port>>> for Inferable<Arc<RwLock<Port>>> {
     fn _new(exp: String) -> Self {
         Self {
@@ -154,6 +173,7 @@ macro_rules! inferable_new_wrapper {
 inferable_new_wrapper!(Arc<RwLock<LogicalDataType>>);
 inferable_new_wrapper!(VariableValue);
 inferable_new_wrapper!(Arc<RwLock<Streamlet>>);
+inferable_new_wrapper!(Arc<RwLock<Implement>>);
 
 /// From Inferable to String
 impl<T> From< Inferable<Arc<RwLock<T>>> > for String where T: Clone + DeepClone, String: From<T> {
@@ -211,6 +231,13 @@ macro_rules! infer_variable_value {
 macro_rules! infer_streamlet {
     () => {
         Arc<RwLock<Streamlet>>
+    }
+}
+
+#[macro_export]
+macro_rules! infer_implement {
+    () => {
+        Arc<RwLock<Implement>>
     }
 }
 

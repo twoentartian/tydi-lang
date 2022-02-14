@@ -23,7 +23,7 @@ streamlet streamlet1<i:int, t:type> {
   out : bit8_stream [port_length] out,
 };
 
-streamlet streamlet2<i:[int], t:type> {
+streamlet streamlet2<i:int, t:type> {
   in : t in, //anonymous type
   out : bit8_stream [port_length] out,
 };

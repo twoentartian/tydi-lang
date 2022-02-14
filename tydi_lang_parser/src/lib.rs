@@ -20,7 +20,7 @@ extern crate tydi_lang_raw_ast;
 
 use tydi_lang_raw_ast::{project_arch};
 use tydi_lang_raw_ast::scope::*;
-use tydi_lang_raw_ast::{not_inferred, inferred, infer_logical_data_type, infer_streamlet, infer_port};
+use tydi_lang_raw_ast::{not_inferred, inferred, infer_logical_data_type, infer_streamlet, infer_port, infer_implement};
 use tydi_lang_raw_ast::implement::ImplementType;
 
 mod test_lex;
@@ -29,7 +29,8 @@ mod test_evaluation_simple;
 mod evaluation_var;
 mod evaluation_type;
 mod evaluation_streamlet;
-mod evaluation_impl;
+mod evaluation_implement;
+mod built_in_ids;
 
 
 #[derive(Parser)]
@@ -200,7 +201,7 @@ pub fn parse_start(start_elements: Pairs<Rule>, output_package: &mut project_arc
                     match single_import_element.as_rule() {
                         Rule::ID => {
                             let element_name = single_import_element.as_str().to_string();
-                            let result = output_package.scope.write().unwrap().new_variable(format!("$package${}", element_name.clone()), DataType::PackageType, String::from(""));
+                            let result = output_package.scope.write().unwrap().new_variable(format!("{}{}", *built_in_ids::PACKAGE_PREFIX, element_name.clone()), DataType::PackageType, String::from(""));
                             if result.is_err() { return Err(ParserErrorCode::AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
                         },
                         _ => { unreachable!() },
@@ -251,9 +252,9 @@ pub fn parse_statement(statement: Pairs<Rule>, output_package: &mut project_arch
 pub fn parse_implement_body_declare_instance(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     let mut instance_array_type = InstanceArray::SingleInstance;
     let mut instance_name = String::from("");
-    let mut derived_streamlet_package: Option<String> = None;
-    let mut derived_streamlet_name = String::from("");
-    let mut derived_streamlet_argexps = vec![];
+    let mut derived_implement_package: Option<String> = None;
+    let mut derived_implement_name = String::from("");
+    let mut derived_implement_argexps = vec![];
     for element in statement.into_iter() {
         match element.as_rule() {
             Rule::ID => {
@@ -263,14 +264,14 @@ pub fn parse_implement_body_declare_instance(statement: Pairs<Rule>, scope: Arc<
                 let result = parse_internal_external_id(element.into_inner(), scope.clone());
                 if result.is_err() { return Err(result.err().unwrap()); }
                 let (package_name, streamlet_name) = result.ok().unwrap();
-                derived_streamlet_package = package_name;
-                derived_streamlet_name = streamlet_name;
+                derived_implement_package = package_name;
+                derived_implement_name = streamlet_name;
             },
             Rule::ArgExps => {
                 let result = parse_argexps(element.into_inner(), scope.clone());
                 if result.is_err() { return Err(result.err().unwrap()); }
                 let result = result.ok().unwrap();
-                derived_streamlet_argexps = result;
+                derived_implement_argexps = result;
             },
             Rule::Exp => {
                 let var = Variable::new(String::from(""), DataType::IntType, element.as_str().to_string());
@@ -282,11 +283,11 @@ pub fn parse_implement_body_declare_instance(statement: Pairs<Rule>, scope: Arc<
 
     match instance_array_type {
         InstanceArray::ArrayInstance(array_) => {
-            let result = scope.write().unwrap().new_instance_array(instance_name, derived_streamlet_package, not_inferred!(infer_streamlet!(), derived_streamlet_name), derived_streamlet_argexps, array_.clone());
+            let result = scope.write().unwrap().new_instance_array(instance_name, derived_implement_package, not_inferred!(infer_implement!(), derived_implement_name), derived_implement_argexps, array_.clone());
             if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
         },
         InstanceArray::SingleInstance => {
-            let result = scope.write().unwrap().new_instance(instance_name, derived_streamlet_package, not_inferred!(infer_streamlet!(), derived_streamlet_name), derived_streamlet_argexps);
+            let result = scope.write().unwrap().new_instance(instance_name, derived_implement_package, not_inferred!(infer_implement!(), derived_implement_name), derived_implement_argexps);
             if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
         },
         _ => { unreachable!() }
@@ -459,7 +460,7 @@ pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
                             let var_name = item.as_str().to_string();
                             let for_scope = for_block.get_scope();
                             let mut for_scope = for_scope.write().unwrap();
-                            let result = for_scope.new_variable(var_name.clone(), DataType::UnknownType, format!("$arg${}", var_name.clone()));
+                            let result = for_scope.new_variable(var_name.clone(), DataType::UnknownType, format!("{}{}", *built_in_ids::ARG_PREFIX, var_name.clone()));
                             if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
                             for_block.set_var_exp(Arc::new(RwLock::new(Variable::new(var_name.clone(), DataType::UnknownType, var_name.clone()))));
                         }
@@ -728,7 +729,7 @@ pub fn parse_arg_to_var(arg_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
                 }
 
                 // shadow var
-                let shadow_var_name = format!("$arg${}", var_name.clone());
+                let shadow_var_name = format!("{}{}", *built_in_ids::ARG_PREFIX , var_name.clone());
                 let var_type = DataType::LogicalDataType(Arc::new(RwLock::new(LogicalDataType::DummyLogicalData)));
                 {
                     let result = scope.write().unwrap().new_variable(var_name.clone(), var_type.clone(), shadow_var_name.clone());
@@ -752,7 +753,7 @@ pub fn parse_arg_to_var(arg_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
 
                 // shadow var
                 let var_name = id_exp;
-                let shadow_var_name = format!("$arg${}", var_name.clone());
+                let shadow_var_name = format!("{}{}", *built_in_ids::ARG_PREFIX, var_name.clone());
                 let var_type = result.ok().unwrap();
                 {
                     let result = scope.write().unwrap().new_variable(var_name.clone(), var_type.clone(), shadow_var_name.clone());
@@ -793,7 +794,7 @@ pub fn parse_arg_to_var(arg_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
 
                 // shadow var
                 let var_name = id_exp.clone();
-                let shadow_var_name = format!("$arg${}", var_name.clone());
+                let shadow_var_name = format!("{}{}", *built_in_ids::ARG_PREFIX , var_name.clone());
                 let var_type = data_type.clone();
                 {
                     let result = scope.write().unwrap().new_variable(var_name.clone(), var_type.clone(), shadow_var_name.clone());
@@ -919,7 +920,7 @@ pub fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
         streamlet.get_scope().write().unwrap().new_relationship(scope.read().unwrap().self_ref.clone().unwrap(), ScopeRelationType::StreamletScopeRela);
     }
     {
-        let result = scope.write().unwrap().with_streamlet(streamlet);
+        let result = scope.write().unwrap().with_streamlet(Arc::new(RwLock::new(streamlet)));
         if result.is_err() { return Err(ParserErrorCode::AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
     }
 

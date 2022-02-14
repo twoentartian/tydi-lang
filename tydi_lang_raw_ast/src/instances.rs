@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 use deep_clone::DeepClone;
+use implement::Implement;
 use crate::error::ErrorCode;
 use crate::streamlet::Streamlet;
 use crate::{generate_get, generate_set, generate_access};
@@ -40,8 +41,8 @@ pub struct Instance {
     name: String,
     package: Option<String>,
 
-    streamlet_type: Inferable<Arc<RwLock<Streamlet>>>,
-    streamlet_template_argexp: Vec<Arc<RwLock<Variable>>>,
+    implement_type: Inferable<Arc<RwLock<Implement>>>,
+    implement_template_argexp: Vec<Arc<RwLock<Variable>>>,
     array_type: InstanceArray,
 }
 
@@ -51,8 +52,8 @@ impl DeepClone for Instance {
             name: self.name.deep_clone(),
             package: self.package.deep_clone(),
 
-            streamlet_type: self.streamlet_type.deep_clone(),
-            streamlet_template_argexp: self.streamlet_template_argexp.deep_clone(),
+            implement_type: self.implement_type.deep_clone(),
+            implement_template_argexp: self.implement_template_argexp.deep_clone(),
             array_type: self.array_type.deep_clone(),
         }
     }
@@ -60,18 +61,19 @@ impl DeepClone for Instance {
 
 impl Instance {
     generate_get!(name, String, get_name);
-    generate_access!(streamlet_type, Inferable<Arc<RwLock<Streamlet>>>, get_streamlet_type, set_streamlet_type);
-    generate_access!(streamlet_template_argexp, Vec<Arc<RwLock<Variable>>>, get_streamlet_argexp, set_streamlet_argexp);
+    generate_access!(package, Option<String>, get_package, set_package);
+    generate_access!(implement_type, Inferable<Arc<RwLock<Implement>>>, get_implement_type, set_implement_type);
+    generate_access!(implement_template_argexp, Vec<Arc<RwLock<Variable>>>, get_implement_argexp, set_implement_argexp);
     generate_access!(array_type, InstanceArray, get_array_type, set_array_type);
 
-    pub fn new(name_: String, package_: Option<String>, streamlet_type_exp_: Inferable<Arc<RwLock<Streamlet>>>, template_argexp: Vec<Arc<RwLock<Variable>>>) -> Self {
+    pub fn new(name_: String, package_: Option<String>, streamlet_type_exp_: Inferable<Arc<RwLock<Implement>>>, template_argexp: Vec<Arc<RwLock<Variable>>>) -> Self {
         match streamlet_type_exp_.get_infer_state() {
             InferState::Inferred => {
                 Self {
                     name: name_,
                     package: package_,
-                    streamlet_type: <Inferable<Arc<RwLock<Streamlet>>> as NewInferable<Arc<RwLock<Streamlet>>>>::_new_inferred(streamlet_type_exp_.get_raw_exp(), streamlet_type_exp_.get_raw_value()),
-                    streamlet_template_argexp: template_argexp,
+                    implement_type: <Inferable<Arc<RwLock<Implement>>> as NewInferable<Arc<RwLock<Implement>>>>::_new_inferred(streamlet_type_exp_.get_raw_exp(), streamlet_type_exp_.get_raw_value()),
+                    implement_template_argexp: template_argexp,
                     array_type: InstanceArray::SingleInstance,
                 }
             }
@@ -79,22 +81,22 @@ impl Instance {
                 Self {
                     name: name_,
                     package: package_,
-                    streamlet_type: <Inferable<Arc<RwLock<Streamlet>>> as NewInferable<Arc<RwLock<Streamlet>>>>::_new(streamlet_type_exp_.get_raw_exp()),
-                    streamlet_template_argexp: template_argexp,
+                    implement_type: <Inferable<Arc<RwLock<Implement>>> as NewInferable<Arc<RwLock<Implement>>>>::_new(streamlet_type_exp_.get_raw_exp()),
+                    implement_template_argexp: template_argexp,
                     array_type: InstanceArray::SingleInstance,
                 }
             }
         }
     }
 
-    pub fn new_array(name_: String, package_: Option<String>, streamlet_type_exp_: Inferable<Arc<RwLock<Streamlet>>>, template_argexp: Vec<Arc<RwLock<Variable>>>, array_: Arc<RwLock<Variable>>) -> Self {
+    pub fn new_array(name_: String, package_: Option<String>, streamlet_type_exp_: Inferable<Arc<RwLock<Implement>>>, template_argexp: Vec<Arc<RwLock<Variable>>>, array_: Arc<RwLock<Variable>>) -> Self {
         match streamlet_type_exp_.get_infer_state() {
             InferState::Inferred => {
                 Self {
                     name: name_,
                     package: package_,
-                    streamlet_type: <Inferable<Arc<RwLock<Streamlet>>> as NewInferable<Arc<RwLock<Streamlet>>>>::_new_inferred(streamlet_type_exp_.get_raw_exp(), streamlet_type_exp_.get_raw_value()),
-                    streamlet_template_argexp: template_argexp,
+                    implement_type: <Inferable<Arc<RwLock<Implement>>> as NewInferable<Arc<RwLock<Implement>>>>::_new_inferred(streamlet_type_exp_.get_raw_exp(), streamlet_type_exp_.get_raw_value()),
+                    implement_template_argexp: template_argexp,
                     array_type: InstanceArray::ArrayInstance(array_),
                 }
             }
@@ -102,8 +104,8 @@ impl Instance {
                 Self {
                     name: name_,
                     package: package_,
-                    streamlet_type: <Inferable<Arc<RwLock<Streamlet>>> as NewInferable<Arc<RwLock<Streamlet>>>>::_new(streamlet_type_exp_.get_raw_exp()),
-                    streamlet_template_argexp: template_argexp,
+                    implement_type: <Inferable<Arc<RwLock<Implement>>> as NewInferable<Arc<RwLock<Implement>>>>::_new(streamlet_type_exp_.get_raw_exp()),
+                    implement_template_argexp: template_argexp,
                     array_type: InstanceArray::ArrayInstance(array_),
                 }
             }
@@ -123,10 +125,10 @@ impl From<Instance> for String {
             Some(package) => { format!("{}.", package) }
         };
         let mut argexp_output = String::from("");
-        for single_argexp in inst.get_streamlet_argexp() {
+        for single_argexp in inst.get_implement_argexp() {
             argexp_output.push_str(&format!("@{}", &String::from((*single_argexp.read().unwrap()).clone())));
         }
-        return format!("{}:{}({}){}<{}>", inst.get_name(), package_exp, String::from(inst.streamlet_type), array_exp, argexp_output);
+        return format!("{}:{}({}){}<{}>", inst.get_name(), package_exp, String::from(inst.implement_type), array_exp, argexp_output);
     }
 }
 
@@ -137,7 +139,7 @@ impl PrettyPrint for Instance {
 }
 
 impl Scope {
-    pub fn new_instance(&mut self, name_: String, package_: Option<String>, streamlet_exp: Inferable<Arc<RwLock<Streamlet>>>, template_argexp: Vec<Arc<RwLock<Variable>>>) -> Result<(), ErrorCode> {
+    pub fn new_instance(&mut self, name_: String, package_: Option<String>, streamlet_exp: Inferable<Arc<RwLock<Implement>>>, template_argexp: Vec<Arc<RwLock<Variable>>>) -> Result<(), ErrorCode> {
         if (self.scope_type != ScopeType::ImplementScope) && (self.scope_type != ScopeType::BasicScope) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define instances outside of implement or base scope"))); }
 
         match self.instances.get(&name_) {
@@ -148,7 +150,7 @@ impl Scope {
         return Ok(());
     }
 
-    pub fn new_instance_array(&mut self, name_: String, package_: Option<String>, streamlet_exp: Inferable<Arc<RwLock<Streamlet>>>, template_argexp: Vec<Arc<RwLock<Variable>>>, array_: Arc<RwLock<Variable>>) -> Result<(), ErrorCode> {
+    pub fn new_instance_array(&mut self, name_: String, package_: Option<String>, streamlet_exp: Inferable<Arc<RwLock<Implement>>>, template_argexp: Vec<Arc<RwLock<Variable>>>, array_: Arc<RwLock<Variable>>) -> Result<(), ErrorCode> {
         if (self.scope_type != ScopeType::ImplementScope) && (self.scope_type != ScopeType::BasicScope) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define instances outside of implement or base scope"))); }
 
         match self.instances.get(&name_) {

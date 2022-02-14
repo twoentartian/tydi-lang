@@ -36,6 +36,12 @@ pub struct LogicalBit {
     bit: Arc<RwLock<Variable>>,
 }
 
+impl PartialEq for LogicalBit {
+    fn eq(&self, other: &Self) -> bool {
+        return self.bit.read().unwrap().get_var_value().get_raw_exp() == other.bit.read().unwrap().get_var_value().get_raw_exp();
+    }
+}
+
 impl DeepClone for LogicalBit {
     fn deep_clone(&self) -> Self {
         return Self {

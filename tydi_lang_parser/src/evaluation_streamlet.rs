@@ -1,7 +1,9 @@
 use std::sync::{Arc, RwLock, RwLockReadGuard};
+use evaluation_var::infer_variable;
 use ParserErrorCode::StreamletEvaluationFail;
 use tydi_lang_raw_ast::data_type::DataType;
 use tydi_lang_raw_ast::{inferred, infer_logical_data_type};
+use tydi_lang_raw_ast::deep_clone::DeepClone;
 use tydi_lang_raw_ast::inferable::{NewInferable, Inferable};
 use tydi_lang_raw_ast::logical_data_type::LogicalDataType;
 use tydi_lang_raw_ast::port::PortArray;
@@ -11,7 +13,7 @@ use tydi_lang_raw_ast::project_arch::Project;
 
 use crate::{evaluation_type, evaluation_var, ParserErrorCode};
 
-pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exps: Vec<Arc<RwLock<Variable>>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<(), ParserErrorCode> {
+pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exps: Vec<Arc<RwLock<Variable>>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Arc<RwLock<Streamlet>>, ParserErrorCode> {
     let streamlet_copy = (*streamlet.read().unwrap()).clone();
     match streamlet_copy.get_type() {
         StreamletType::UnknownType => { unreachable!() }
@@ -52,7 +54,10 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                                     for i in 0..value {
                                         let result = streamlet_scope.write().unwrap().new_port(format!("{}@{}", port_read.get_name(), i.to_string()), inferred!(infer_logical_data_type!(), port_type.clone()), port_read.get_direction());
                                         if result.is_err() { return Err(StreamletEvaluationFail(String::from(result.err().unwrap()))); }
-                                        //expand_ports.push(Arc::new(RwLock::new(Port::new(format!("{}@{}", port_read.get_name(), i.to_string()), inferred!(infer_logical_data_type!(), port_type.clone()), port_read.get_direction()))));
+                                    }
+                                    //remove the array port in scope
+                                    {
+                                        streamlet_scope.write().unwrap().ports.remove(&port_read.get_name()).unwrap();
                                     }
                                 }
                                 _ => return Err(StreamletEvaluationFail(format!("the length of a port array must be an integer")))
@@ -61,11 +66,87 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                     }
                 }
             }
+
+            return Ok(streamlet.clone());
         }
         StreamletType::TemplateStreamlet(template_args) => {
-            //the template streamlet should never be inferred, only instantiated streamlet can be inferred.
+            //get instantiate template name
+            let streamlet_instance_name;
+            {
+                let mut template_exp_string = String::from("");
+                for streamlet_template_exp in &streamlet_template_exps {
+                    template_exp_string.push_str(&format!("@{}", String::from(streamlet_template_exp.read().unwrap().get_var_value().get_raw_exp())));
+                }
+                streamlet_instance_name = format!("{}{}", streamlet.read().unwrap().get_name(), template_exp_string);
+            }
+
+            //infer template expressions
+            for streamlet_template_exp in &streamlet_template_exps {
+                let result = infer_variable(streamlet_template_exp.clone(), scope.clone(), project.clone());
+                if result.is_err() { return Err(result.err().unwrap()); }
+            }
+
+            //clone / instantiate streamlet
+            let mut cloned_streamlet = streamlet.read().unwrap().deep_clone();
+            cloned_streamlet.set_name(streamlet_instance_name);
+            cloned_streamlet.set_type(StreamletType::NormalStreamlet);
+            let cloned_streamlet = Arc::new(RwLock::new(cloned_streamlet));
+            {
+                let result = scope.write().unwrap().with_streamlet(cloned_streamlet.clone());
+                if result.is_err() { /*that streamlet might have already exists, so we don't check result*/ }
+            }
+
+            //remove the template var in scope
+            let cloned_streamlet_scope = cloned_streamlet.read().unwrap().get_scope();
+            for i in 0 .. template_args.len() {
+                let name = template_args[i].read().unwrap().get_name();
+                let index = name.find(&*crate::built_in_ids::ARG_PREFIX).unwrap();
+                let name = (&name[index+5 ..]).to_string();
+                let result = cloned_streamlet_scope.write().unwrap().vars.remove(&name);
+                match result {
+                    None => { unreachable!() }
+                    Some(target_var) => {}
+                }
+            }
+
+            //create corresponding linking var
+            if streamlet_template_exps.len() != template_args.len() { return Err(StreamletEvaluationFail(format!("template expressions mismatch"))); }
+            for i in 0 .. streamlet_template_exps.len() {
+                let template_exp = &streamlet_template_exps[i];
+                let streamlet_arg = &template_args[i];
+                let template_exp_type_arc = template_exp.read().unwrap().get_type();
+                let streamlet_arg_type_arc = streamlet_arg.read().unwrap().get_type();
+                let template_exp_type = (*template_exp_type_arc.read().unwrap()).clone();
+                let streamlet_arg_type = (*streamlet_arg_type_arc.read().unwrap()).clone();
+                if streamlet_arg_type != template_exp_type.clone() { return Err(StreamletEvaluationFail(format!("template expressions mismatch, template type({}) != exp type({})", String::from(streamlet_arg_type.clone()), String::from(template_exp_type.clone())))); }
+                let linking_var_name = streamlet_arg.read().unwrap().get_name();
+                let linking_var_name_index = linking_var_name.find(&*crate::built_in_ids::ARG_PREFIX).unwrap();
+                let linking_var_name = (&linking_var_name[linking_var_name_index+5 ..]).to_string();
+                match streamlet_arg_type.clone() {
+                    DataType::IntType | DataType::StringType | DataType::BoolType | DataType::FloatType | DataType::ArrayType(_) => {
+                        let mut linking_var = Arc::new(RwLock::new(Variable::new_with_value(linking_var_name.clone(), streamlet_arg_type.clone(), template_exp.read().unwrap().get_var_value().get_raw_value())));
+                        let result = cloned_streamlet_scope.write().unwrap().with_variable(linking_var);
+                        if result.is_err() { return Err(StreamletEvaluationFail(format!("failed to create linking variable({}): {}", linking_var_name.clone(), String::from(result.err().unwrap())))); }
+                    }
+                    DataType::LogicalDataType(_) => {
+                        match template_exp_type {
+                            DataType::LogicalDataType(logical_data_type) => {
+                                let result = cloned_streamlet_scope.write().unwrap().new_logical_data_type(linking_var_name.clone(), (*logical_data_type.read().unwrap()).clone());
+                                if result.is_err() { return Err(StreamletEvaluationFail(format!("failed to create linking type({}): {}", linking_var_name.clone(), String::from(result.err().unwrap())))); }
+                            },
+                            _ => return unreachable!(),
+                        }
+                    }
+                    _ => { unreachable!() }
+                };
+            }
+
+            //evaluation the new generated streamlet
+            let result = infer_streamlet(cloned_streamlet.clone(), vec![], scope.clone(), project.clone());
+            if result.is_err() { return Err(result.err().unwrap()); }
+
+            return Ok(cloned_streamlet.clone());
         }
     }
 
-    return Ok(());
 }

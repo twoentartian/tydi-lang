@@ -1,13 +1,16 @@
 use std::sync::{Arc, RwLock};
 use std::collections::HashSet;
 use deep_clone::DeepClone;
+use implement::Implement;
+use logical_data_type::LogicalDataType;
+use streamlet::Streamlet;
 use crate::scope::{DataType, ScopeRelationType, Scope};
 use crate::util::{generate_padding, PrettyPrint};
 use crate::{generate_get, generate_set, generate_access};
 pub use crate::error::ErrorCode;
 use crate::inferable::{Inferable, NewInferable};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum VariableValue {
     Unknown,
     Int(i32),
@@ -18,6 +21,10 @@ pub enum VariableValue {
     ArrayBool(Vec<bool>),
     ArrayFloat(Vec<f32>),
     ArrayStr(Vec<String>),
+
+    LogicalDataType(Arc<RwLock<LogicalDataType>>),
+    Streamlet(Arc<RwLock<Streamlet>>),
+    Implement(Arc<RwLock<Implement>>),
 }
 
 impl DeepClone for VariableValue {
@@ -82,6 +89,16 @@ impl From<VariableValue> for String {
                 }
                 format!("{{{}}}", output)
             },
+
+            VariableValue::LogicalDataType(logical_data) => {
+                format!("LogicalData({})", String::from((*logical_data.read().unwrap()).clone()))
+            },
+            VariableValue::Streamlet(streamlet) => {
+                format!("Streamlet({})", String::from((*streamlet.read().unwrap()).clone()))
+            },
+            VariableValue::Implement(implement) => {
+                format!("Implement({})", String::from((*implement.read().unwrap()).clone()))
+            },
         }
     }
 }
@@ -120,6 +137,14 @@ impl Variable {
             name: name_.clone(),
             var_type: Arc::new(RwLock::new(type_)),
             var_value: <Inferable<VariableValue> as NewInferable<VariableValue>>::_new(exp_.clone()),
+        }
+    }
+
+    pub fn new_with_value(name_: String, type_: DataType, value: VariableValue) -> Self {
+        Self {
+            name: name_.clone(),
+            var_type: Arc::new(RwLock::new(type_)),
+            var_value: <Inferable<VariableValue> as NewInferable<VariableValue>>::_new_inferred(name_.clone(),value),
         }
     }
 
@@ -208,6 +233,16 @@ impl Scope {
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("variable {} already defined", name_))); }
         };
         self.vars.insert(name_.clone(), Arc::new(RwLock::new(Variable::new(name_.clone(), type_.clone(), exp_.clone()))));
+        return Ok(());
+    }
+
+    pub fn with_variable(&mut self, var: Arc<RwLock<Variable>>) -> Result<(), ErrorCode> {
+        let name_ = var.read().unwrap().get_name();
+        match self.vars.get(&name_) {
+            None => {}
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("variable {} already defined", name_))); }
+        };
+        self.vars.insert(name_.clone(), var.clone());
         return Ok(());
     }
 
