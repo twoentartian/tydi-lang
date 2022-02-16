@@ -139,25 +139,25 @@ impl PrettyPrint for Instance {
 }
 
 impl Scope {
-    pub fn new_instance(&mut self, name_: String, package_: Option<String>, streamlet_exp: Inferable<Arc<RwLock<Implement>>>, template_argexp: Vec<Arc<RwLock<Variable>>>) -> Result<(), ErrorCode> {
+    pub fn new_instance(&mut self, name_: String, package_: Option<String>, implement_exp: Inferable<Arc<RwLock<Implement>>>, template_argexp: Vec<Arc<RwLock<Variable>>>) -> Result<(), ErrorCode> {
         if (self.scope_type != ScopeType::ImplementScope) && (self.scope_type != ScopeType::BasicScope) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define instances outside of implement or base scope"))); }
 
         match self.instances.get(&name_) {
             None => {}
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("instance {} already defined", name_))); }
         };
-        self.instances.insert(name_.clone(), Arc::new(RwLock::new(Instance::new(name_.clone(), package_,streamlet_exp, template_argexp))));
+        self.instances.insert(name_.clone(), Arc::new(RwLock::new(Instance::new(name_.clone(), package_, implement_exp, template_argexp))));
         return Ok(());
     }
 
-    pub fn new_instance_array(&mut self, name_: String, package_: Option<String>, streamlet_exp: Inferable<Arc<RwLock<Implement>>>, template_argexp: Vec<Arc<RwLock<Variable>>>, array_: Arc<RwLock<Variable>>) -> Result<(), ErrorCode> {
+    pub fn new_instance_array(&mut self, name_: String, package_: Option<String>, implement_exp: Inferable<Arc<RwLock<Implement>>>, template_argexp: Vec<Arc<RwLock<Variable>>>, array_: Arc<RwLock<Variable>>) -> Result<(), ErrorCode> {
         if (self.scope_type != ScopeType::ImplementScope) && (self.scope_type != ScopeType::BasicScope) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define instances outside of implement or base scope"))); }
 
         match self.instances.get(&name_) {
             None => {}
             Some(_) => { return Err(ErrorCode::IdRedefined(format!("instance {} already defined", name_))); }
         };
-        self.instances.insert(name_.clone(), Arc::new(RwLock::new(Instance::new_array(name_.clone(), package_,streamlet_exp, template_argexp, array_))));
+        self.instances.insert(name_.clone(), Arc::new(RwLock::new(Instance::new_array(name_.clone(), package_, implement_exp, template_argexp, array_))));
         return Ok(());
     }
 

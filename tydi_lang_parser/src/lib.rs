@@ -850,7 +850,7 @@ pub fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
                             exp = item.as_str().to_string();
                         },
                         Rule::LogicalType => {
-                            let result = get_logical_type(item.clone().into_inner(), format!("$generated${}", item.as_str().to_string()),streamlet.get_scope());
+                            let result = get_logical_type(item.clone().into_inner(), format!("{}{}", &*crate::built_in_ids::GENERATED_ID_PREFIX, item.as_str().to_string()),streamlet.get_scope());
                             if result.is_err() { return Err(result.err().unwrap()); }
                             logical_type = result.ok().unwrap();
                         },

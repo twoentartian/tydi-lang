@@ -49,7 +49,7 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                             let array_var_value = array_var_read.get_var_value().get_raw_value();
                             match array_var_value {
                                 VariableValue::Int(value) => {
-                                    if value <= 0 { return Err(StreamletEvaluationFail(format!("the length streamlet port array must be a positive number"))); }
+                                    if value <= 0 { return Err(StreamletEvaluationFail(format!("the length of streamlet port array must be a positive number"))); }
                                     let port_type = port_read.get_type().get_raw_value();
                                     for i in 0..value {
                                         let result = streamlet_scope.write().unwrap().new_port(format!("{}@{}", port_read.get_name(), i.to_string()), inferred!(infer_logical_data_type!(), port_type.clone()), port_read.get_direction());
@@ -149,4 +149,32 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
         }
     }
 
+}
+
+pub fn resolve_and_infer_streamlet(streamlet_name: String, package_name: Option<String>, streamlet_template_exps: Vec<Arc<RwLock<Variable>>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Arc<RwLock<Streamlet>>, ParserErrorCode> {
+     match package_name {
+        None => {
+            let result = scope.read().unwrap().resolve_streamlet_from_scope(streamlet_name.clone());
+            if result.is_err() { return Err(StreamletEvaluationFail(String::from(result.err().unwrap()))); }
+            let streamlet = result.ok().unwrap();
+            return infer_streamlet(streamlet.clone(), streamlet_template_exps.clone(), scope.clone(), project.clone())
+        }
+        Some(package_name) => {
+            //check import
+            {
+                let package_var_result = scope.read().unwrap().resolve_variable_from_scope(format!("{}{}", *crate::built_in_ids::PACKAGE_PREFIX, package_name.clone()));
+                if package_var_result.is_err() { return Err(StreamletEvaluationFail(format!("package {} not imported", package_name.clone()))); }
+            }
+            let project_read = project.read().unwrap();
+            let external_package = project_read.packages.get(&package_name);
+            if external_package.is_none() { return Err(StreamletEvaluationFail(format!("package {} not found", package_name.clone()))); }
+            let external_package = external_package.unwrap();
+            let external_scope = external_package.read().unwrap().get_scope();
+
+            let result = external_scope.read().unwrap().resolve_streamlet_in_current_scope(streamlet_name.clone());
+            if result.is_err() { return Err(StreamletEvaluationFail(String::from(result.err().unwrap()))); }
+            let streamlet = result.ok().unwrap();
+            return infer_streamlet(streamlet.clone(), streamlet_template_exps.clone(), scope.clone(), project.clone())
+        }
+    }
 }

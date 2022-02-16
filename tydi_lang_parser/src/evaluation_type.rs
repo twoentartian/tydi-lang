@@ -30,7 +30,7 @@ pub fn infer_logical_type(logical_type: Arc<RwLock<LogicalDataType>>, scope: Arc
             let type_result = package_scope.read().unwrap().resolve_type_from_scope(type_name.clone());
             if type_result.is_err() { return Err(TypeEvaluationFail(String::from(type_result.err().unwrap()))); }
             let type_result = type_result.ok().unwrap();
-            let infer_result = infer_type(type_result.clone(), package_scope.clone(), project.clone());
+            let infer_result = infer_type_alias(type_result.clone(), package_scope.clone(), project.clone());
             if infer_result.is_err() { return Err(infer_result.err().unwrap()); }
 
             let result_logical_type = type_result.read().unwrap().get_type_infer().get_raw_value();
@@ -50,7 +50,7 @@ pub fn infer_logical_type(logical_type: Arc<RwLock<LogicalDataType>>, scope: Arc
             let group_type_clone = (*group_type.read().unwrap()).clone();
             let group_type_scope = group_type_clone.get_scope();
             for (_, single_type) in group_type_scope.read().unwrap().types.clone() {
-                let result = infer_type(single_type.clone(), group_type_scope.clone(), project.clone());
+                let result = infer_type_alias(single_type.clone(), group_type_scope.clone(), project.clone());
                 if result.is_err() { return Err(result.err().unwrap()); }
             }
         }
@@ -58,7 +58,7 @@ pub fn infer_logical_type(logical_type: Arc<RwLock<LogicalDataType>>, scope: Arc
             let union_type_clone = (*union_type.read().unwrap()).clone();
             let union_type_scope = union_type_clone.get_scope();
             for (_, single_type) in union_type_scope.read().unwrap().types.clone() {
-                let result = infer_type(single_type.clone(), union_type_scope.clone(), project.clone());
+                let result = infer_type_alias(single_type.clone(), union_type_scope.clone(), project.clone());
                 if result.is_err() { return Err(result.err().unwrap()); }
             }
         }
@@ -238,7 +238,7 @@ pub fn infer_logical_type(logical_type: Arc<RwLock<LogicalDataType>>, scope: Arc
     return Ok(());
 }
 
-pub fn infer_type(type_alias: Arc<RwLock<TypeAlias>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<(), ParserErrorCode> {
+pub fn infer_type_alias(type_alias: Arc<RwLock<TypeAlias>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<(), ParserErrorCode> {
     let type_clone = (*type_alias.read().unwrap()).clone();
     let real_type_infer = type_clone.get_type_infer().get_raw_value();
     return infer_logical_type(real_type_infer, scope.clone(), project.clone());

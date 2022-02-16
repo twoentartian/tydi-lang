@@ -77,7 +77,7 @@ fn evaluate_type() {
                 let package = project.read().unwrap().packages["type_eval_0"].clone();
                 let package_scope = package.read().unwrap().get_scope().clone();
                 for (_, type_alias) in package_scope.read().unwrap().types.clone() {
-                    let result = evaluation_type::infer_type(type_alias, package_scope.clone(), project.clone());
+                    let result = evaluation_type::infer_type_alias(type_alias, package_scope.clone(), project.clone());
                     if result.is_err() { println!("{}", String::from(result.err().unwrap()));return; }
                 }
             }
