@@ -1,3 +1,4 @@
+use std::os::unix::raw::uid_t;
 use std::sync::{Arc, RwLock, RwLockReadGuard};
 use evaluation_var::infer_variable;
 use ParserErrorCode::StreamletEvaluationFail;
@@ -52,7 +53,11 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                                     if value <= 0 { return Err(StreamletEvaluationFail(format!("the length of streamlet port array must be a positive number"))); }
                                     let port_type = port_read.get_type().get_raw_value();
                                     for i in 0..value {
-                                        let result = streamlet_scope.write().unwrap().new_port(format!("{}@{}", port_read.get_name(), i.to_string()), inferred!(infer_logical_data_type!(), port_type.clone()), port_read.get_direction());
+                                        let mut new_port = (*port.read().unwrap()).clone();
+                                        new_port.set_name(format!("{}@{}", port_read.get_name(), i.to_string()));
+                                        new_port.set_array_type(PortArray::SinglePort);
+                                        //let result = streamlet_scope.write().unwrap().new_port(format!("{}@{}", port_read.get_name(), i.to_string()), inferred!(infer_logical_data_type!(), port_type.clone()), port_read.get_direction());
+                                        let result = streamlet_scope.write().unwrap().with_port(Arc::new(RwLock::new(new_port)));
                                         if result.is_err() { return Err(StreamletEvaluationFail(String::from(result.err().unwrap()))); }
                                     }
                                     //remove the array port in scope
@@ -66,24 +71,15 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                     }
                 }
             }
-
             return Ok(streamlet.clone());
         }
         StreamletType::TemplateStreamlet(template_args) => {
             //get instantiate template name
-            let streamlet_instance_name;
-            {
-                let mut template_exp_string = String::from("");
-                for streamlet_template_exp in &streamlet_template_exps {
-                    template_exp_string.push_str(&format!("@{}", String::from(streamlet_template_exp.read().unwrap().get_var_value().get_raw_exp())));
-                }
-                streamlet_instance_name = format!("{}{}", streamlet.read().unwrap().get_name(), template_exp_string);
-            }
+            let streamlet_instance_name = crate::util::generate_template_instance_name(streamlet.read().unwrap().get_name(), &streamlet_template_exps);
 
             //infer template expressions
-            for streamlet_template_exp in &streamlet_template_exps {
-                let result = infer_variable(streamlet_template_exp.clone(), scope.clone(), project.clone());
-                if result.is_err() { return Err(result.err().unwrap()); }
+            for template_exp in &streamlet_template_exps {
+                 infer_variable(template_exp.clone(), scope.clone(), project.clone())?;
             }
 
             //clone / instantiate streamlet
@@ -105,7 +101,7 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                 let result = cloned_streamlet_scope.write().unwrap().vars.remove(&name);
                 match result {
                     None => { unreachable!() }
-                    Some(target_var) => {}
+                    Some(_) => {}
                 }
             }
 

@@ -124,7 +124,23 @@ impl PartialEq for DataType {
                     _ => false,
                 }
             },
-            _ => { unreachable!(); }
+
+
+            DataType::ProxyImplementOfStreamlet(_,_) | DataType::ExternalProxyImplementOfStreamlet(_,_,_) => {
+                return match other {
+                    DataType::ProxyImplement(_,_) => true,
+                    DataType::ExternalProxyImplement(_,_,_) => true,
+                    _ => false,
+                }
+            },
+            DataType::ProxyImplement(_,_) | DataType::ExternalProxyImplement(_,_,_) => {
+                return match other {
+                    DataType::ProxyImplementOfStreamlet(_,_) => true,
+                    DataType::ExternalProxyImplementOfStreamlet(_,_,_) => true,
+                    _ => false,
+                }
+            }
+            _ => { false }
         }
     }
 }

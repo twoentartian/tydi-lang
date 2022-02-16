@@ -1319,6 +1319,11 @@ pub fn infer_variable(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, pro
             inferred_value = Variable::new_with_value(String::from(""), DataType::LogicalDataType(logical_data_type.clone()), VariableValue::LogicalDataType(logical_data_type));
         }
 
+        //following region will process the values which should be by-passed
+        DataType::ProxyImplement(_,_) => {
+            //do nothing
+            return Ok(());
+        }
         _ => unreachable!(),
     };
 
@@ -1342,4 +1347,3 @@ pub fn infer_variable(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, pro
     }
     return Ok(());
 }
-

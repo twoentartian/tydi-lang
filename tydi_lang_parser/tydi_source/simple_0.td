@@ -15,8 +15,8 @@ const f5 = f4 - f3;
 const f5_correct = f5 == 99.8;
 
 const str0 = "" + 1;
-const falg = true;
-const str1 = str0 + ":" + falg;
+const flag = true;
+const str1 = str0 + ":" + flag;
 const str2 = "(" + str1 + ")";
 
 const mod0 = 1 + 10 % 3;
@@ -31,7 +31,7 @@ const divide0 = 2.0 / 1.0;
 const divide1 = 2.0 / 1;
 //const divide2 = 2.0 / 0;
 
-const compund0 = 1 + 2.0 * (5.0 - 2);
+const compound0 = 1 + 2.0 * (5.0 - 2);
 
 const greater0 = 5 > 4;
 
@@ -58,7 +58,7 @@ const array_exp_4 = array_exp_3 + 50.5;
 const array_exp_5 = 50.5 + array_exp_3;
 const array_exp_6 = true + {true,false};
 
-const bitwise_not_0 = ~(4)16;
+const bitwise_not_0 = ~(5)15; // 0b01111 bitwise not => 0b10000//16
 const bitwise_not_0_correct = 0 == bitwise_not_0;
 
 const round_0 = round(3.4);

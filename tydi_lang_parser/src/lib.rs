@@ -31,7 +31,7 @@ mod evaluation_type;
 mod evaluation_streamlet;
 mod evaluation_implement;
 mod built_in_ids;
-
+mod util;
 
 #[derive(Parser)]
 #[grammar = "tydi_lang_syntax.pest"]
@@ -47,6 +47,7 @@ pub enum ParserErrorCode {
     TypeEvaluationFail(String),
     StreamletEvaluationFail(String),
     ImplementEvaluationFail(String),
+    PackageNotImported(String),
 }
 
 impl From<ParserErrorCode> for String {
@@ -60,6 +61,7 @@ impl From<ParserErrorCode> for String {
             ParserErrorCode::TypeEvaluationFail(s) => { format!("TypeEvaluationFail:{}", s) }
             ParserErrorCode::StreamletEvaluationFail(s) => { format!("StreamletEvaluationFail:{}", s) }
             ParserErrorCode::ImplementEvaluationFail(s) => { format!("ImplementEvaluationFail:{}", s) }
+            ParserErrorCode::PackageNotImported(s) => { format!("PackageNotImported:{}", s) }
         }
     }
 }
@@ -550,7 +552,20 @@ pub fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
             Rule::Arg => {
                 let result = parse_arg_to_var(element.into_inner(), implement.get_scope());
                 if result.is_err() { return Err(result.err().unwrap()); }
-                implement_args.push(result.ok().unwrap());
+                let result = result.ok().unwrap();
+                match (*result.get_type().read().unwrap()).clone() {
+                    DataType::IntType => {}
+                    DataType::StringType => {}
+                    DataType::BoolType => {}
+                    DataType::FloatType => {}
+                    DataType::ArrayType(_) => {}
+                    DataType::LogicalDataType(_) => {}
+                    DataType::ProxyImplementOfStreamlet(_,_) => {}
+                    DataType::ExternalProxyImplementOfStreamlet(_,_,_) => {}
+
+                    _ => return Err(AnalysisCodeStructureFail(format!("unaccepted implement template arg")))
+                }
+                implement_args.push(result);
             },
             Rule::Extern_Intern_Id => {
                 let result = parse_internal_external_id(element.into_inner(), scope.clone());
@@ -602,7 +617,7 @@ pub fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
 
     // arrach implement
     {
-        let result = scope.write().unwrap().with_implement(implement);
+        let result = scope.write().unwrap().with_implement(Arc::new(RwLock::new(implement)));
         if result.is_err() { return Err(ParserErrorCode::AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
     }
 
@@ -801,7 +816,7 @@ pub fn parse_arg_to_var(arg_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
                     if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
                 }
 
-                output = Variable::new(id_exp.clone(), data_type.clone(), String::from(""));
+                output = Variable::new(shadow_var_name, data_type.clone(), String::from(""));
             },
             _ => { unreachable!() },
         }
@@ -838,6 +853,15 @@ pub fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
                 let result = parse_arg_to_var(element.into_inner(), streamlet.get_scope());
                 if result.is_err() { return Err(result.err().unwrap()); }
                 let result = result.ok().unwrap();
+                match (*result.get_type().read().unwrap()).clone() {
+                    DataType::IntType => {}
+                    DataType::StringType => {}
+                    DataType::BoolType => {}
+                    DataType::FloatType => {}
+                    DataType::ArrayType(_) => {}
+                    DataType::LogicalDataType(_) => {}
+                    _ => return Err(AnalysisCodeStructureFail(format!("unaccepted streamlet template arg")))
+                }
                 streamlet_args.push(result.clone());
             },
             Rule::StreamLetBodyStreamLetPort => {
@@ -877,7 +901,7 @@ pub fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
                             exp = item.as_str().to_string();
                         },
                         Rule::LogicalType => {
-                            let result = get_logical_type(item.clone().into_inner(), String::from(""),streamlet.get_scope());
+                            let result = get_logical_type(item.clone().into_inner(), format!("{}{}", &*crate::built_in_ids::GENERATED_ID_PREFIX, item.as_str().to_string()),streamlet.get_scope());
                             if result.is_err() { return Err(result.err().unwrap()); }
                             logical_type = result.ok().unwrap();
                         },

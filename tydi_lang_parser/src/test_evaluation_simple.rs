@@ -125,18 +125,17 @@ fn evaluate_streamlet() {
                 let package_scope = package.read().unwrap().get_scope().clone();
                 for (_, streamlet) in package_scope.read().unwrap().streamlets.clone() {
                     let streamlet_type = streamlet.read().unwrap().get_type();
-                    let streamlet_template_exps;
                     match streamlet_type {
                         StreamletType::NormalStreamlet => {
-                            streamlet_template_exps = vec![];
-                        }
+                            let result = evaluation_streamlet::infer_streamlet(streamlet, vec![], package_scope.clone(), project.clone());
+                            if result.is_err() { println!("{}", String::from(result.err().unwrap()));return; }
+                        },
                         StreamletType::TemplateStreamlet(template_exps) => {
-                            streamlet_template_exps = template_exps.clone();
-                        }
+                            //don't evaluate template
+                        },
                         _ => unreachable!()
                     }
-                    let result = evaluation_streamlet::infer_streamlet(streamlet, streamlet_template_exps, package_scope.clone(), project.clone());
-                    if result.is_err() { println!("{}", String::from(result.err().unwrap()));return; }
+
                 }
             }
             {
@@ -184,18 +183,16 @@ fn evaluate_implement() {
                 let package_implements = package_scope.read().unwrap().implements.clone();
                 for (_, implement) in package_implements {
                     let implement_type = implement.read().unwrap().get_type();
-                    let implement_template_exps;
                     match implement_type.clone() {
                         ImplementType::NormalImplement => {
-                            implement_template_exps = vec![];
+                            let result = evaluation_implement::infer_implement(implement, vec![], package_scope.clone(), project.clone());
+                            if result.is_err() { println!("{}", String::from(result.err().unwrap()));return; }
                         }
                         ImplementType::TemplateImplement(template_exps) => {
-                            implement_template_exps = template_exps.clone();
+                            //don't evaluate template
                         }
                         _ => unreachable!()
                     }
-                    let result = evaluation_implement::infer_implement(implement, implement_template_exps, package_scope.clone(), project.clone());
-                    if result.is_err() { println!("{}", String::from(result.err().unwrap()));return; }
                 }
             }
             {

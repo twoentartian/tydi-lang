@@ -175,17 +175,17 @@ impl Scope {
         return Ok(scope_copy);
     }
 
-    pub fn with_implement(&mut self, implement: Implement) -> Result<Arc<RwLock<Scope>>, ErrorCode> {
+    pub fn with_implement(&mut self, implement: Arc<RwLock<Implement>>) -> Result<(), ErrorCode> {
         if self.scope_type != ScopeType::BasicScope { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define streamlet outside of base scope"))); }
 
-        match self.implements.get(&implement.name) {
+        let name_ = implement.read().unwrap().get_name();
+        match self.implements.get(&name_) {
             None => {}
-            Some(_) => { return Err(ErrorCode::IdRedefined(format!("implement {} already defined", implement.get_name()))); }
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("implement {} already defined", name_.clone()))); }
         };
 
-        let scope_clone = implement.scope.clone();
-        self.implements.insert(implement.get_name(), Arc::new(RwLock::new(implement)));
-        return Ok(scope_clone);
+        self.implements.insert(name_, implement);
+        return Ok(());
     }
 
     pub fn resolve_implement_in_current_scope(& self, name_: String) -> Result<Arc<RwLock<Implement>>, ErrorCode> {

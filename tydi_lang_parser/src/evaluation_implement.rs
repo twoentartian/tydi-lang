@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use evaluation_streamlet::resolve_and_infer_streamlet;
 use evaluation_var::infer_variable;
 use tydi_lang_raw_ast::data_type::DataType;
 
@@ -6,6 +7,7 @@ use tydi_lang_raw_ast::project_arch::Project;
 use tydi_lang_raw_ast::scope::{Connection, Implement, Port, Scope, Streamlet, StreamletType, Variable, VariableValue};
 use tydi_lang_raw_ast::{inferred, infer_implement};
 use tydi_lang_raw_ast::connection::PortOwner;
+use tydi_lang_raw_ast::deep_clone::DeepClone;
 use tydi_lang_raw_ast::implement::ImplementType;
 use tydi_lang_raw_ast::inferable::{Inferable, NewInferable, InferState};
 use tydi_lang_raw_ast::instances::{Instance, InstanceArray};
@@ -29,6 +31,9 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
     let implement_type = implement.read().unwrap().get_type();
     match implement_type {
         ImplementType::NormalImplement => {
+            //check implement_template_exps
+            if implement_template_exps.len() != 0 { return Err(ImplementEvaluationFail(format!("normal implement cannot have template expressions"))); }
+
             //infer derived streamlet
             let streamlet_var = implement.read().unwrap().get_derived_streamlet_var();
             let streamlet_var_type = streamlet_var.read().unwrap().get_type();
@@ -75,11 +80,7 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
                     }
                     Some(package_name) => {
                         //external streamlet
-                        //check import
-                        {
-                            let package_var_result = implement_scope.read().unwrap().resolve_variable_from_scope(format!("{}{}", *crate::built_in_ids::PACKAGE_PREFIX, package_name.clone()));
-                            if package_var_result.is_err() { return Err(ImplementEvaluationFail(format!("package {} not imported", package_name.clone()))); }
-                        }
+                        crate::util::check_import_package(package_name.clone(), scope.clone())?;
                         let project_read = project.read().unwrap();
                         let external_package = project_read.packages.get(&package_name);
                         if external_package.is_none() { return Err(ImplementEvaluationFail(format!("package {} not found", package_name.clone()))); }
@@ -130,54 +131,179 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
 
             //infer connection
             for (_, connection) in implement_scope.read().unwrap().connections.clone() {
-                //infer port owner
-                let lhs_port_owner;
-                let rhs_port_owner;
-                {
-                    let connection_read = connection.read().unwrap();
-                    lhs_port_owner = connection_read.get_lhs_port_owner();
-                    rhs_port_owner = connection_read.get_rhs_port_owner();
-                }
-                let lhs_owner_result = infer_port_owner(lhs_port_owner.clone(), implement_scope.clone(), project.clone());
-                if lhs_owner_result.is_err() { return Err(lhs_owner_result.err().unwrap()); }
-                let lhs_owner_result = lhs_owner_result.ok().unwrap();
-                let rhs_owner_result = infer_port_owner(rhs_port_owner.clone(), implement_scope.clone(), project.clone());
-                if rhs_owner_result.is_err() { return Err(rhs_owner_result.err().unwrap()); }
-                let rhs_owner_result = rhs_owner_result.ok().unwrap();
-                {
-                    let mut connection_write = connection.write().unwrap();
-                    connection_write.set_lhs_port_owner(lhs_owner_result.clone());
-                    connection_write.set_rhs_port_owner(rhs_owner_result.clone());
-                }
-
-                //infer port
-                let lhs_array = connection.read().unwrap().get_lhs_port_array_type();
-                let lhs_port = connection.read().unwrap().get_lhs_port();
-                let result = infer_port(lhs_port.clone(), &lhs_owner_result, lhs_array, implement.clone(), implement_scope.clone(), project.clone());
-                if result.is_err() { return Err(result.err().unwrap()); }
-                {
-                    connection.write().unwrap().set_lhs_port(result.ok().unwrap());
-                }
-                let rhs_array = connection.read().unwrap().get_rhs_port_array_type();
-                let rhs_port = connection.read().unwrap().get_rhs_port();
-                let result = infer_port(rhs_port.clone(), &rhs_owner_result, rhs_array, implement.clone(), implement_scope.clone(), project.clone());
-                if result.is_err() { return Err(result.err().unwrap()); }
-                {
-                    connection.write().unwrap().set_rhs_port(result.ok().unwrap());
-                }
+                infer_connection(connection.clone(), implement.clone(), implement_scope.clone(), project.clone())?;
             }
 
             return Ok(implement);
         }
-        ImplementType::TemplateImplement(implement_args) => {
+        ImplementType::TemplateImplement(template_args) => {
+            //get instantiate template name
+            let implement_instance_name = crate::util::generate_template_instance_name(implement.read().unwrap().get_name(), &implement_template_exps);
 
+            //infer template expressions
+            for template_exp in &implement_template_exps {
+                infer_variable(template_exp.clone(), scope.clone(), project.clone())?;
+            }
 
-            return Ok(implement);//todo
+            //clone / instantiate implement
+            let mut cloned_implement = implement.read().unwrap().deep_clone();
+            cloned_implement.set_name(implement_instance_name);
+            cloned_implement.set_type(ImplementType::NormalImplement);
+            let cloned_implement = Arc::new(RwLock::new(cloned_implement));
+            {
+                let result = scope.write().unwrap().with_implement(cloned_implement.clone());
+                if result.is_err() { /*that implement might have already exists, so we don't check result*/ }
+            }
+
+            //remove the template var in scope
+            let cloned_implement_scope = cloned_implement.read().unwrap().get_scope();
+            for i in 0 .. template_args.len() {
+                let name = template_args[i].read().unwrap().get_name();
+                let index = name.find(&*crate::built_in_ids::ARG_PREFIX).unwrap();
+                let name = (&name[index+5 ..]).to_string();
+                let result = cloned_implement_scope.write().unwrap().vars.remove(&name);
+                match result {
+                    None => { unreachable!() }
+                    Some(_) => {}
+                }
+            }
+
+            //create corresponding linking var
+            if implement_template_exps.len() != template_args.len() { return Err(ImplementEvaluationFail(format!("template expressions mismatch"))); }
+            for i in 0 .. implement_template_exps.len() {
+                let template_exp = &implement_template_exps[i];
+                let template_arg = &template_args[i];
+                let template_exp_type_arc = template_exp.read().unwrap().get_type();
+                let template_arg_type_arc = template_arg.read().unwrap().get_type();
+                let template_exp_type = (*template_exp_type_arc.read().unwrap()).clone();
+                let template_arg_type = (*template_arg_type_arc.read().unwrap()).clone();
+                if template_arg_type != template_exp_type.clone() {
+                    return Err(ImplementEvaluationFail(format!("template expressions mismatch, template type({}) != exp type({})", String::from(template_arg_type.clone()), String::from(template_exp_type.clone()))));
+                }
+                let linking_var_name = template_arg.read().unwrap().get_name();
+                let linking_var_name_index = linking_var_name.find(&*crate::built_in_ids::ARG_PREFIX).unwrap();
+                let linking_var_name = (&linking_var_name[linking_var_name_index+5 ..]).to_string();
+                match template_arg_type.clone() {
+                    DataType::IntType | DataType::StringType | DataType::BoolType | DataType::FloatType | DataType::ArrayType(_) => {
+                        let mut linking_var = Arc::new(RwLock::new(Variable::new_with_value(linking_var_name.clone(), template_arg_type.clone(), template_exp.read().unwrap().get_var_value().get_raw_value())));
+                        let result = cloned_implement_scope.write().unwrap().with_variable(linking_var);
+                        if result.is_err() { return Err(ImplementEvaluationFail(format!("failed to create linking variable({}): {}", linking_var_name.clone(), String::from(result.err().unwrap())))); }
+                    }
+                    DataType::LogicalDataType(_) => {
+                        match template_exp_type {
+                            DataType::LogicalDataType(logical_data_type) => {
+                                let result = cloned_implement_scope.write().unwrap().new_logical_data_type(linking_var_name.clone(), (*logical_data_type.read().unwrap()).clone());
+                                if result.is_err() { return Err(ImplementEvaluationFail(format!("failed to create linking type({}): {}", linking_var_name.clone(), String::from(result.err().unwrap())))); }
+                            },
+                            _ => return unreachable!(),
+                        }
+                    }
+                    DataType::ProxyImplementOfStreamlet(streamlet_name, streamlet_template_exps) => {
+                        let result = resolve_and_infer_streamlet(streamlet_name, None, streamlet_template_exps, implement_scope.clone(), project.clone());
+                        if result.is_err() { return Err(result.err().unwrap()); }
+                        let streamlet = result.ok().unwrap();
+
+                        match template_exp_type {
+                            DataType::ProxyImplement(name, proxy_implement_template_exps) => {
+
+                            }
+                            DataType::ExternalProxyImplement(package, name, proxy_implement_template_exps) => {
+
+                            }
+                            _ => unreachable!()
+                        }
+
+                        cloned_implement_scope.write().unwrap().with_implement();
+                    }
+                    DataType::ExternalProxyImplementOfStreamlet(package_name, streamlet_name, streamlet_template_exps) => {
+                        let result = resolve_and_infer_streamlet(streamlet_name, Some(package_name), streamlet_template_exps, implement_scope.clone(), project.clone());
+                        if result.is_err() { return Err(result.err().unwrap()); }
+                        let streamlet = result.ok().unwrap();
+
+                        match template_exp_type {
+                            DataType::ProxyImplement(name, proxy_implement_template_exps) => {
+
+                            }
+                            DataType::ExternalProxyImplement(package, name, proxy_implement_template_exps) => {
+
+                            }
+                            _ => unreachable!()
+                        }
+
+                        cloned_implement_scope.write().unwrap().with_implement();
+                    }
+                    _ => { unreachable!() }
+                };
+            }
+
+            return Ok(cloned_implement);//todo
         }
         _ => unreachable!()
     }
 
 
+}
+
+pub fn infer_connection(connection: Arc<RwLock<Connection>>, implement: Arc<RwLock<Implement>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<(), ParserErrorCode> {
+    //infer port owner
+    let lhs_owner_result;
+    let rhs_owner_result;
+    {
+        let lhs_port_owner;
+        let rhs_port_owner;
+        {
+            let connection_read = connection.read().unwrap();
+            lhs_port_owner = connection_read.get_lhs_port_owner();
+            rhs_port_owner = connection_read.get_rhs_port_owner();
+        }
+        let lhs_owner_result_ = infer_port_owner(lhs_port_owner.clone(), scope.clone(), project.clone());
+        if lhs_owner_result_.is_err() { return Err(lhs_owner_result_.err().unwrap()); }
+        lhs_owner_result = lhs_owner_result_.ok().unwrap();
+        let rhs_owner_result_ = infer_port_owner(rhs_port_owner.clone(), scope.clone(), project.clone());
+        if rhs_owner_result_.is_err() { return Err(rhs_owner_result_.err().unwrap()); }
+        rhs_owner_result = rhs_owner_result_.ok().unwrap();
+        {
+            let mut connection_write = connection.write().unwrap();
+            connection_write.set_lhs_port_owner(lhs_owner_result.clone());
+            connection_write.set_rhs_port_owner(rhs_owner_result.clone());
+        }
+    }
+
+    //infer port
+    {
+        let lhs_array = connection.read().unwrap().get_lhs_port_array_type();
+        let lhs_port = connection.read().unwrap().get_lhs_port();
+        let result = infer_port(lhs_port.clone(), &lhs_owner_result, lhs_array, implement.clone(), scope.clone(), project.clone());
+        if result.is_err() { return Err(result.err().unwrap()); }
+        {
+            connection.write().unwrap().set_lhs_port(result.ok().unwrap());
+        }
+        let rhs_array = connection.read().unwrap().get_rhs_port_array_type();
+        let rhs_port = connection.read().unwrap().get_rhs_port();
+        let result = infer_port(rhs_port.clone(), &rhs_owner_result, rhs_array, implement.clone(), scope.clone(), project.clone());
+        if result.is_err() { return Err(result.err().unwrap()); }
+        {
+            connection.write().unwrap().set_rhs_port(result.ok().unwrap());
+        }
+    }
+
+    //infer delay
+    {
+        let delay_var = connection.read().unwrap().get_delay();
+        let delay_var_result = evaluation_var::infer_variable(delay_var.clone(), scope.clone(), project.clone());
+        if delay_var_result.is_err() { return Err(delay_var_result.err().unwrap()); }
+        match delay_var.read().unwrap().get_var_value().get_raw_value() {
+            VariableValue::Int(i) => {
+                if i < 0 { return Err(ImplementEvaluationFail(format!("delay of {} must >= 0", connection.read().unwrap().get_name()))); }
+            }
+            _ => return {
+                let datatype = delay_var.read().unwrap().get_type();
+                Err(ImplementEvaluationFail(format!("delay of {} must be an integer, but it's a {}", connection.read().unwrap().get_name(), String::from((*datatype.read().unwrap()).clone()))))
+            }
+        };
+    }
+
+    return Ok(());
 }
 
 pub fn infer_port(port_to_infer: Inferable<Arc<RwLock<Port>>>, port_to_infer_owner: &PortOwner, array_exp: PortArray, implement: Arc<RwLock<Implement>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Inferable<Arc<RwLock<Port>>>, ParserErrorCode> {
@@ -187,8 +313,7 @@ pub fn infer_port(port_to_infer: Inferable<Arc<RwLock<Port>>>, port_to_infer_own
         PortArray::UnknownPortArray => { unreachable!() }
         PortArray::SinglePort => { index = None }
         PortArray::ArrayPort(var) => {
-            let result = infer_variable(var.clone(), scope.clone(), project.clone());
-            if result.is_err() { return Err(result.err().unwrap()); }
+            infer_variable(var.clone(), scope.clone(), project.clone())?;
             match var.read().unwrap().get_var_value().get_raw_value() {
                 VariableValue::Int(i) => {
                     if i < 0 { return Err(ImplementEvaluationFail(format!("the index of port array must >= 0"))); }
@@ -303,11 +428,7 @@ pub fn resolve_and_infer_implement(implement_name: String, package_name: Option<
             return infer_implement(implement.clone(), implement_template_exps.clone(), scope.clone(), project.clone())
         }
         Some(package_name) => {
-            //check import
-            {
-                let package_var_result = scope.read().unwrap().resolve_variable_from_scope(format!("{}{}", *crate::built_in_ids::PACKAGE_PREFIX, package_name.clone()));
-                if package_var_result.is_err() { return Err(ImplementEvaluationFail(format!("package {} not imported", package_name.clone()))); }
-            }
+            crate::util::check_import_package(package_name.clone(), scope.clone())?;
             let project_read = project.read().unwrap();
             let external_package = project_read.packages.get(&package_name);
             if external_package.is_none() { return Err(ImplementEvaluationFail(format!("package {} not found", package_name.clone()))); }

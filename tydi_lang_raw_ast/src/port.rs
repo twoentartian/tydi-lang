@@ -78,7 +78,7 @@ impl DeepClone for Port {
 }
 
 impl Port {
-    generate_get!(name, String, get_name);
+    generate_access!(name, String, get_name, set_name);
     generate_access!(port_type, Inferable<Arc<RwLock<LogicalDataType>>>, get_type, set_type);
     generate_get!(direction, PortDirection, get_direction);
     generate_access!(array_type, PortArray, get_array_type, set_array_type);

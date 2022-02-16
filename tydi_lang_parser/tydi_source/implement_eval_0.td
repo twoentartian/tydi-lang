@@ -14,7 +14,7 @@ streamlet basic0 {
 streamlet streamlet1<i:int, t:type> {
   const v = i,
   in : Stream(t) in, //anonymous type
-  out : bit8_stream [v] out,
+  out : bit8_stream [i] out,
 };
 
 impl impl0 of implement_eval_1.basic1 {
@@ -24,6 +24,15 @@ impl impl0 of implement_eval_1.basic1 {
 impl impl1 of streamlet1<var, type Bit(1)> {
   const v = 5,
   instance test_inst(impl0) [v],
-  test_inst[0].out[1] => test_inst[v-1].in,
+  test_inst[0].out[0] =1=> test_inst[v-1].in,
+
+};
+
+impl impl2<i:int, ts: impl of implement_eval_1.basic1> of implement_eval_1.basic1 {
+
+};
+
+impl impl3 of streamlet1<var, type Bit(1)> {
+  instance test_inst(impl2<10, impl impl0>),
 
 };
