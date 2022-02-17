@@ -176,7 +176,7 @@ impl Scope {
     }
 
     pub fn with_implement(&mut self, implement: Arc<RwLock<Implement>>) -> Result<(), ErrorCode> {
-        if self.scope_type != ScopeType::BasicScope { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define streamlet outside of base scope"))); }
+        if self.scope_type != ScopeType::BasicScope && self.scope_type != ScopeType::ImplementScope { return Err(ErrorCode::ScopeNotAllowed(format!("not allowed to define implement outside of base scope"))); }
 
         let name_ = implement.read().unwrap().get_name();
         match self.implements.get(&name_) {

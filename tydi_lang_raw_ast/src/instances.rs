@@ -1,7 +1,8 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 use deep_clone::DeepClone;
-use implement::Implement;
+use implement::{Implement, ImplementType};
+use variable::VariableValue::Bool;
 use crate::error::ErrorCode;
 use crate::streamlet::Streamlet;
 use crate::{generate_get, generate_set, generate_access};
@@ -124,11 +125,29 @@ impl From<Instance> for String {
             None => { String::from("") }
             Some(package) => { format!("{}.", package) }
         };
-        let mut argexp_output = String::from("");
-        for single_argexp in inst.get_implement_argexp() {
-            argexp_output.push_str(&format!("@{}", &String::from((*single_argexp.read().unwrap()).clone())));
+
+        let mut template_flag = false;
+        if inst.implement_type.get_infer_state() == InferState::Inferred {
+            match inst.implement_type.get_raw_value().read().unwrap().get_type() {
+                ImplementType::NormalImplement => {
+                    template_flag = false;
+                }
+                ImplementType::TemplateImplement(_) => {
+                    template_flag = true;
+                }
+                _ => unreachable!()
+            }
         }
-        return format!("{}:{}({}){}<{}>", inst.get_name(), package_exp, String::from(inst.implement_type), array_exp, argexp_output);
+
+        return if template_flag {
+            let mut argexp_output = String::from("");
+            for single_argexp in inst.get_implement_argexp() {
+                argexp_output.push_str(&format!("@{}", &String::from((*single_argexp.read().unwrap()).clone())));
+            }
+            format!("{}:{}({}<{}>){}", inst.get_name(), package_exp, String::from(inst.implement_type), argexp_output, array_exp)
+        } else {
+            format!("{}:{}({}){}", inst.get_name(), package_exp, String::from(inst.implement_type), array_exp)
+        }
     }
 }
 

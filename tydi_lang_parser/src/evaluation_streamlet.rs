@@ -1,4 +1,3 @@
-use std::os::unix::raw::uid_t;
 use std::sync::{Arc, RwLock, RwLockReadGuard};
 use evaluation_var::infer_variable;
 use ParserErrorCode::StreamletEvaluationFail;
@@ -138,8 +137,7 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
             }
 
             //evaluation the new generated streamlet
-            let result = infer_streamlet(cloned_streamlet.clone(), vec![], scope.clone(), project.clone());
-            if result.is_err() { return Err(result.err().unwrap()); }
+            infer_streamlet(cloned_streamlet.clone(), vec![], scope.clone(), project.clone())?;
 
             return Ok(cloned_streamlet.clone());
         }

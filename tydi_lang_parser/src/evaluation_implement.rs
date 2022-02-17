@@ -95,10 +95,11 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
                 //evaluation implement
                 let result = infer_implement(resolve_implement_result.clone(), derived_implement_template_exps.clone(), scope.clone(), project.clone());
                 if result.is_err() { return Err(result.err().unwrap()); }
+                let evaluated_implement = result.ok().unwrap();
 
                 //set derived implement
                 {
-                    instance.write().unwrap().set_implement_type(inferred!(infer_implement!(), resolve_implement_result));
+                    instance.write().unwrap().set_implement_type(inferred!(infer_implement!(), evaluated_implement));
                 }
 
                 //perform array expansion?
@@ -203,40 +204,71 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
                         if result.is_err() { return Err(result.err().unwrap()); }
                         let streamlet = result.ok().unwrap();
 
+                        //resolve implement
+                        let arg_implement;
                         match template_exp_type {
                             DataType::ProxyImplement(name, proxy_implement_template_exps) => {
-
+                                arg_implement = resolve_and_infer_implement(name.clone(), None, proxy_implement_template_exps.clone(), implement_scope.clone(), project.clone())?;
                             }
                             DataType::ExternalProxyImplement(package, name, proxy_implement_template_exps) => {
-
+                                arg_implement = resolve_and_infer_implement(name.clone(), Some(package), proxy_implement_template_exps.clone(), implement_scope.clone(), project.clone())?;
                             }
                             _ => unreachable!()
                         }
 
-                        cloned_implement_scope.write().unwrap().with_implement();
+                        //check implement is derived from the streamlet
+                        let streamlet_of_arg_implement = arg_implement.read().unwrap().get_derived_streamlet().unwrap();
+                        let expected_name = streamlet.read().unwrap().get_name();
+                        let provided_name = streamlet_of_arg_implement.read().unwrap().get_name();
+                        if expected_name != provided_name {
+                            return Err(ImplementEvaluationFail(format!("invalid implement, derived from streamlet {} but expects {}", provided_name, provided_name)));
+                        }
+
+                        //deep clone
+                        let mut cloned_implement = arg_implement.read().unwrap().deep_clone();
+                        cloned_implement.set_name(linking_var_name.clone());
+                        let result = cloned_implement_scope.write().unwrap().with_implement(Arc::new(RwLock::new(cloned_implement)));
+                        if result.is_err() { return Err(ImplementEvaluationFail(String::from(result.err().unwrap()))); }
                     }
                     DataType::ExternalProxyImplementOfStreamlet(package_name, streamlet_name, streamlet_template_exps) => {
                         let result = resolve_and_infer_streamlet(streamlet_name, Some(package_name), streamlet_template_exps, implement_scope.clone(), project.clone());
                         if result.is_err() { return Err(result.err().unwrap()); }
                         let streamlet = result.ok().unwrap();
 
+                        //resolve implement
+                        let arg_implement;
                         match template_exp_type {
                             DataType::ProxyImplement(name, proxy_implement_template_exps) => {
-
+                                arg_implement = resolve_and_infer_implement(name.clone(), None, proxy_implement_template_exps.clone(), implement_scope.clone(), project.clone())?;
                             }
                             DataType::ExternalProxyImplement(package, name, proxy_implement_template_exps) => {
-
+                                arg_implement = resolve_and_infer_implement(name.clone(), Some(package), proxy_implement_template_exps.clone(), implement_scope.clone(), project.clone())?;
                             }
                             _ => unreachable!()
                         }
 
-                        cloned_implement_scope.write().unwrap().with_implement();
+                        //check implement is derived from the streamlet
+                        let streamlet_of_arg_implement = arg_implement.read().unwrap().get_derived_streamlet().unwrap();
+                        let expected_name = streamlet.read().unwrap().get_name();
+                        let provided_name = streamlet_of_arg_implement.read().unwrap().get_name();
+                        if expected_name != provided_name {
+                            return Err(ImplementEvaluationFail(format!("invalid implement, derived from streamlet {} but expects {}", provided_name, provided_name)));
+                        }
+
+                        //deep clone
+                        let mut cloned_implement = arg_implement.read().unwrap().deep_clone();
+                        cloned_implement.set_name(linking_var_name.clone());
+                        let result = cloned_implement_scope.write().unwrap().with_implement(Arc::new(RwLock::new(cloned_implement)));
+                        if result.is_err() { return Err(ImplementEvaluationFail(String::from(result.err().unwrap()))); }
                     }
                     _ => { unreachable!() }
                 };
             }
 
-            return Ok(cloned_implement);//todo
+            //evaluation the new generated implement
+            infer_implement(cloned_implement.clone(), vec![], scope.clone(), project.clone())?;
+
+            return Ok(cloned_implement);
         }
         _ => unreachable!()
     }

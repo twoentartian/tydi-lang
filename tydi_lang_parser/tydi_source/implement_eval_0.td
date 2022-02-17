@@ -18,18 +18,19 @@ streamlet streamlet1<i:int, t:type> {
 };
 
 impl impl0 of implement_eval_1.basic1 {
-
+  const v = 5,
 };
 
 impl impl1 of streamlet1<var, type Bit(1)> {
   const v = 5,
+  const v2 = v * 2,
   instance test_inst(impl0) [v],
-  test_inst[0].out[0] =1=> test_inst[v-1].in,
+  test_inst[0].out[0] =v2=> test_inst[v-1].in,
 
 };
 
 impl impl2<i:int, ts: impl of implement_eval_1.basic1> of implement_eval_1.basic1 {
-
+  instance test_inst(impl0),
 };
 
 impl impl3 of streamlet1<var, type Bit(1)> {
