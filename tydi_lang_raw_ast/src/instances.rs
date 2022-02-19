@@ -2,7 +2,6 @@ use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 use deep_clone::DeepClone;
 use implement::{Implement, ImplementType};
-use variable::VariableValue::Bool;
 use crate::error::ErrorCode;
 use crate::streamlet::Streamlet;
 use crate::{generate_get, generate_set, generate_access};

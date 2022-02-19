@@ -33,9 +33,9 @@ fn parse_test0_mt() {
         }
         Err(errors) => {
             for index in 0..errors.len() {
-                match errors[index].clone() {
-                    Ok(_) => { println!("{}:no error", paths[index]) }
-                    Err(e) => println!("{}: error: {}", paths[index], String::from(e))
+                match errors[index].1.clone() {
+                    Ok(_) => { println!("{}:no error", errors[index].0) }
+                    Err(e) => println!("{}: error: {}", errors[index].0, String::from(e))
                 }
             }
         }

@@ -1,5 +1,7 @@
 ///////////////////////  start of lex.sdf3  ///////////////////////
-ID = @{ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")*  ~ !(ASCII_ALPHA | ASCII_DIGIT | "_") }
+ID_BLOCK_LIST = { !("impl " | "streamlet " | "const " | "int " | "str " | "bool " | "float " | "type " | "instance " ) }
+ID = @{ ID_BLOCK_LIST ~ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")*  ~ !(ASCII_ALPHA | ASCII_DIGIT | "_") }
+
 
 INT_RAW_NORAML = @{ ASCII_DIGIT  ~ (ASCII_DIGIT | "_")* ~ !(ASCII_DIGIT | "_")}
 INT_RAW_HEX = @{ "0x" ~ ASCII_HEX_DIGIT  ~ (ASCII_HEX_DIGIT | "_")* ~ !(ASCII_HEX_DIGIT | "_")}
@@ -76,10 +78,12 @@ InfixOp = _{ OP_LeftShift | OP_RightShift | OP_LogicalAnd | OP_LogicalOr | OP_Lo
 ExpLog = { "log" ~ Exp ~ "(" ~ Exp ~ ")"}
 ExpBitWiseNot = { "~" ~ "(" ~ Exp ~ ")" ~ Exp }
 ExpIndex = { ID ~ "[" ~ Exp ~ "]" }
-ExpConstInType = { "type" ~ ID ~ "." ~ ID }
 ExpRound = { "round" ~ "(" ~ Exp ~ ")" }
 ExpFloor = { "floor" ~ "(" ~ Exp ~ ")" }
 ExpCeil = { "ceil" ~ "(" ~ Exp ~ ")" }
+
+ExpConstInType = { "type" ~ ID ~ "." ~ ID }
+ExpConstInExternType = { ID ~ "." ~ "type" ~ ID ~ "." ~ ID }
 
 ///////////////////////  end of exp.sdf3  ///////////////////////
 

@@ -2,7 +2,14 @@ package implement_eval_0;
 
 import implement_eval_1;
 
-const var = 10;
+const v = 1;
+
+type Group temp_group {
+  const v = 10,
+  const v1 = 20,
+};
+
+const var = type temp_group.v;
 
 type bit8_stream = Stream(Bit(8), d = 5);
 
@@ -22,7 +29,8 @@ impl impl0 of implement_eval_1.basic1 {
 };
 
 impl impl1 of streamlet1<var, type Bit(1)> {
-  const v = 5,
+  const v = impl impl0.v,
+  //const v = 5,
   const v2 = v * 2,
   instance test_inst(impl0) [v],
   test_inst[0].out[0] =v2=> test_inst[v-1].in,

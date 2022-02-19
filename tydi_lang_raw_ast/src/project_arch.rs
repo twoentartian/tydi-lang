@@ -43,7 +43,7 @@ impl Project {
         return Ok(());
     }
 
-    pub fn find_package(&mut self, name_: String) -> Result<Arc<RwLock<Package>>,ErrorCode> {
+    pub fn find_package(&self, name_: String) -> Result<Arc<RwLock<Package>>,ErrorCode> {
         match self.packages.get(&name_) {
             None => {return Err(ErrorCode::IdNotFound(format!("package name: {} already exists", name_))); }
             Some(package) => {return Ok(package.clone()); }

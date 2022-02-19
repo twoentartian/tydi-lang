@@ -8,14 +8,14 @@ use pest::prec_climber as pcl;
 use tydi_lang_raw_ast::deep_clone::DeepClone;
 use tydi_lang_raw_ast::{inferred, infer_logical_data_type};
 use tydi_lang_raw_ast::inferable::{NewInferable, Inferable};
+use tydi_lang_raw_ast::logical_data_type::LogicalDataType;
 use tydi_lang_raw_ast::project_arch::Project;
 use tydi_lang_raw_ast::scope::{Scope, Variable, DataType, InferState, VariableValue};
 use crate::ParserErrorCode;
 use crate::evaluation_type;
 
-#[derive(Parser)]
-#[grammar = "tydi_lang_syntax.pest"]
-pub struct TydiParser;
+type Rule = crate::Rule;
+type TydiParser = crate::TydiParser;
 
 lazy_static! {
     static ref PREC_CLIMBER: PrecClimber<Rule> = {
@@ -369,6 +369,192 @@ fn eval_op_less(lhs:Variable, rhs: Variable, lhs_type: DataType, rhs_type: DataT
     }
 }
 
+/// support types within self packages or in external packages
+fn eval_exp_in_type(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
+    let mut name_vec: Vec<String> = vec![];
+    for term_inner in term.clone().into_iter() {
+        match term_inner.clone().as_rule() {
+            Rule::ID => {
+                name_vec.push(term_inner.as_str().to_string());
+            },
+            _ => unreachable!()
+        }
+    }
+
+    //get target scope
+    let target_scope;
+    if name_vec.len() == 2 {
+        target_scope = scope.clone();
+    }
+    else if name_vec.len() == 3 {
+        //type in external package
+        let external_package = project.read().unwrap().find_package(name_vec[0].clone());
+        let external_package = external_package.ok().unwrap();
+        let external_package_scope = external_package.read().unwrap().get_scope();
+        target_scope = external_package_scope;
+        let mut name_vec_without_package_name: Vec<String> = vec![];
+        name_vec_without_package_name.push(name_vec[1].clone());
+        name_vec_without_package_name.push(name_vec[2].clone());
+        name_vec = name_vec_without_package_name;
+    }
+    else {
+        unreachable!()
+    }
+
+    //resolve type
+    let type_result = target_scope.read().unwrap().resolve_type_from_scope(name_vec[0].clone());
+    if type_result.is_err() { return Err(ExpressionEvaluationFail(String::from(type_result.err().unwrap()))); }
+    let resolved_type = type_result.ok().unwrap();
+
+    //infer type
+    crate::evaluation_type::infer_type_alias(resolved_type.clone(), target_scope.clone(), project.clone())?;
+    let resolved_logical_type = resolved_type.read().unwrap().get_type_infer().get_raw_value();
+
+    return match (*resolved_logical_type.read().unwrap()).clone() {
+        LogicalDataType::DataGroupType(_, logical_group) => {
+            let type_scope = logical_group.read().unwrap().get_scope();
+            let output_var_result = type_scope.read().unwrap().resolve_variable_in_current_scope(name_vec[1].clone());
+            if output_var_result.is_err() { return Err(ExpressionEvaluationFail(String::from(output_var_result.err().unwrap()))); }
+            let output_var = output_var_result.ok().unwrap();
+            infer_variable(output_var.clone(), target_scope.clone(), project.clone())?;
+            let output_var_cloned = (*output_var.read().unwrap()).clone();
+            Ok(output_var_cloned)
+        }
+        LogicalDataType::DataUnionType(_, logical_union) => {
+            let type_scope = logical_union.read().unwrap().get_scope();
+            let output_var_result = type_scope.read().unwrap().resolve_variable_in_current_scope(name_vec[1].clone());
+            if output_var_result.is_err() { return Err(ExpressionEvaluationFail(String::from(output_var_result.err().unwrap()))); }
+            let output_var = output_var_result.ok().unwrap();
+            infer_variable(output_var.clone(), target_scope.clone(), project.clone())?;
+            let output_var_cloned = (*output_var.read().unwrap()).clone();
+            Ok(output_var_cloned)
+        }
+        _ => Err(ExpressionEvaluationFail(format!("only logical group and union can have const variable in types")))
+    };
+}
+
+/// support implements within self packages or in external packages
+fn eval_exp_in_implement(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
+    let mut name_vec: Vec<String> = vec![];
+    let mut arg_exps: Option<Vec<Arc<RwLock<Variable>>>> = None;
+    for term_inner in term.clone().into_iter() {
+        match term_inner.clone().as_rule() {
+            Rule::ID => {
+                name_vec.push(term_inner.as_str().to_string());
+            },
+            Rule::ArgExps => {
+                arg_exps = Some(crate::parse_argexps(term_inner.into_inner(), scope.clone())?);
+            }
+            _ => unreachable!()
+        }
+    }
+
+    //get target scope
+    let target_scope;
+    if name_vec.len() == 2 {
+        target_scope = scope.clone();
+    }
+    else if name_vec.len() == 3 {
+        //type in external package
+        let external_package = project.read().unwrap().find_package(name_vec[0].clone());
+        let external_package = external_package.ok().unwrap();
+        let external_package_scope = external_package.read().unwrap().get_scope();
+        target_scope = external_package_scope;
+        let mut name_vec_without_package_name: Vec<String> = vec![];
+        name_vec_without_package_name.push(name_vec[1].clone());
+        name_vec_without_package_name.push(name_vec[2].clone());
+        name_vec = name_vec_without_package_name;
+    }
+    else {
+        unreachable!()
+    }
+
+    //resolve implement
+    let implement_result = target_scope.read().unwrap().resolve_implement_from_scope(name_vec[0].clone());
+    if implement_result.is_err() { return Err(ExpressionEvaluationFail(String::from(implement_result.err().unwrap()))); }
+    let resolved_implement = implement_result.ok().unwrap();
+
+    //infer implement
+    let implement_result;
+    match arg_exps {
+        None => {
+            implement_result = crate::evaluation_implement::infer_implement(resolved_implement.clone(), vec![], scope.clone(), project.clone())?;
+        }
+        Some(arg_exps) => {
+            implement_result = crate::evaluation_implement::infer_implement(resolved_implement.clone(), arg_exps, scope.clone(), project.clone())?;
+        }
+    }
+
+    let implement_scope = implement_result.read().unwrap().get_scope();
+    let output_var_result = implement_scope.read().unwrap().resolve_variable_in_current_scope(name_vec[1].clone());
+    if output_var_result.is_err() { return Err(ExpressionEvaluationFail(String::from(output_var_result.err().unwrap()))); }
+    let output_var = output_var_result.ok().unwrap();
+    infer_variable(output_var.clone(), target_scope.clone(), project.clone())?;
+    let output_var_cloned = (*output_var.read().unwrap()).clone();
+    Ok(output_var_cloned)
+}
+
+/// support streamlets within self packages or in external packages
+fn eval_exp_in_streamlet(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
+    let mut name_vec: Vec<String> = vec![];
+    let mut arg_exps: Option<Vec<Arc<RwLock<Variable>>>> = None;
+    for term_inner in term.clone().into_iter() {
+        match term_inner.clone().as_rule() {
+            Rule::ID => {
+                name_vec.push(term_inner.as_str().to_string());
+            },
+            Rule::ArgExps => {
+                arg_exps = Some(crate::parse_argexps(term_inner.into_inner(), scope.clone())?);
+            }
+            _ => unreachable!()
+        }
+    }
+
+    //get target scope
+    let target_scope;
+    if name_vec.len() == 2 {
+        target_scope = scope.clone();
+    }
+    else if name_vec.len() == 3 {
+        //type in external package
+        let external_package = project.read().unwrap().find_package(name_vec[0].clone());
+        let external_package = external_package.ok().unwrap();
+        let external_package_scope = external_package.read().unwrap().get_scope();
+        target_scope = external_package_scope;
+        let mut name_vec_without_package_name: Vec<String> = vec![];
+        name_vec_without_package_name.push(name_vec[1].clone());
+        name_vec_without_package_name.push(name_vec[2].clone());
+        name_vec = name_vec_without_package_name;
+    }
+    else {
+        unreachable!()
+    }
+
+    //resolve implement
+    let streamlet_result = target_scope.read().unwrap().resolve_streamlet_from_scope(name_vec[0].clone());
+    if streamlet_result.is_err() { return Err(ExpressionEvaluationFail(String::from(streamlet_result.err().unwrap()))); }
+    let resolved_streamlet = streamlet_result.ok().unwrap();
+
+    //infer streamlet
+    let streamlet_result;
+    match arg_exps {
+        None => {
+            streamlet_result = crate::evaluation_streamlet::infer_streamlet(resolved_streamlet.clone(), vec![], scope.clone(), project.clone())?;
+        }
+        Some(arg_exps) => {
+            streamlet_result = crate::evaluation_streamlet::infer_streamlet(resolved_streamlet.clone(), arg_exps, scope.clone(), project.clone())?;
+        }
+    }
+
+    let streamlet_scope = streamlet_result.read().unwrap().get_scope();
+    let output_var_result = streamlet_scope.read().unwrap().resolve_variable_in_current_scope(name_vec[1].clone());
+    if output_var_result.is_err() { return Err(ExpressionEvaluationFail(String::from(output_var_result.err().unwrap()))); }
+    let output_var = output_var_result.ok().unwrap();
+    infer_variable(output_var.clone(), target_scope.clone(), project.clone())?;
+    let output_var_cloned = (*output_var.read().unwrap()).clone();
+    Ok(output_var_cloned)
+}
+
 pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Variable, ParserErrorCode> {
     for term_inner in term.clone().into_iter() {
         match term_inner.clone().as_rule() {
@@ -382,8 +568,8 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
             Rule::ExpBitWiseNot => {
                 return eval_exp_bitwisenot(term_inner.into_inner(), scope.clone(), project.clone());
             }
-            Rule::ExpConstInType => {
-                todo!()
+            Rule::ExpConstInType | Rule::ExpConstInExternType => {
+                return eval_exp_in_type(term_inner.into_inner(), scope.clone(), project.clone());
             }
             Rule::ExpRound => {
                 let mut input_exp = Variable::new_int(String::from(""), 0);
@@ -508,17 +694,11 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
                     _ => return Err(ExpressionEvaluationFail(format!("[] operator only accepts array")))
                 }
             }
-            Rule::ExpConstInStreamlet => {
-                todo!()
+            Rule::ExpConstInStreamlet | Rule::ExpExternalConstInStreamlet  => {
+                return eval_exp_in_streamlet(term_inner.into_inner(), scope.clone(), project.clone());
             }
-            Rule::ExpExternalConstInStreamlet => {
-                todo!()
-            }
-            Rule::ExpConstInImplement => {
-                todo!()
-            }
-            Rule::ExpExternalConstInImplement => {
-                todo!()
+            Rule::ExpConstInImplement | Rule::ExpExternalConstInImplement => {
+                return eval_exp_in_implement(term_inner.into_inner(), scope.clone(), project.clone());
             }
             Rule::UnaryExp => {
                 return eval_exp_unary(term_inner.into_inner(), scope.clone(), project.clone());

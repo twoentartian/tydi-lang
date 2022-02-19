@@ -102,7 +102,7 @@ pub fn parse_multi_files_st(project_name: String, file_paths: Vec<String>) -> Re
     }
 }
 
-pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worker: Option<usize>) -> Result<Arc<RwLock<project_arch::Project>>, Vec<Result<(),ParserErrorCode>>> {
+pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worker: Option<usize>) -> Result<Arc<RwLock<project_arch::Project>>, Vec<(String, Result<(),ParserErrorCode>)>> {
     use threadpool::ThreadPool;
     use std::sync::mpsc;
     use std::path::Path;
@@ -124,37 +124,37 @@ pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worke
         pool.execute(move|| {
             let result = parse_to_memory(file_path.clone());
             if result.is_err() {
-                let result = tx_temp.send(Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))));
+                let result = tx_temp.send((file_path.clone(), Err(AnalysisCodeStructureFail(String::from(result.err().unwrap())))));
                 result.unwrap();
                 return;
             }
             let package = result.ok().unwrap();
             let file_path_fs= Path::new(&file_path);
             if Some(OsStr::new(&format!("{}.td", package.get_name()))) != file_path_fs.file_name() {
-                let result = tx_temp.send(Err(FileError(format!("{} has a different package name", file_path.clone()))));
+                let result = tx_temp.send((file_path.clone(), Err(FileError(format!("{} has a different package name", file_path.clone())))));
                 result.unwrap();
                 return;
             }
             {
                 let result = output_project.write().unwrap().with_package(package);
                 if result.is_err() {
-                    let result = tx_temp.send(Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))));
+                    let result = tx_temp.send((file_path.clone(), Err(AnalysisCodeStructureFail(String::from(result.err().unwrap())))));
                     result.unwrap();
                     return;
                 }
             }
-            let result = tx_temp.send(Ok(()));
+            let result = tx_temp.send((file_path.clone(), Ok(())));
             result.unwrap();
             return;
         });
     }
     pool.join();
 
-    let mut errors: Vec<Result<(),ParserErrorCode>>  = vec![];
+    let mut errors: Vec<(String,Result<(),ParserErrorCode>)> = vec![];
     let mut error_flag = false;
     for single_rx in rx.try_iter() {
         errors.push(single_rx.clone());
-        match single_rx.clone() {
+        match single_rx.1.clone() {
             Ok(_) => {}
             Err(_) => { error_flag = true }
         }
