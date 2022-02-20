@@ -20,7 +20,7 @@ extern crate tydi_lang_raw_ast;
 
 use tydi_lang_raw_ast::{project_arch};
 use tydi_lang_raw_ast::scope::*;
-use tydi_lang_raw_ast::{not_inferred, inferred, infer_logical_data_type, infer_streamlet, infer_port, infer_implement};
+use tydi_lang_raw_ast::{not_inferred, inferred, infer_logical_data_type, infer_port, infer_implement};
 use tydi_lang_raw_ast::implement::ImplementType;
 
 mod test_lex;
@@ -30,6 +30,7 @@ mod evaluation_var;
 mod evaluation_type;
 mod evaluation_streamlet;
 mod evaluation_implement;
+mod evaluation;
 mod built_in_ids;
 mod util;
 
@@ -168,7 +169,8 @@ pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worke
     }
 }
 
-pub fn parse_to_memory(file_path: String) -> Result<project_arch::Package, ParserErrorCode> {
+
+fn parse_to_memory(file_path: String) -> Result<project_arch::Package, ParserErrorCode> {
     let unparsed_file_result = fs::read_to_string(file_path.clone());
     if unparsed_file_result.is_err() { return Err(ParserErrorCode::FileError(unparsed_file_result.err().unwrap().to_string())); }
     let unparsed_file_content = unparsed_file_result.ok().unwrap();
@@ -191,7 +193,7 @@ pub fn parse_to_memory(file_path: String) -> Result<project_arch::Package, Parse
     return Ok(output_package);
 }
 
-pub fn parse_start(start_elements: Pairs<Rule>, output_package: &mut project_arch::Package) -> Result<(), ParserErrorCode> {
+fn parse_start(start_elements: Pairs<Rule>, output_package: &mut project_arch::Package) -> Result<(), ParserErrorCode> {
     for start_element in start_elements.into_iter() {
         match start_element.as_rule() {
             Rule::ID => {
@@ -222,7 +224,7 @@ pub fn parse_start(start_elements: Pairs<Rule>, output_package: &mut project_arc
     return Ok(());
 }
 
-pub fn parse_statement(statement: Pairs<Rule>, output_package: &mut project_arch::Package) -> Result<(), ParserErrorCode> {
+fn parse_statement(statement: Pairs<Rule>, output_package: &mut project_arch::Package) -> Result<(), ParserErrorCode> {
     for element in statement.into_iter() {
         match element.as_rule() {
             Rule::StatementConstAssign => {
@@ -249,7 +251,7 @@ pub fn parse_statement(statement: Pairs<Rule>, output_package: &mut project_arch
     return Ok(());
 }
 
-pub fn parse_global_instance(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+fn parse_global_instance(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     let mut instance_name = String::from("");
     let mut derived_implement_package: Option<String> = None;
     let mut derived_implement_name = String::from("");
@@ -282,7 +284,7 @@ pub fn parse_global_instance(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) 
     return Ok(());
 }
 
-pub fn parse_implement_body_declare_instance(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+fn parse_implement_body_declare_instance(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     let mut instance_array_type = InstanceArray::SingleInstance;
     let mut instance_name = String::from("");
     let mut derived_implement_package: Option<String> = None;
@@ -329,7 +331,7 @@ pub fn parse_implement_body_declare_instance(statement: Pairs<Rule>, scope: Arc<
     return Ok(());
 }
 
-pub fn parse_logical_type_slice(slice: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Result<(Inferable<Arc<RwLock<Port>>>, PortOwner, PortArray), ParserErrorCode> {
+fn parse_logical_type_slice(slice: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Result<(Inferable<Arc<RwLock<Port>>>, PortOwner, PortArray), ParserErrorCode> {
     for single_slice in slice.into_iter() {
         match single_slice.as_rule() {
             Rule::LogicalTypeSliceCompound => {
@@ -400,7 +402,7 @@ pub fn parse_logical_type_slice(slice: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Re
     unreachable!();
 }
 
-pub fn parse_else_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+fn parse_else_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     for item in block.into_iter() {
         match item.clone().as_rule() {
             Rule::ImplementationBody => {
@@ -413,7 +415,7 @@ pub fn parse_else_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result
     return Ok(());
 }
 
-pub fn parse_elif_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>, elif_block: & mut ElifScope) -> Result<(), ParserErrorCode> {
+fn parse_elif_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>, elif_block: & mut ElifScope) -> Result<(), ParserErrorCode> {
     for item in block.into_iter() {
         match item.clone().as_rule() {
             Rule::Exp => {
@@ -429,7 +431,7 @@ pub fn parse_elif_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>, elif_bloc
     return Ok(());
 }
 
-pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     for single_stat in statement.into_iter() {
         match single_stat.clone().as_rule() {
             Rule::ImplementationBodyDeclareInstance => {
@@ -571,7 +573,7 @@ pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
     return Ok(());
 }
 
-pub fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     let mut implement = Implement::new(String::from(""), ImplementType::UnknownType);
     let mut implement_args : Vec<Variable> = vec![];
     let mut derived_streamlet_type = DataType::UnknownType;
@@ -655,7 +657,7 @@ pub fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
     return Ok(());
 }
 
-pub fn parse_internal_external_id(ids: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Result<(Option<String>, String),ParserErrorCode> {
+fn parse_internal_external_id(ids: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Result<(Option<String>, String),ParserErrorCode> {
     for id in ids.into_iter() {
         match id.as_rule() {
             Rule::ExternalId => {
@@ -672,7 +674,7 @@ pub fn parse_internal_external_id(ids: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Re
     unreachable!()
 }
 
-pub fn parse_argexp_implement(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Arc<RwLock<Variable>>,ParserErrorCode> {
+fn parse_argexp_implement(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Arc<RwLock<Variable>>,ParserErrorCode> {
     let mut data_type = DataType::UnknownType;
     for exp in exps.clone().into_iter() {
         match exp.as_rule() {
@@ -703,7 +705,7 @@ pub fn parse_argexp_implement(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> R
     return Ok(Arc::new(RwLock::new(output_var)));
 }
 
-pub fn parse_argexps(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Vec<Arc<RwLock<Variable>>>,ParserErrorCode> {
+fn parse_argexps(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Vec<Arc<RwLock<Variable>>>,ParserErrorCode> {
     let mut output = vec![];
     for exp in exps.into_iter() {
         match exp.clone().as_rule() {
@@ -758,7 +760,7 @@ pub fn parse_argexps(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Vec
     return Ok(output);
 }
 
-pub fn parse_arg_to_var(arg_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Variable, ParserErrorCode> {
+fn parse_arg_to_var(arg_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Variable, ParserErrorCode> {
     let mut output = Variable::new(String::from(""), DataType::UnknownType, String::from(""));
     for arg in arg_exp.into_iter() {
         match arg.clone().as_rule() {
@@ -856,7 +858,7 @@ pub fn parse_arg_to_var(arg_exp: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
     return Ok(output);
 }
 
-pub fn parse_direction(dir: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Result<PortDirection, ParserErrorCode> {
+fn parse_direction(dir: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Result<PortDirection, ParserErrorCode> {
     let mut output_dir = PortDirection::Unknown;
     for d in dir.into_iter() {
         match d.clone().as_rule() {
@@ -872,7 +874,7 @@ pub fn parse_direction(dir: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Result<PortDi
     return Ok(output_dir);
 }
 
-pub fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     let mut streamlet = Streamlet::new(String::from(""), StreamletType::UnknownType);
     let mut streamlet_args : Vec<Variable> = vec![];
     for element in statement.into_iter() {
@@ -982,7 +984,7 @@ pub fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>
     return Ok(());
 }
 
-pub fn convert_type_str_to_type(type_exp: String) -> Result<DataType, ParserErrorCode> {
+fn convert_type_str_to_type(type_exp: String) -> Result<DataType, ParserErrorCode> {
     let data_type ;
     if type_exp == String::from("") { data_type = DataType::UnknownType; }
     else if type_exp == String::from("int") { data_type = DataType::IntType; }
@@ -998,7 +1000,7 @@ pub fn convert_type_str_to_type(type_exp: String) -> Result<DataType, ParserErro
     return Ok(data_type);
 }
 
-pub fn parse_const_assign(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+fn parse_const_assign(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     let mut id = String::from("");
     let mut type_exp = String::from("");
     let mut exp = String::from("");
@@ -1020,7 +1022,7 @@ pub fn parse_const_assign(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> 
     return Ok(());
 }
 
-pub fn parse_type_assign(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+fn parse_type_assign(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     let mut id = String::from("");
     for element in statement.clone().into_iter() {
         match element.as_rule() {
@@ -1037,7 +1039,7 @@ pub fn parse_type_assign(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> R
     return Ok(());
 }
 
-pub fn parse_type_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+fn parse_type_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     for element in statement.clone().into_iter() {
         match element.as_rule() {
             Rule::LogicalType => {
@@ -1071,7 +1073,7 @@ pub fn parse_type_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> 
     return Ok(());
 }
 
-pub fn get_logical_type(exp: Pairs<Rule>, id: String, scope: Arc<RwLock<Scope>>) -> Result<LogicalDataType, ParserErrorCode> {
+fn get_logical_type(exp: Pairs<Rule>, id: String, scope: Arc<RwLock<Scope>>) -> Result<LogicalDataType, ParserErrorCode> {
     let mut output = LogicalDataType::DummyLogicalData;
     for element in exp.into_iter() {
         match element.as_rule() {
@@ -1267,7 +1269,7 @@ pub fn get_logical_type(exp: Pairs<Rule>, id: String, scope: Arc<RwLock<Scope>>)
     return Ok(output);
 }
 
-pub fn get_logical_group(items: Pairs<Rule>) -> Result<LogicalGroup, ParserErrorCode> {
+fn get_logical_group(items: Pairs<Rule>) -> Result<LogicalGroup, ParserErrorCode> {
     let mut group_type = LogicalGroup::new(String::from(""));
     for item in items.into_iter() {
         match item.as_rule() {
@@ -1288,7 +1290,7 @@ pub fn get_logical_group(items: Pairs<Rule>) -> Result<LogicalGroup, ParserError
     return Ok(group_type);
 }
 
-pub fn get_logical_union(items: Pairs<Rule>) -> Result<LogicalUnion, ParserErrorCode> {
+fn get_logical_union(items: Pairs<Rule>) -> Result<LogicalUnion, ParserErrorCode> {
     let mut union_type = LogicalUnion::new(String::from(""));
     for item in items.into_iter() {
         match item.as_rule() {

@@ -1,14 +1,13 @@
-use std::sync::{Arc, RwLock, RwLockReadGuard};
+use std::sync::{Arc, RwLock};
 use evaluation_var::infer_variable;
 use ParserErrorCode::StreamletEvaluationFail;
 use tydi_lang_raw_ast::data_type::DataType;
-use tydi_lang_raw_ast::{inferred, infer_logical_data_type};
 use tydi_lang_raw_ast::deep_clone::DeepClone;
-use tydi_lang_raw_ast::inferable::{NewInferable, Inferable};
+use tydi_lang_raw_ast::evaluated_flag::{EvaluatedFlag, EvaluatedState};
 use tydi_lang_raw_ast::logical_data_type::LogicalDataType;
 use tydi_lang_raw_ast::port::PortArray;
 
-use tydi_lang_raw_ast::scope::{Streamlet, Scope, StreamletType, VariableValue, Variable, Port, ErrorCode};
+use tydi_lang_raw_ast::scope::{Streamlet, Scope, StreamletType, VariableValue, Variable, ErrorCode};
 use tydi_lang_raw_ast::project_arch::Project;
 
 use crate::{evaluation_type, evaluation_var, ParserErrorCode};
@@ -19,6 +18,27 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
         StreamletType::UnknownType => { unreachable!() }
         StreamletType::NormalStreamlet => {
             if streamlet_template_exps.len() != 0 { return Err(StreamletEvaluationFail(format!("normal streamlet cannot have template expressions"))); }
+
+            let mut sleep = false;
+            loop {
+                if sleep { std::thread::sleep(std::time::Duration::from_micros(10)); }
+                let mut streamlet_write = streamlet.write().unwrap();
+                let evaluate_state = streamlet_write.get_evaluate_flag();
+                match evaluate_state {
+                    EvaluatedState::NotEvaluate => {
+                        //evaluating
+                        streamlet_write.set_evaluate_flag(EvaluatedState::Evaluating);
+                        break;
+                    }
+                    EvaluatedState::Evaluating => {
+                        sleep = true;
+                        continue;
+                    }
+                    EvaluatedState::Evaluated => {
+                        return Ok(streamlet.clone());
+                    }
+                }
+            }
 
             let streamlet_scope = streamlet.read().unwrap().get_scope();
             let streamlet_ports = streamlet_scope.read().unwrap().ports.clone();
@@ -50,7 +70,6 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                             match array_var_value {
                                 VariableValue::Int(value) => {
                                     if value <= 0 { return Err(StreamletEvaluationFail(format!("the length of streamlet port array must be a positive number"))); }
-                                    let port_type = port_read.get_type().get_raw_value();
                                     for i in 0..value {
                                         let mut new_port = (*port.read().unwrap()).clone();
                                         new_port.set_name(format!("{}@{}", port_read.get_name(), i.to_string()));
@@ -69,6 +88,10 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                         }
                     }
                 }
+            }
+
+            {
+                streamlet.write().unwrap().set_evaluate_flag(EvaluatedState::Evaluated);
             }
             return Ok(streamlet.clone());
         }
@@ -125,7 +148,7 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                 let linking_var_name = (&linking_var_name[linking_var_name_index+5 ..]).to_string();
                 match streamlet_arg_type.clone() {
                     DataType::IntType | DataType::StringType | DataType::BoolType | DataType::FloatType | DataType::ArrayType(_) => {
-                        let mut linking_var = Arc::new(RwLock::new(Variable::new_with_value(linking_var_name.clone(), streamlet_arg_type.clone(), template_exp.read().unwrap().get_var_value().get_raw_value())));
+                        let linking_var = Arc::new(RwLock::new(Variable::new_with_value(linking_var_name.clone(), streamlet_arg_type.clone(), template_exp.read().unwrap().get_var_value().get_raw_value())));
                         let result = cloned_streamlet_scope.write().unwrap().with_variable(linking_var);
                         if result.is_err() { return Err(StreamletEvaluationFail(format!("failed to create linking variable({}): {}", linking_var_name.clone(), String::from(result.err().unwrap())))); }
                     }
@@ -135,7 +158,7 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                                 let result = cloned_streamlet_scope.write().unwrap().new_logical_data_type(linking_var_name.clone(), (*logical_data_type.read().unwrap()).clone());
                                 if result.is_err() { return Err(StreamletEvaluationFail(format!("failed to create linking type({}): {}", linking_var_name.clone(), String::from(result.err().unwrap())))); }
                             },
-                            _ => return unreachable!(),
+                            _ => unreachable!(),
                         }
                     }
                     _ => { unreachable!() }

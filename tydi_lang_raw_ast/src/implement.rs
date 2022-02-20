@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 use deep_clone::DeepClone;
+use evaluated_flag::{EvaluatedFlag, EvaluatedState};
+use evaluated_flag::EvaluatedState::NotEvaluate;
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
 use crate::{generate_get, generate_access, generate_set};
@@ -65,6 +67,8 @@ pub struct Implement {
 
     derived_streamlet_var: Arc<RwLock<Variable>>,
     derived_streamlet: Option<Arc<RwLock<Streamlet>>>,
+
+    evaluated_state: EvaluatedState,
 }
 
 impl DeepClone for Implement {
@@ -76,11 +80,23 @@ impl DeepClone for Implement {
             scope: self.scope.deep_clone(),
             derived_streamlet_var: self.derived_streamlet_var.deep_clone(),
             derived_streamlet: self.derived_streamlet.deep_clone(),
+
+            evaluated_state: self.evaluated_state.deep_clone(),
         };
         {
             output.scope.write().unwrap().set_self_ref(output.scope.clone());
         }
         return output;
+    }
+}
+
+impl EvaluatedFlag for Implement {
+    fn get_evaluate_flag(&self) -> EvaluatedState {
+        return self.evaluated_state.clone();
+    }
+
+    fn set_evaluate_flag(&mut self, flag: EvaluatedState) {
+        self.evaluated_state = flag;
     }
 }
 
@@ -108,6 +124,8 @@ impl Implement {
 
             derived_streamlet_var: Arc::new(RwLock::new(Variable::new(String::from(""), DataType::UnknownType, String::from("")))),
             derived_streamlet: None,
+
+            evaluated_state: NotEvaluate,
         }
     }
 

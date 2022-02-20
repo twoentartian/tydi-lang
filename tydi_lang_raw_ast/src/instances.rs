@@ -3,7 +3,6 @@ use std::sync::{Arc, RwLock};
 use deep_clone::DeepClone;
 use implement::{Implement, ImplementType};
 use crate::error::ErrorCode;
-use crate::streamlet::Streamlet;
 use crate::{generate_get, generate_set, generate_access};
 use crate::inferable::{Inferable, InferState, NewInferable};
 use crate::variable::Variable;

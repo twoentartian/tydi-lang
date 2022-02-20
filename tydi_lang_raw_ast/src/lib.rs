@@ -17,8 +17,10 @@ pub mod instances;
 pub mod connection;
 pub mod if_for;
 pub mod deep_clone;
+pub mod evaluated_flag;
 
 mod test_print_project;
+
 
 #[macro_use]
 extern crate lazy_static;

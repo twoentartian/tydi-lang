@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 use deep_clone::DeepClone;
+use evaluated_flag::{EvaluatedState, EvaluatedFlag};
+use evaluated_flag::EvaluatedState::NotEvaluate;
 use crate::variable::Variable;
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
@@ -56,6 +58,7 @@ pub struct Streamlet {
 
     streamlet_type: StreamletType,
     scope: Arc<RwLock<Scope>>,
+    evaluated_state: EvaluatedState,
 }
 
 impl DeepClone for Streamlet {
@@ -64,11 +67,22 @@ impl DeepClone for Streamlet {
             name: self.name.deep_clone(),
             streamlet_type: self.streamlet_type.deep_clone(),
             scope: self.scope.deep_clone(),
+            evaluated_state: self.evaluated_state.deep_clone(),
         };
         {
             output.scope.write().unwrap().set_self_ref(output.scope.clone());
         }
         return output;
+    }
+}
+
+impl EvaluatedFlag for Streamlet {
+    fn get_evaluate_flag(&self) -> EvaluatedState {
+        return self.evaluated_state.clone();
+    }
+
+    fn set_evaluate_flag(&mut self, flag: EvaluatedState) {
+        self.evaluated_state = flag;
     }
 }
 
@@ -91,6 +105,7 @@ impl Streamlet {
             name: name_,
             streamlet_type: type_,
             scope: scope_,
+            evaluated_state: NotEvaluate,
         }
     }
 
