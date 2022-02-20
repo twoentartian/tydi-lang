@@ -60,7 +60,7 @@ impl DeepClone for Instance {
 }
 
 impl Instance {
-    generate_get!(name, String, get_name);
+    generate_access!(name, String, get_name, set_name);
     generate_access!(package, Option<String>, get_package, set_package);
     generate_access!(implement_type, Inferable<Arc<RwLock<Implement>>>, get_implement_type, set_implement_type);
     generate_access!(implement_template_argexp, Vec<Arc<RwLock<Variable>>>, get_implement_argexp, set_implement_argexp);
@@ -158,7 +158,7 @@ impl PrettyPrint for Instance {
 
 impl Scope {
     pub fn new_instance(&mut self, name_: String, package_: Option<String>, implement_exp: Inferable<Arc<RwLock<Implement>>>, template_argexp: Vec<Arc<RwLock<Variable>>>) -> Result<(), ErrorCode> {
-        if (self.scope_type != ScopeType::ImplementScope) && (self.scope_type != ScopeType::BasicScope) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define instances outside of implement or base scope"))); }
+        if (self.scope_type != ScopeType::ImplementScope) && (self.scope_type != ScopeType::BasicScope && (self.scope_type != ScopeType::IfForScope)) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define instances outside of implement or base scope"))); }
 
         match self.instances.get(&name_) {
             None => {}
@@ -168,8 +168,20 @@ impl Scope {
         return Ok(());
     }
 
+    pub fn with_instance(&mut self, inst: Arc<RwLock<Instance>>) -> Result<(), ErrorCode> {
+        if (self.scope_type != ScopeType::ImplementScope) && (self.scope_type != ScopeType::BasicScope && (self.scope_type != ScopeType::IfForScope)) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define instances outside of implement or base scope"))); }
+
+        let name_ = inst.read().unwrap().get_name();
+        match self.instances.get(&name_) {
+            None => {}
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("instance {} already defined", name_))); }
+        };
+        self.instances.insert(name_.clone(), inst.clone());
+        return Ok(());
+    }
+
     pub fn new_instance_array(&mut self, name_: String, package_: Option<String>, implement_exp: Inferable<Arc<RwLock<Implement>>>, template_argexp: Vec<Arc<RwLock<Variable>>>, array_: Arc<RwLock<Variable>>) -> Result<(), ErrorCode> {
-        if (self.scope_type != ScopeType::ImplementScope) && (self.scope_type != ScopeType::BasicScope) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define instances outside of implement or base scope"))); }
+        if (self.scope_type != ScopeType::ImplementScope) && (self.scope_type != ScopeType::BasicScope && (self.scope_type != ScopeType::IfForScope)) { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define instances outside of implement or base scope"))); }
 
         match self.instances.get(&name_) {
             None => {}

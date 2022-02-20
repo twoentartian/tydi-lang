@@ -1487,11 +1487,15 @@ pub fn infer_variable(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, pro
     let mut inferred_value;
     match (*var_type.read().unwrap()).clone() {
         DataType::UnknownType | DataType::IntType | DataType::StringType | DataType::BoolType | DataType::FloatType | DataType::ArrayType(_) => {
-            let value_result = parse_eval_exp(var.read().unwrap().get_var_value().get_raw_exp(), scope.clone(), project.clone());
+            let raw_exp = var.read().unwrap().get_var_value().get_raw_exp();
+            let value_result = parse_eval_exp(raw_exp.clone(), scope.clone(), project.clone());
             if value_result.is_err() {
                 return Err(value_result.err().unwrap());
             }
             inferred_value = value_result.ok().unwrap();
+            let mut var_value = inferred_value.get_var_value();
+            var_value.set_raw_exp(raw_exp.clone());
+            inferred_value.set_var_value(var_value);
         }
         DataType::LogicalDataType(logical_data_type) => {
             let result = evaluation_type::infer_logical_type(logical_data_type.clone(), scope.clone(), project.clone());

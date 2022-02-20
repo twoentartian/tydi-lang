@@ -226,28 +226,59 @@ pub fn parse_statement(statement: Pairs<Rule>, output_package: &mut project_arch
     for element in statement.into_iter() {
         match element.as_rule() {
             Rule::StatementConstAssign => {
-                let result = parse_const_assign(element.into_inner(), output_package.scope.clone());
-                if result.is_err() { return result; }
+                parse_const_assign(element.into_inner(), output_package.scope.clone())?;
             },
             Rule::StatementTypeAssign => {
-                let result = parse_type_assign(element.into_inner(), output_package.scope.clone());
-                if result.is_err() { return result; }
+                parse_type_assign(element.into_inner(), output_package.scope.clone())?;
             },
             Rule::StatementDeclareLogicalDataType => {
-                let result = parse_type_declare(element.into_inner(), output_package.scope.clone());
-                if result.is_err() { return result; }
+                parse_type_declare(element.into_inner(), output_package.scope.clone())?;
             },
             Rule::StatementDeclareStreamLet => {
-                let result = parse_streamlet_declare(element.into_inner(), output_package.scope.clone());
-                if result.is_err() { return result; }
+                parse_streamlet_declare(element.into_inner(), output_package.scope.clone())?;
             },
             Rule::StatementDeclareImplementation => {
-                let result = parse_implement_declare(element.into_inner(), output_package.scope.clone());
-                if result.is_err() { return result; }
+                parse_implement_declare(element.into_inner(), output_package.scope.clone())?;
+            },
+            Rule::StatementDeclareImplInst => {
+                parse_global_instance(element.into_inner(), output_package.scope.clone())?;
+            }
+            _ => { unreachable!() },
+        }
+    }
+    return Ok(());
+}
+
+pub fn parse_global_instance(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+    let mut instance_name = String::from("");
+    let mut derived_implement_package: Option<String> = None;
+    let mut derived_implement_name = String::from("");
+    let mut derived_implement_argexps = vec![];
+    for element in statement.into_iter() {
+        match element.as_rule() {
+            Rule::ID => {
+                instance_name = element.as_str().to_string();
+            },
+            Rule::Extern_Intern_Id => {
+                let result = parse_internal_external_id(element.into_inner(), scope.clone());
+                if result.is_err() { return Err(result.err().unwrap()); }
+                let (package_name, streamlet_name) = result.ok().unwrap();
+                derived_implement_package = package_name;
+                derived_implement_name = streamlet_name;
+            },
+            Rule::ArgExps => {
+                let result = parse_argexps(element.into_inner(), scope.clone());
+                if result.is_err() { return Err(result.err().unwrap()); }
+                let result = result.ok().unwrap();
+                derived_implement_argexps = result;
             },
             _ => { unreachable!() },
         }
     }
+
+    let result = scope.write().unwrap().new_instance(instance_name, derived_implement_package, not_inferred!(infer_implement!(), derived_implement_name), derived_implement_argexps);
+    if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
+
     return Ok(());
 }
 
@@ -414,7 +445,7 @@ pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
                 if result.is_err() { return Err(result.err().unwrap()); }
             },
             Rule::ImplementationBodyIfBlock => {
-                let name = format!("{}-{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
+                let name = format!("if-{}-{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
                 let mut if_block: IfScope = IfScope::new(name.clone(), Arc::new(RwLock::new(Variable::new_bool(String::from(""), true))));
                 for item in single_stat.clone().into_inner().into_iter() {
                     match item.as_rule() {
@@ -428,7 +459,7 @@ pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
                             if result.is_err() { return Err(result.err().unwrap()); }
                         },
                         Rule::ElifBlock => {
-                            let name = format!("{}-{}", item.clone().as_span().start(), item.clone().as_span().end());
+                            let name = format!("elif-{}-{}", item.clone().as_span().start(), item.clone().as_span().end());
                             let mut elif_block = ElifScope::new(name);
                             let result = parse_elif_block(item.into_inner(), elif_block.get_scope(), &mut elif_block);
                             if result.is_err() { return Err(result.err().unwrap()); }
@@ -437,7 +468,7 @@ pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
                             if_block.set_elif(previous_elifs);
                         },
                         Rule::ElseBlock => {
-                            let name = format!("{}-{}", item.clone().as_span().start(), item.clone().as_span().end());
+                            let name = format!("else-{}-{}", item.clone().as_span().start(), item.clone().as_span().end());
                             let else_block = ElseScope::new(name);
                             let result = parse_else_block(item.into_inner(), else_block.get_scope().clone());
                             if result.is_err() { return Err(result.err().unwrap()); }
@@ -453,7 +484,7 @@ pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
                 }
             },
             Rule::ImplementationBodyForBlock => {
-                let name = format!("{}-{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
+                let name = format!("for-{}-{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
                 let temp_var = Arc::new(RwLock::new(Variable::new_bool(String::from(""), true)));
                 let mut for_block: ForScope = ForScope::new(name.clone(), temp_var.clone(), temp_var.clone());
                 for item in single_stat.clone().into_inner().into_iter() {
@@ -483,7 +514,7 @@ pub fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -
                 }
             },
             Rule::ImplementationBodyDeclareProcess => {
-                // todo!()
+                todo!()
             },
             Rule::ImplementationBodyDeclareNet | Rule::ImplementationBodyDeclareDelayedNet => {
                 let mut connection = Connection::new(String::from(""), not_inferred!(infer_port!(), String::from("")), not_inferred!(infer_port!(), String::from("")), Variable::new_int(String::from(""), 0));

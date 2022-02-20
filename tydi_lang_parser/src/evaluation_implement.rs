@@ -4,10 +4,12 @@ use evaluation_var::infer_variable;
 use tydi_lang_raw_ast::data_type::DataType;
 
 use tydi_lang_raw_ast::project_arch::Project;
-use tydi_lang_raw_ast::scope::{Connection, Implement, Port, Scope, Streamlet, StreamletType, Variable, VariableValue};
+use tydi_lang_raw_ast::scope::{Connection, IfScope, ForScope, Implement, Port, Scope, Streamlet, StreamletType, Variable, VariableValue};
 use tydi_lang_raw_ast::{inferred, infer_implement};
 use tydi_lang_raw_ast::connection::PortOwner;
 use tydi_lang_raw_ast::deep_clone::DeepClone;
+use tydi_lang_raw_ast::error::ErrorCode;
+use tydi_lang_raw_ast::if_for::ElseScope;
 use tydi_lang_raw_ast::implement::ImplementType;
 use tydi_lang_raw_ast::inferable::{Inferable, NewInferable, InferState};
 use tydi_lang_raw_ast::instances::{Instance, InstanceArray};
@@ -58,76 +60,7 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
             //infer instances
             let instances_in_implement = implement_scope.read().unwrap().instances.clone();
             for (_, instance) in instances_in_implement {
-                let package;
-                let derived_implement_template_exps;
-                let instance_array_type;
-                let derived_implement_name;
-                {
-                    let instance_read = instance.read().unwrap();
-                    package = instance_read.get_package();
-                    derived_implement_template_exps = instance_read.get_implement_argexp();
-                    instance_array_type = instance_read.get_array_type();
-                    derived_implement_name = instance_read.get_implement_type().get_raw_exp();
-                }
-
-                let mut resolve_implement_result;
-                match package {
-                    None => {
-                        //local streamlet
-                        let find_implement_result = implement_scope.read().unwrap().resolve_implement_from_scope(derived_implement_name.clone());
-                        if find_implement_result.is_err() { return Err(ImplementEvaluationFail(String::from(find_implement_result.err().unwrap()))); }
-                        resolve_implement_result = find_implement_result.ok().unwrap();
-                    }
-                    Some(package_name) => {
-                        //external streamlet
-                        crate::util::check_import_package(package_name.clone(), scope.clone())?;
-                        let project_read = project.read().unwrap();
-                        let external_package = project_read.packages.get(&package_name);
-                        if external_package.is_none() { return Err(ImplementEvaluationFail(format!("package {} not found", package_name.clone()))); }
-                        let external_package = external_package.unwrap();
-                        let external_scope = external_package.read().unwrap().get_scope();
-                        let find_streamlet_result = external_scope.read().unwrap().resolve_implement_in_current_scope(derived_implement_name.clone());
-                        if find_streamlet_result.is_err() { return Err(ImplementEvaluationFail(String::from(find_streamlet_result.err().unwrap()))); }
-                        resolve_implement_result = find_streamlet_result.ok().unwrap();
-                    }
-                }
-
-                //evaluation implement
-                let result = infer_implement(resolve_implement_result.clone(), derived_implement_template_exps.clone(), scope.clone(), project.clone());
-                if result.is_err() { return Err(result.err().unwrap()); }
-                let evaluated_implement = result.ok().unwrap();
-
-                //set derived implement
-                {
-                    instance.write().unwrap().set_implement_type(inferred!(infer_implement!(), evaluated_implement));
-                }
-
-                //perform array expansion?
-                let instance_array_type = instance.read().unwrap().get_array_type().clone();
-                match instance_array_type {
-                    InstanceArray::SingleInstance => { /*nothing to do*/ }
-                    InstanceArray::ArrayInstance(array_var) => {
-                        let result = evaluation_var::infer_variable(array_var.clone(), implement_scope.clone(), project.clone());
-                        if result.is_err() { return Err(result.err().unwrap()); }
-                        match array_var.read().unwrap().get_var_value().get_raw_value() {
-                            VariableValue::Int(array_value) => {
-                                if array_value <= 0 { return Err(ImplementEvaluationFail(format!("the length of implement port array must be a positive number"))); }
-                                //generate instance array
-                                let instance_read = instance.read().unwrap();
-                                for i in 0 .. array_value {
-                                    let result = implement_scope.write().unwrap().new_instance(format!("{}@{}", instance_read.get_name(), i.to_string()), instance_read.get_package(), instance_read.get_implement_type(), instance_read.get_implement_argexp());
-                                    if result.is_err() { return Err(ImplementEvaluationFail(String::from(result.err().unwrap()))); }
-                                }
-                                //remove the array instance in scope
-                                {
-                                    implement_scope.write().unwrap().instances.remove(&instance_read.get_name()).unwrap();
-                                }
-                            }
-                            _ => { return Err(ImplementEvaluationFail(format!("the length of an instance array must be an integer"))); }
-                        }
-                    }
-                    _ => unreachable!()
-                }
+                infer_instance(instance.clone(), implement_scope.clone(), project.clone())?;
             }
 
             //infer connection
@@ -135,16 +68,28 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
                 infer_connection(connection.clone(), implement.clone(), implement_scope.clone(), project.clone())?;
             }
 
+            //infer if block
+            let if_blocks = implement_scope.read().unwrap().if_blocks.clone();
+            for (_, if_block) in if_blocks {
+                infer_if_block(if_block.clone(), implement.clone(), implement_scope.clone(), project.clone())?;
+            }
+
+            //infer for block
+            let for_blocks = implement_scope.read().unwrap().for_blocks.clone();
+            for (_, for_block) in for_blocks {
+                infer_for_block(for_block.clone(), implement.clone(), implement_scope.clone(), project.clone())?;
+            }
+
             return Ok(implement);
         }
         ImplementType::TemplateImplement(template_args) => {
-            //get instantiate template name
-            let implement_instance_name = crate::util::generate_template_instance_name(implement.read().unwrap().get_name(), &implement_template_exps);
-
             //infer template expressions
             for template_exp in &implement_template_exps {
                 infer_variable(template_exp.clone(), scope.clone(), project.clone())?;
             }
+
+            //get instantiate template name
+            let implement_instance_name = crate::util::generate_template_instance_name(implement.read().unwrap().get_name(), &implement_template_exps);
 
             //clone / instantiate implement
             let mut cloned_implement = implement.read().unwrap().deep_clone();
@@ -152,8 +97,14 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
             cloned_implement.set_type(ImplementType::NormalImplement);
             let cloned_implement = Arc::new(RwLock::new(cloned_implement));
             {
-                let result = scope.write().unwrap().with_implement(cloned_implement.clone());
-                if result.is_err() { /*that implement might have already exists, so we don't check result*/ }
+                let basic_scope = crate::util::goto_basic_scope(scope.clone())?;
+                let result = basic_scope.write().unwrap().with_implement(cloned_implement.clone());
+                if result.is_err() {
+                    match result.clone().err().unwrap() {
+                        ErrorCode::IdRedefined(_) => { /*that implement might have already exists, so we don't check result*/ }
+                        _ => return Err(ImplementEvaluationFail(String::from(result.err().unwrap())))
+                    }
+                }
             }
 
             //remove the template var in scope
@@ -272,8 +223,221 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
         }
         _ => unreachable!()
     }
+}
 
+pub fn infer_instance(instance: Arc<RwLock<Instance>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<(), ParserErrorCode> {
+    let package;
+    let derived_implement_template_exps;
+    let instance_array_type;
+    let derived_implement_name;
+    {
+        let instance_read = instance.read().unwrap();
+        package = instance_read.get_package();
+        derived_implement_template_exps = instance_read.get_implement_argexp();
+        instance_array_type = instance_read.get_array_type();
+        derived_implement_name = instance_read.get_implement_type().get_raw_exp();
+    }
 
+    let mut resolve_implement_result;
+    match package {
+        None => {
+            //local streamlet
+            let find_implement_result = scope.read().unwrap().resolve_implement_from_scope(derived_implement_name.clone());
+            if find_implement_result.is_err() { return Err(ImplementEvaluationFail(String::from(find_implement_result.err().unwrap()))); }
+            resolve_implement_result = find_implement_result.ok().unwrap();
+        }
+        Some(package_name) => {
+            //external streamlet
+            crate::util::check_import_package(package_name.clone(), scope.clone())?;
+            let project_read = project.read().unwrap();
+            let external_package = project_read.packages.get(&package_name);
+            if external_package.is_none() { return Err(ImplementEvaluationFail(format!("package {} not found", package_name.clone()))); }
+            let external_package = external_package.unwrap();
+            let external_scope = external_package.read().unwrap().get_scope();
+            let find_streamlet_result = external_scope.read().unwrap().resolve_implement_in_current_scope(derived_implement_name.clone());
+            if find_streamlet_result.is_err() { return Err(ImplementEvaluationFail(String::from(find_streamlet_result.err().unwrap()))); }
+            resolve_implement_result = find_streamlet_result.ok().unwrap();
+        }
+    }
+
+    //evaluation implement
+    let evaluated_implement = infer_implement(resolve_implement_result.clone(), derived_implement_template_exps.clone(), scope.clone(), project.clone())?;
+
+    //set derived implement
+    {
+        instance.write().unwrap().set_implement_type(inferred!(infer_implement!(), evaluated_implement));
+    }
+
+    //perform array expansion?
+    let instance_array_type = instance.read().unwrap().get_array_type().clone();
+    match instance_array_type {
+        InstanceArray::SingleInstance => { /*nothing to do*/ }
+        InstanceArray::ArrayInstance(array_var) => {
+            let result = evaluation_var::infer_variable(array_var.clone(), scope.clone(), project.clone());
+            if result.is_err() { return Err(result.err().unwrap()); }
+            match array_var.read().unwrap().get_var_value().get_raw_value() {
+                VariableValue::Int(array_value) => {
+                    if array_value <= 0 { return Err(ImplementEvaluationFail(format!("the length of implement port array must be a positive number"))); }
+                    //generate instance array
+                    let instance_read = instance.read().unwrap();
+                    for i in 0 .. array_value {
+                        let result = scope.write().unwrap().new_instance(format!("{}@{}", instance_read.get_name(), i.to_string()), instance_read.get_package(), instance_read.get_implement_type(), instance_read.get_implement_argexp());
+                        if result.is_err() { return Err(ImplementEvaluationFail(String::from(result.err().unwrap()))); }
+                    }
+                    //remove the array instance in scope
+                    {
+                        scope.write().unwrap().instances.remove(&instance_read.get_name()).unwrap();
+                    }
+                }
+                _ => { return Err(ImplementEvaluationFail(format!("the length of an instance array must be an integer"))); }
+            }
+        }
+        _ => unreachable!()
+    }
+
+    return Ok(());
+}
+
+pub fn infer_clone_connections_and_instances(source_scope: Arc<RwLock<Scope>>, dest_scope: Arc<RwLock<Scope>>, if_for_id: String, implement: Arc<RwLock<Implement>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<(), ParserErrorCode> {
+    //infer
+    {
+        let connections = source_scope.read().unwrap().connections.clone();
+        for (_, connection) in connections {
+            infer_connection(connection.clone(), implement.clone(), scope.clone(), project.clone())?;
+        }
+        let instances = source_scope.read().unwrap().instances.clone();
+        for (_, instance) in instances {
+            infer_instance(instance.clone(), scope.clone(), project.clone())?;
+        }
+    }
+    //clone
+    {
+        let mut dest_scope_write = dest_scope.write().unwrap();
+        for (_, connection) in source_scope.read().unwrap().connections.clone() {
+            let mut cloned_connection = (*connection.read().unwrap()).clone();
+            let name = cloned_connection.get_name();
+            cloned_connection.set_name(format!("{}@{}", name, if_for_id.clone()));
+            dest_scope_write.with_connection(Arc::new(RwLock::new(cloned_connection)));
+        }
+        for (_, instance) in source_scope.read().unwrap().instances.clone() {
+            let mut cloned_instance = (*instance.read().unwrap()).clone();
+            let name = cloned_instance.get_name();
+            cloned_instance.set_name(format!("{}@{}", name, if_for_id.clone()));
+            dest_scope_write.with_instance(Arc::new(RwLock::new(cloned_instance)));
+        }
+    }
+
+    return Ok(());
+}
+
+pub fn infer_if_block(if_block: Arc<RwLock<IfScope>>, implement: Arc<RwLock<Implement>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<(), ParserErrorCode> {
+    let if_exp;
+    {
+        let if_var = if_block.read().unwrap().get_if_exp();
+        evaluation_var::infer_variable(if_var.clone(), scope.clone(), project.clone())?;
+        let if_var_value = if_var.read().unwrap().get_var_value().get_raw_value();
+        match if_var_value {
+            VariableValue::Bool(bool_var) => { if_exp = bool_var; }
+            _ => return Err(ImplementEvaluationFail(format!("the expression of a if block must be a bool value")))
+        }
+    }
+
+    //if_exp == true
+    if if_exp {
+        let if_block_scope = if_block.read().unwrap().get_scope();
+        let if_block_name = if_block.read().unwrap().get_name();
+        infer_clone_connections_and_instances(if_block_scope.clone(), scope.clone(), if_block_name.clone(), implement.clone(), if_block_scope.clone(), project.clone())?;
+    }
+    else {
+        let mut elif_passing = false;
+        for elif_block in if_block.read().unwrap().get_elif() {
+            let if_exp;
+            let if_var = elif_block.get_elif_exp();
+            evaluation_var::infer_variable(if_var.clone(), scope.clone(), project.clone())?;
+            let if_var_value = if_var.read().unwrap().get_var_value().get_raw_value();
+            match if_var_value {
+                VariableValue::Bool(bool_var) => { if_exp = bool_var; }
+                _ => return Err(ImplementEvaluationFail(format!("the expression of a elif block must be a bool value")))
+            }
+            if if_exp {
+                infer_clone_connections_and_instances(elif_block.get_scope(), scope.clone(), elif_block.get_name(), implement.clone(), elif_block.get_scope(), project.clone())?;
+                elif_passing = true;
+                break;
+            }
+        }
+        if elif_passing == false {
+            //expand else scope
+            let else_scope = if_block.read().unwrap().get_else();
+            match else_scope {
+                None => { /*do nothing*/ }
+                Some(else_scope) => {
+                    infer_clone_connections_and_instances(else_scope.get_scope(), scope.clone(), else_scope.get_name(), implement.clone(), else_scope.get_scope(), project.clone())?;
+                }
+            }
+        }
+    }
+
+    return Ok(());
+}
+
+pub fn infer_for_block(for_block: Arc<RwLock<ForScope>>, implement: Arc<RwLock<Implement>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<(), ParserErrorCode> {
+    let for_array_var = for_block.read().unwrap().get_array_exp();
+    evaluation_var::infer_variable(for_array_var.clone(), scope.clone(), project.clone())?;
+    let array_value = for_array_var.read().unwrap().get_var_value().get_raw_value();
+    match array_value.clone() {
+        VariableValue::ArrayInt(_) | VariableValue::ArrayBool(_) | VariableValue::ArrayFloat(_) | VariableValue::ArrayStr(_) => {}
+        _ => return Err(ImplementEvaluationFail(format!("for statement requires an array expression to iterate")))
+    }
+
+    let for_var = for_block.read().unwrap().get_var_exp();
+    let for_var_name = for_var.read().unwrap().get_name();
+    let for_scope = for_block.read().unwrap().get_scope();
+    {
+        for_scope.write().unwrap().vars.remove(&for_var_name);
+    }
+    match array_value {
+        VariableValue::ArrayInt(values) => {
+            for value in values {
+                let mut cloned_scope = for_scope.read().unwrap().deep_clone();
+                let var = Variable::new_int(for_var_name.clone(), value);
+                {
+                    cloned_scope.with_variable(Arc::new(RwLock::new(var)));
+                }
+                let cloned_scope = Arc::new(RwLock::new(cloned_scope));
+                infer_clone_connections_and_instances(cloned_scope.clone(), scope.clone(), format!("{}@{}", for_block.read().unwrap().get_name(), value.to_string()), implement.clone(), cloned_scope.clone(), project.clone())?;
+            }
+        }
+        VariableValue::ArrayBool(values) => {
+            for value in values {
+                let mut cloned_scope = for_scope.read().unwrap().deep_clone();
+                let var = Variable::new_bool(for_var_name.clone(), value);
+                {
+                    cloned_scope.with_variable(Arc::new(RwLock::new(var)));
+                }
+                let cloned_scope = Arc::new(RwLock::new(cloned_scope));
+                //infer_clone_connections_and_instances(cloned_scope.clone(), scope.clone(), format!("{}@{}", for_block.read().unwrap().get_name(), value.to_string()), implement.clone(), scope.clone(), project.clone())?;
+            }
+        }
+        VariableValue::ArrayFloat(values) => {
+            for value in values {
+                let var = Variable::new_float(for_var_name.clone(), value);
+                {
+                    for_scope.write().unwrap().with_variable(Arc::new(RwLock::new(var)));
+                }
+            }
+        }
+        VariableValue::ArrayStr(values) => {
+            for value in values {
+                let var = Variable::new_str(for_var_name.clone(), value);
+                {
+                    for_scope.write().unwrap().with_variable(Arc::new(RwLock::new(var)));
+                }
+            }
+        }
+        _ => unreachable!()
+    }
+
+    return Ok(());
 }
 
 pub fn infer_connection(connection: Arc<RwLock<Connection>>, implement: Arc<RwLock<Implement>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<(), ParserErrorCode> {

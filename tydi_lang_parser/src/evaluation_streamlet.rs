@@ -8,7 +8,7 @@ use tydi_lang_raw_ast::inferable::{NewInferable, Inferable};
 use tydi_lang_raw_ast::logical_data_type::LogicalDataType;
 use tydi_lang_raw_ast::port::PortArray;
 
-use tydi_lang_raw_ast::scope::{Streamlet, Scope, StreamletType, VariableValue, Variable, Port};
+use tydi_lang_raw_ast::scope::{Streamlet, Scope, StreamletType, VariableValue, Variable, Port, ErrorCode};
 use tydi_lang_raw_ast::project_arch::Project;
 
 use crate::{evaluation_type, evaluation_var, ParserErrorCode};
@@ -73,13 +73,13 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
             return Ok(streamlet.clone());
         }
         StreamletType::TemplateStreamlet(template_args) => {
-            //get instantiate template name
-            let streamlet_instance_name = crate::util::generate_template_instance_name(streamlet.read().unwrap().get_name(), &streamlet_template_exps);
-
             //infer template expressions
             for template_exp in &streamlet_template_exps {
-                 infer_variable(template_exp.clone(), scope.clone(), project.clone())?;
+                infer_variable(template_exp.clone(), scope.clone(), project.clone())?;
             }
+
+            //get instantiate template name
+            let streamlet_instance_name = crate::util::generate_template_instance_name(streamlet.read().unwrap().get_name(), &streamlet_template_exps);
 
             //clone / instantiate streamlet
             let mut cloned_streamlet = streamlet.read().unwrap().deep_clone();
@@ -87,8 +87,14 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
             cloned_streamlet.set_type(StreamletType::NormalStreamlet);
             let cloned_streamlet = Arc::new(RwLock::new(cloned_streamlet));
             {
-                let result = scope.write().unwrap().with_streamlet(cloned_streamlet.clone());
-                if result.is_err() { /*that streamlet might have already exists, so we don't check result*/ }
+                let basic_scope = crate::util::goto_basic_scope(scope.clone())?;
+                let result = basic_scope.write().unwrap().with_streamlet(cloned_streamlet.clone());
+                if result.is_err() {
+                    match result.clone().err().unwrap() {
+                        ErrorCode::IdRedefined(_) => { /*that streamlet might have already exists, so we don't check result*/ }
+                        _ => return Err(StreamletEvaluationFail(String::from(result.err().unwrap())))
+                    }
+                }
             }
 
             //remove the template var in scope

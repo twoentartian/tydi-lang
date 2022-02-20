@@ -277,7 +277,7 @@ impl ForScope {
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
 
     pub fn new(name_: String, for_var_exp_: Arc<RwLock<Variable>>, for_array_exp_: Arc<RwLock<Variable>>) -> Self {
-        let scope_ = Arc::new(RwLock::new(Scope::new(format!("for_{}", name_.clone()), ScopeType::IfForScope)));
+        let scope_ = Arc::new(RwLock::new(Scope::new(name_.clone(), ScopeType::IfForScope)));
         {
             scope_.write().unwrap().set_self_ref(scope_.clone());
         }

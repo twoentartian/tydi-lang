@@ -49,6 +49,7 @@ Term = { ( "(" ~ Exp ~ ")") |
             UnaryExp }
 
 Exp = { Term ~ (InfixOp  ~ Term)* }
+
 UnaryOp = { OP_UnaryMinus | OP_UnaryNot  }
     OP_UnaryMinus = { "-" }
     OP_UnaryNot = { "!" }
@@ -215,7 +216,7 @@ ArgExpImplementExp = { "impl" ~ Extern_Intern_Id ~ ArgExps? }
 ArgExp = _{ (ArgExpTypeExp | ArgExpExternalTypeExp | ArgExpImplementExp | ArgExpConstExp) }
 
 ////5.GlobalInstance
-GlobalInstance = { "instance" ~ ID ~ "(" ~ ID ~ ArgExps? ~ ")" }
+ImplInst = _{ "impl" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" }
 ///////////////////////  end of streamlet.sdf3  ///////////////////////
 
 
@@ -224,12 +225,12 @@ StatementTypeAssign = { "type" ~ ID ~ "=" ~ LogicalType ~ ";" }
 StatementConstAssign = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ ";" }
 StatementDeclareStreamLet = { StreamLet ~ ";" }
 StatementDeclareImplementation = { Implementation ~ ";" }
-StatementDeclareGlobalInstance = { GlobalInstance ~ ";" }
+StatementDeclareImplInst = { ImplInst ~ ";" }
 StatementDeclareLogicalDataType = { "type" ~ LogicalType ~ ";" }
 /// Obsolete
 /// StatementAssertEqualLogicalType = { "assert" ~ "type" ~ "(" ~  LogicalType ~ "==" ~ LogicalType ~ ")" ~ ";" }
 Statement = _{ (StatementTypeAssign | StatementConstAssign | StatementDeclareStreamLet | StatementDeclareImplementation |
-                StatementDeclareGlobalInstance | StatementDeclareLogicalDataType /*| StatementAssertEqualLogicalType*/) }
+                StatementDeclareImplInst | StatementDeclareLogicalDataType /*| StatementAssertEqualLogicalType*/) }
 ///////////////////////  end of statement.sdf3  ///////////////////////
 
 

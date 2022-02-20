@@ -40,7 +40,7 @@ impl<T> DeepClone for Inferable<T> where T: Clone + DeepClone {
 }
 
 impl<T> Inferable<T> where T: Clone + DeepClone {
-    generate_get!(raw_exp, String, get_raw_exp);
+    generate_access!(raw_exp, String, get_raw_exp, set_raw_exp);
     generate_access!(infer_state, InferState, get_infer_state, set_infer_state);
     generate_access!(raw_value, T, get_raw_value, set_raw_value);
 }
