@@ -275,7 +275,7 @@ fn evaluate_implement_mt_benchmark() {
         unreachable!()
     }
 
-    for worker in 1..num_cpus::get() {
+    for worker in 1..num_cpus::get()+1 {
 
         use std::time::Instant;
         let start = Instant::now();
