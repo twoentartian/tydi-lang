@@ -52,13 +52,14 @@ impl impl3 of streamlet1<var, type Bit(1)> {
   }
   elif (true) {
     instance test_inst2(impl2<20, impl impl0>),
+    for i in {1,2,3} {
+      instance test_inst4(impl2<i, impl impl0>),
+    }
   }
   else {
     instance test_inst3(impl2<10, impl impl0>),
   }
-  for i in {1,2,3} {
-    instance test_inst4(impl2<i, impl impl0>),
-  }
+
 };
 
 

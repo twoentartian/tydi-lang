@@ -436,6 +436,14 @@ pub fn infer_clone_connections_and_instances(source_scope: Arc<RwLock<Scope>>, d
         for (_, instance) in instances {
             infer_instance(instance.clone(), scope.clone(), project.clone())?;
         }
+        let for_blocks = source_scope.read().unwrap().for_blocks.clone();
+        for (_, for_block) in for_blocks {
+            infer_for_block(for_block.clone(), implement.clone(), scope.clone(), project.clone())?;
+        }
+        let if_blocks = source_scope.read().unwrap().if_blocks.clone();
+        for (_, if_block) in if_blocks {
+            infer_if_block(if_block.clone(), implement.clone(), scope.clone(), project.clone())?;
+        }
     }
     //clone
     {
