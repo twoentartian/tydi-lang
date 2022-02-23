@@ -6,33 +6,14 @@ extern crate tydi_lang_raw_ast;
 
 use chrono::{Datelike, Timelike};
 use std::fs;
+use std::fs::File;
+use std::path::Path;
 use std::io::Write;
 use std::sync::{Arc, RwLock};
 use tydi_lang_raw_ast::project_arch::Project;
 use tydi_lang_parser::evaluation;
 use tydi_lang_raw_ast::util::PrettyPrint;
 
-#[test]
-pub fn test() {
-    let base_dir = std::env::current_dir().expect("not found path");
-    let paths:Vec<String>;
-    if base_dir.ends_with("tydi-lang") {
-        paths = vec![String::from("./tydi_lang_front_end/tydi_source/tydi_ir.td")];
-    }
-    else if base_dir.ends_with("tydi_lang_front_end") {
-        paths = vec![String::from("./tydi_source/tydi_ir.td")];
-    }
-    else {
-        unreachable!()
-    }
-
-    let result = tydi_frontend_compile(None, paths, Some(String::from("./output")), true, true, None);
-    if result.is_err() {
-        println!("{}",result.err().unwrap());
-        assert!(false);
-    }
-
-}
 
 pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec<String>, output_path: Option<String>, flag_compile_streamlet: bool, flag_compile_implement: bool, worker: Option<usize>) -> Result<Arc<RwLock<Project>>, String> {
     //get project name
@@ -53,8 +34,11 @@ pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec
         }
         Some(path) => { real_output_path = path; }
     }
-    let result = fs::create_dir(real_output_path.clone());
-    if result.is_err() { return Err(format!("failed to create output folder({})", real_output_path.clone())); }
+
+    if !Path::new(&real_output_path).exists() {
+        let result = fs::create_dir(real_output_path.clone());
+        if result.is_err() { return Err(format!("failed to create output folder({})", real_output_path.clone())); }
+    }
 
     //parse front end
     let result = tydi_lang_parser::parse_multi_files_mt(real_project_name.clone(), tydi_source_path.clone(), worker);
@@ -76,7 +60,7 @@ pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec
     }
 
     {
-        let parser_output_file_path = format!("{}/parser_output.txt", real_output_path.clone());
+        let parser_output_file_path = format!("{}/1_parser_output.txt", real_output_path.clone());
         let mut file = fs::File::create(&parser_output_file_path).unwrap();
         let content = project_architecture.read().unwrap().pretty_print(0,false);
         file.write_all(content.as_bytes()).unwrap();
@@ -93,19 +77,27 @@ pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec
     }
 
     {
-        let evaluation_output_file_path = format!("{}/evaluation_output.txt", real_output_path.clone());
+        let evaluation_output_file_path = format!("{}/2_evaluation_output.txt", real_output_path.clone());
         let mut file = fs::File::create(&evaluation_output_file_path).unwrap();
         let content = project_architecture.read().unwrap().pretty_print(0,false);
         file.write_all(content.as_bytes()).unwrap();
     }
 
-    //generation
-    if flag_compile_streamlet {
-
+    //IR generation
+    let output_til_path = format!("{}/3_til", real_output_path.clone());
+    if !Path::new(&output_til_path).exists() {
+        let result = fs::create_dir(output_til_path.clone());
+        if result.is_err() { return Err(format!("failed to create output til folder({})", output_til_path.clone())); }
     }
 
-    if flag_compile_implement {
-
+    let output_til = project_architecture.read().unwrap().to_tydi_il(real_project_name.clone(), flag_compile_streamlet, flag_compile_implement);
+    for (file_name, file_content) in output_til {
+        let output_til_file_path = format!("{}/{}.til", output_til_path.clone(), file_name);
+        let result = File::create(output_til_file_path.clone());
+        if result.is_err() { return Err(result.err().unwrap().to_string()); }
+        let mut file = result.ok().unwrap();
+        let result = file.write_all(file_content.as_bytes());
+        if result.is_err() { return Err(result.err().unwrap().to_string()); }
     }
 
     return Ok(project_architecture);

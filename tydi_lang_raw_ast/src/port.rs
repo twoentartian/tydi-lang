@@ -82,25 +82,27 @@ impl DeepClone for Port {
 }
 
 impl tydi_il::ToTydiIL for Port {
-    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>) -> String {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, depth: u32) -> String {
         let mut output = String::from("");
 
         //document
         match &self.docu {
             None => {}
             Some(docu) => {
-                output.push_str(&format!("{}\n", docu));
+                output.push_str(&format!("{}{}\n", generate_padding(depth),docu));
             }
         }
 
-        output.push_str(&format!("{}: {} {}",
-                                 self.name.clone(),
-                                 match self.direction {
-                                     PortDirection::Input => "in",
-                                     PortDirection::Output => "out",
-                                     PortDirection::Unknown => unreachable!(),
-                                 },
-                                 self.port_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map)));
+        output.push_str(
+            &format!("{}{}: {} {}",
+                     generate_padding(depth),
+                     crate::util::rename_id_to_il(self.name.clone()),
+                     match self.direction {
+                         PortDirection::Input => "in",
+                         PortDirection::Output => "out",
+                         PortDirection::Unknown => unreachable!(),
+                     },
+                     self.port_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map, 1)));
         return output;
     }
 }

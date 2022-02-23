@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use deep_clone::DeepClone;
 use evaluated_flag::{EvaluatedFlag, EvaluatedState};
@@ -12,6 +12,7 @@ use crate::scope::{Scope, ScopeRelationType, ScopeType};
 use crate::streamlet::Streamlet;
 use crate::util::{generate_padding, PrettyPrint, EnableDocument};
 use crate::variable::Variable;
+use crate::tydi_il;
 use derived_macro::EnableDocument;
 
 #[derive(Clone, Debug)]
@@ -95,6 +96,72 @@ impl DeepClone for Implement {
     }
 }
 
+impl tydi_il::ToTydiIL for Implement {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, depth:u32) -> String {
+        let mut output = String::from("");
+
+        //document
+        let docu_str = match &self.docu {
+            None => { String::from("") }
+            Some(docu) => { format!("{}{}\n", generate_padding(depth+1), docu) }
+        };
+        let streamlet = self.derived_streamlet.as_ref().unwrap().read().unwrap();
+        let streamlet_docu = match streamlet.get_document() {
+            None => { String::from("") }
+            Some(docu) => { format!("{}{}\n", generate_padding(depth), docu) }
+        };
+
+        //streamlet_ports
+        let streamlet_ports = streamlet.get_scope().read().unwrap().ports.clone();
+        let mut streamlet_port_content = String::from("");
+        for (_,port) in streamlet_ports {
+            let str = port.read().unwrap().to_tydi_il(type_alias_map, depth+1);
+            streamlet_port_content.push_str(&format!("{},\n", str));
+        }
+
+        //instance
+        let instances = self.scope.read().unwrap().instances.clone();
+        let mut instance_content = String::from("");
+        for (_,instance) in instances {
+            let str = instance.read().unwrap().to_tydi_il(type_alias_map, depth+2);
+            instance_content.push_str(&format!("{};\n", str));
+        }
+
+        //connections
+        let connections = self.scope.read().unwrap().connections.clone();
+        let mut connection_content = String::from("");
+        for (_,connection) in connections {
+            let str = connection.read().unwrap().to_tydi_il(type_alias_map, depth+2);
+            connection_content.push_str(&format!("{};\n", str));
+        }
+
+        output.push_str(
+            &format!("\
+        {}\
+        {}streamlet {} = (\n\
+          {}\
+        {}) {{\n\
+        {}\
+        {}impl:{{\n\
+        {}\
+        {}\
+        {}}},\n\
+        {}}};\n\
+        ",
+                     streamlet_docu,
+                     generate_padding(depth), crate::util::rename_id_to_il(self.name.clone()),
+                     streamlet_port_content,
+                     generate_padding(depth),
+                     &docu_str,
+                     generate_padding(depth + 1),
+                     instance_content,
+                     connection_content,
+                     generate_padding(depth + 1),
+                     generate_padding(depth)));
+        return output;
+    }
+}
+
 impl EvaluatedFlag for Implement {
     fn get_evaluate_flag(&self) -> EvaluatedState {
         return self.evaluated_state.clone();
@@ -111,6 +178,16 @@ impl Implement {
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
     generate_access!(derived_streamlet_var, Arc<RwLock<Variable>>, get_derived_streamlet_var, set_derived_streamlet_var);
     generate_access!(derived_streamlet, Option<Arc<RwLock<Streamlet>>>, get_derived_streamlet, set_derived_streamlet);
+
+    pub fn get_instance_impl_dependency(&self) -> Vec<String> {
+        let mut output = vec![];
+        let instances = self.scope.read().unwrap().instances.clone();
+        for (_, instance) in instances {
+            let instance_impl = instance.read().unwrap().get_implement_type().get_raw_value();
+            output.push(instance_impl.read().unwrap().get_name());
+        }
+        return output;
+    }
 
     pub fn set_name(&mut self, name_: String) {
         self.name = name_.clone();

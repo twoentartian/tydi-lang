@@ -122,18 +122,29 @@ impl DeepClone for LogicalStream {
 }
 
 impl ToTydiIL for LogicalStream {
-    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>) -> String {
-        let output_alias_map = format!("\
-        Stream(data: {},throughput: {},dimensionality: {},synchronicity: {},complexity: {},direction: {},user: {},keep: {},)",
-                                       self.data_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map),
-                                       String::from((*self.throughput.read().unwrap()).clone()),
-                                       String::from((*self.dimension.read().unwrap()).clone()),
-                                       String::from(String::from(self.synchronicity.clone())),
-                                       String::from((*self.complexity.read().unwrap()).clone()),
-                                       String::from(String::from(self.direction.clone())),
-                                       self.user_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map),
-                                       String::from((*self.keep.read().unwrap()).clone()),
-        );
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, depth:u32) -> String {
+        let output_alias_map =
+            format!("\
+        Stream (\n\
+        {}data: {},\n\
+        {}throughput: {},\n\
+        {}dimensionality: {},\n\
+        {}synchronicity: {},\n\
+        {}complexity: {},\n\
+        {}direction: {},\n\
+        {}user: {},\n\
+        {}keep: {},\n\
+        {})",
+                    generate_padding(depth+1), self.data_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map, 1),
+                    generate_padding(depth+1), String::from((*self.throughput.read().unwrap()).clone()),
+                    generate_padding(depth+1), String::from((*self.dimension.read().unwrap()).clone()),
+                    generate_padding(depth+1), String::from(String::from(self.synchronicity.clone())),
+                    generate_padding(depth+1), String::from((*self.complexity.read().unwrap()).clone()),
+                    generate_padding(depth+1), String::from(String::from(self.direction.clone())),
+                    generate_padding(depth+1), self.user_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map, 1),
+                    generate_padding(depth+1), String::from((*self.keep.read().unwrap()).clone()),
+                    generate_padding(depth),
+            );
         type_alias_map.insert(self.name.clone(), output_alias_map);
 
         return self.name.clone();

@@ -27,20 +27,20 @@ pub enum LogicalDataType {
 }
 
 impl ToTydiIL for LogicalDataType {
-    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>) -> String {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, depth: u32) -> String {
         match self {
             LogicalDataType::DataNull => { return format!("Null"); }
             LogicalDataType::DataBitType(bit) => {
                 return format!("Bits({})", String::from((*bit.get_bit().read().unwrap()).clone()));
             }
             LogicalDataType::DataGroupType(_, target) => {
-                return target.read().unwrap().to_tydi_il(type_alias_map);
+                return target.read().unwrap().to_tydi_il(type_alias_map, depth);
             }
             LogicalDataType::DataUnionType(_, target) => {
-                return target.read().unwrap().to_tydi_il(type_alias_map);
+                return target.read().unwrap().to_tydi_il(type_alias_map, depth);
             }
             LogicalDataType::DataStreamType(_, target) => {
-                return target.read().unwrap().to_tydi_il(type_alias_map);
+                return target.read().unwrap().to_tydi_il(type_alias_map, depth);
             }
             _ => unreachable!()
         }

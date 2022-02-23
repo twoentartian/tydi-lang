@@ -19,9 +19,12 @@ pub fn generate_template_instance_name(template_name: String, template_exps: &Ve
                 template_exp_string.push_str(&format!("@{}", v.to_string()));
             }
             VariableValue::Str(v) => {
-                template_exp_string.push_str(&format!("@\"{}\"", v.to_string()));
+                template_exp_string.push_str(&format!("@{}", v.to_string()));
             }
-            VariableValue::LogicalDataType(_) | VariableValue::Unknown => {
+            VariableValue::LogicalDataType(type_) => {
+                template_exp_string.push_str(&format!("@{}", String::from((*type_.read().unwrap()).clone())))
+            }
+            VariableValue::Unknown => {
                 template_exp_string.push_str(&format!("@{}", String::from(template_exp.read().unwrap().get_var_value().get_raw_exp())));
             }
 

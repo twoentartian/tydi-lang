@@ -2,7 +2,50 @@ package tydi_ir;
 
 type bit8_stream = Stream(Bit(8), d = 5);
 
+type Group group0 {
+  r: Bit(8),
+  g: Bit(8),
+  b: Bit(8),
+};
+
+type rgb_stream = Stream(group0);
+
+#streamlet docu basic0#
 streamlet basic0 {
+  #port document#
   in: bit8_stream in,
   out: bit8_stream out,
 };
+
+#impl docu basic0_1#
+impl basic0_1 of basic0 {
+
+};
+
+#impl docu impl_basic0#
+impl impl_basic0 of basic0 {
+
+  #instance document#
+  instance test_inst(basic0_1),
+
+  #connection document#
+  in => test_inst.in,
+  test_inst.out => out,
+};
+
+impl impl_template<i:int> of basic0 {
+  instance test_inst(basic0_1) [i],
+};
+
+streamlet streamlet_template<i:int, t:type> {
+  in: t [i] in,
+  out: t out,
+};
+
+impl impl_template2<i:int> of streamlet_template<i, type rgb_stream> {
+  instance test_inst(basic0_1) [i],
+};
+
+impl impl_template_instance_1(impl_template<3>);
+
+impl impl_template_instance_2(impl_template2<5>);

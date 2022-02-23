@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+use deep_clone::DeepClone;
 use error::ErrorCode;
+use implement::ImplementType;
+use scope::StreamletType;
+use tydi_il::ToTydiIL;
 use crate::{generate_get};
 use crate::scope::{Scope, ScopeType};
 use crate::util::*;
@@ -49,6 +53,18 @@ impl Project {
             Some(package) => {return Ok(package.clone()); }
         }
     }
+
+    pub fn to_tydi_il(&self, project_name: String, generate_streamlet: bool, generate_implement: bool) -> HashMap<String, String> {
+        let mut output = HashMap::new();
+
+        for (package_name, package) in self.packages.clone() {
+            let file_name = format!("{}_{}", project_name.clone(), package_name.clone());
+            let file_content = package.read().unwrap().to_tydi_il(project_name.clone(), generate_streamlet, generate_implement);
+            output.insert(file_name, file_content);
+        }
+
+        return output;
+    }
 }
 
 impl PrettyPrint for Project {
@@ -91,6 +107,102 @@ impl Package {
             name: name_.clone(),
             scope: scope_,
         }
+    }
+
+    pub fn to_tydi_il(&self, project_name: String, generate_streamlet: bool, generate_implement: bool) -> String {
+        let mut type_alias_map: HashMap<String, String> = HashMap::new();
+
+        let mut output_streamlet = String::from("");
+        if generate_streamlet {
+            let streamlets = self.scope.read().unwrap().streamlets.clone();
+            for (_, streamlet) in streamlets {
+                match streamlet.read().unwrap().get_type() {
+                    StreamletType::NormalStreamlet => {}
+                    StreamletType::TemplateStreamlet(_) => { continue }
+                    _ => unreachable!()
+                }
+                output_streamlet.push_str(&format!("{}\n", streamlet.read().unwrap().to_tydi_il(&mut type_alias_map, 1)));
+            }
+        }
+
+        let mut output_implement = String::from("");
+        if generate_implement {
+            let mut output_implement_dependency: HashMap<String, Vec<String>> = HashMap::new();
+            let mut output_implement_content: HashMap<String, String> = HashMap::new();
+            let mut dependency_exist: HashMap<String, Arc<RwLock<bool>>> = HashMap::new();
+            let implements = self.scope.read().unwrap().implements.clone();
+            for (implement_name, implement) in implements {
+                match implement.read().unwrap().get_type() {
+                    ImplementType::NormalImplement => {}
+                    ImplementType::TemplateImplement(_) => { continue }
+                    _ => unreachable!()
+                }
+                dependency_exist.insert(implement_name.clone(),  Arc::new(RwLock::new(false)));
+                output_implement_dependency.insert(implement_name.clone(), implement.read().unwrap().get_instance_impl_dependency());
+                output_implement_content.insert(implement_name.clone(), implement.read().unwrap().to_tydi_il(&mut type_alias_map, 1));
+            }
+
+            let global_implement_instances = self.scope.read().unwrap().instances.clone();
+            for (implement_name, instance) in global_implement_instances {
+                let implement = instance.read().unwrap().get_implement_type().get_raw_value();
+                let mut implement = implement.read().unwrap().deep_clone();
+                implement.set_name(implement_name.clone());
+
+                dependency_exist.insert(implement_name.clone(),  Arc::new(RwLock::new(false)));
+                output_implement_dependency.insert(implement_name.clone(), implement.get_instance_impl_dependency());
+                output_implement_content.insert(implement_name.clone(), implement.to_tydi_il(&mut type_alias_map, 1));
+            }
+
+            //analyzing dependency
+            let mut output_implement_dependency_bool: HashMap<String, Vec<Arc<RwLock<bool>>>> = HashMap::new();
+            for (impl_name, dependency) in &output_implement_dependency {
+                let mut dependency_bool: Vec<Arc<RwLock<bool>>> = vec![];
+                for impl_dependency in dependency {
+                    match dependency_exist.get(impl_dependency) {
+                        None => { unreachable!("we should never find an implement which isn't in scope, consider bugs in evaluation") }
+                        Some(impl_exist) => { dependency_bool.push(impl_exist.clone()); }
+                    }
+                }
+                let result = output_implement_dependency_bool.insert(impl_name.clone(), dependency_bool);
+                if result.is_some() { unreachable!() }
+            }
+
+            let mut remain_impl = output_implement_dependency_bool.len();
+            while remain_impl > 0 {
+                for (impl_name, dependency) in &output_implement_dependency_bool {
+                    let mut meet_dependency = true;
+                    for single_dependency in dependency {
+                        if !(*single_dependency.read().unwrap()) {
+                            meet_dependency = false;
+                            break;
+                        }
+                    }
+
+                    let impl_in_exist = dependency_exist.get(impl_name).unwrap();
+                    if meet_dependency && (*impl_in_exist.read().unwrap() == false) {
+                        //put impl to the buffer
+                        output_implement.push_str(&format!("{}\n", output_implement_content.get(impl_name).unwrap()));
+                        let mut impl_in_exist = impl_in_exist.write().unwrap();
+                        *impl_in_exist = true;
+                        remain_impl = remain_impl - 1;
+                    }
+                }
+            }
+        }
+
+        //types
+        let mut types_content = String::from("");
+        for (type_name, type_content) in type_alias_map {
+            types_content.push_str(&format!("{}type {} = {};\n", generate_padding(1) ,type_name, type_content));
+        }
+
+        let output = format!("namespace {}::{} {{\n\
+        {}\n\
+        {}\n\
+        {}\n\
+        }}", project_name.clone(), self.get_name(), types_content.clone(), output_streamlet.clone(), output_implement.clone());
+
+        return output;
     }
 }
 

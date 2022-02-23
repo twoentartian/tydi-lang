@@ -920,6 +920,7 @@ fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                 let mut port_dir = PortDirection::Unknown;
                 let mut exp = String::from("");
                 let mut logical_type= LogicalDataType::UnknownLogicalDataType;
+                let mut docu: Option<String> = None;
                 for item in element.clone().into_inner().into_iter() {
                     match item.as_rule() {
                         Rule::ID => {
@@ -935,11 +936,23 @@ fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                             if result.is_err() { return Err(result.err().unwrap()); }
                             port_dir = result.ok().unwrap();
                         },
+                        Rule::DOCUMENT => {
+                            docu = Some(item.as_str().to_string());
+                        },
                         _ => { unreachable!() }
                     }
                 }
 
                 let result = streamlet.new_port(exp.clone(), inferred!(infer_logical_data_type!(), Arc::new(RwLock::new(logical_type))), port_dir);
+                match docu {
+                    None => {}
+                    Some(docu) => {
+                        let streamlet_scope = streamlet.get_scope();
+                        let port = streamlet_scope.read().unwrap().resolve_port_in_current_scope(exp.clone()).unwrap();
+                        port.write().unwrap().set_document(Some(docu));
+                    }
+                }
+
                 if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
             },
             Rule::StreamLetBodyStreamLetPortArray => {
@@ -964,6 +977,9 @@ fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                         },
                         Rule::Exp => {
                             array_var = Variable::new(String::from(""), DataType::IntType, item.as_str().to_string());
+                        },
+                        Rule::DOCUMENT => {
+
                         },
                         _ => { unreachable!() }
                     }

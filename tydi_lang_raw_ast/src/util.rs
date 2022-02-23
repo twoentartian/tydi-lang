@@ -59,3 +59,11 @@ pub fn generate_random_str(length: usize) -> String {
             .collect();
     return rand_string;
 }
+
+pub fn rename_id_to_il(name: String) -> String {
+    let output = name.clone();
+    let output = output.replace("@", "AT");
+    let output = output.replace("(", "UU");
+    let output = output.replace(")", "UU");
+    return output;
+}

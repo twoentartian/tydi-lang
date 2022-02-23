@@ -31,18 +31,21 @@ impl DeepClone for LogicalGroup {
 }
 
 impl ToTydiIL for LogicalGroup {
-    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>) -> String {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, depth:u32) -> String {
         let mut output_alias_map = String::from("");
         let types_in_group = self.scope.read().unwrap().types.clone();
         let mut first = true;
         for (name, type_) in types_in_group {
-            let logical_type = type_.read().unwrap().get_type_infer().get_raw_value();
-            let logical_type = (*logical_type.read().unwrap()).clone();
-            output_alias_map.push_str(&format!("{}: {}", name, logical_type.to_tydi_il(type_alias_map)));
             if first {
                 first = false;
+            }
+            else {
                 output_alias_map.push_str(",");
             }
+
+            let logical_type = type_.read().unwrap().get_type_infer().get_raw_value();
+            let logical_type = (*logical_type.read().unwrap()).clone();
+            output_alias_map.push_str(&format!("{}: {}", name, logical_type.to_tydi_il(type_alias_map, 1)));
         }
         let output_alias_map = format!("Group({})", output_alias_map);
 
@@ -115,18 +118,21 @@ impl DeepClone for LogicalUnion {
 }
 
 impl ToTydiIL for LogicalUnion {
-    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>) -> String {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, depth:u32) -> String {
         let mut output_alias_map = String::from("");
         let types_in_union = self.scope.read().unwrap().types.clone();
         let mut first = true;
         for (name, type_) in types_in_union {
-            let logical_type = type_.read().unwrap().get_type_infer().get_raw_value();
-            let logical_type = (*logical_type.read().unwrap()).clone();
-            output_alias_map.push_str(&format!("{}: {}", name, logical_type.to_tydi_il(type_alias_map)));
             if first {
                 first = false;
+            }
+            else {
                 output_alias_map.push_str(",");
             }
+
+            let logical_type = type_.read().unwrap().get_type_infer().get_raw_value();
+            let logical_type = (*logical_type.read().unwrap()).clone();
+            output_alias_map.push_str(&format!("{}: {}", name, logical_type.to_tydi_il(type_alias_map, 1)));
         }
         let output_alias_map = format!("Union({})", output_alias_map);
 

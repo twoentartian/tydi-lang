@@ -7,8 +7,10 @@ use crate::{generate_get, generate_set, generate_access};
 use crate::inferable::{Inferable, InferState, NewInferable};
 use crate::variable::Variable;
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
-use crate::util::{generate_padding, PrettyPrint, EnableDocument};
+use crate::util::{generate_padding, PrettyPrint, EnableDocument, rename_id_to_il};
 use derived_macro::EnableDocument;
+use scope::HashMap;
+use tydi_il::ToTydiIL;
 
 #[derive(Clone, Debug)]
 pub enum InstanceArray {
@@ -60,6 +62,14 @@ impl DeepClone for Instance {
 
             docu: self.docu.deep_clone(),
         }
+    }
+}
+
+impl ToTydiIL for Instance {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, depth:u32) -> String {
+        let implement_name = self.get_implement_type().get_raw_value().read().unwrap().get_name();
+        let output = format!("{}{} = {}", generate_padding(depth), rename_id_to_il(self.get_name()), implement_name);
+        return output;
     }
 }
 

@@ -136,8 +136,8 @@ DOCUMENT? ~
 "}"
 }
 StreamLetArgs = _{ "<" ~ Arg ~ ("," ~ Arg)* ~ ">" }
-StreamLetBodyStreamLetPort = { ID ~ ":" ~ LogicalType ~ Direction ~ "," }
-StreamLetBodyStreamLetPortArray = { ID ~ ":" ~ LogicalType ~ "[" ~ Exp ~ "]" ~ Direction ~ "," }
+StreamLetBodyStreamLetPort = { DOCUMENT? ~ ID ~ ":" ~ LogicalType ~ Direction ~ "," }
+StreamLetBodyStreamLetPortArray = { DOCUMENT? ~ ID ~ ":" ~ LogicalType ~ "[" ~ Exp ~ "]" ~ Direction ~ "," }
 StreamLetBodyDeclareConstInStreamlet = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
 StreamLetBody = _{ (StreamLetBodyStreamLetPort | StreamLetBodyStreamLetPortArray | StreamLetBodyDeclareConstInStreamlet)}
 DirectionDirIn = { "in" }

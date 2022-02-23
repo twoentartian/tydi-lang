@@ -10,6 +10,8 @@ use crate::port::Port;
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
 use crate::util::{generate_padding, PrettyPrint, EnableDocument};
 use derived_macro::EnableDocument;
+use scope::HashMap;
+use tydi_il::ToTydiIL;
 use crate::variable::Variable;
 
 #[derive(Clone, Debug)]
@@ -72,6 +74,26 @@ impl DeepClone for Connection {
 
             docu: self.docu.deep_clone(),
         }
+    }
+}
+
+impl ToTydiIL for Connection {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, depth: u32) -> String {
+        let lhs_owner = match &self.lhs_port_owner {
+            PortOwner::UnknownPortOwner => { unreachable!() }
+            PortOwner::SelfOwner => { String::from("") }
+            PortOwner::ExternalOwner(name, _, _) => { format!("{}.",name) }
+        };
+        let rhs_owner = match &self.rhs_port_owner {
+            PortOwner::UnknownPortOwner => { unreachable!() }
+            PortOwner::SelfOwner => { String::from("") }
+            PortOwner::ExternalOwner(name, _, _) => { format!("{}.",name) }
+        };
+
+        let lhs_port_name = self.lhs_port.get_raw_value().read().unwrap().get_name();
+        let rhs_port_name = self.rhs_port.get_raw_value().read().unwrap().get_name();
+
+        return format!("{}{}{} -- {}{}", generate_padding(depth), lhs_owner, lhs_port_name, rhs_owner, rhs_port_name);
     }
 }
 

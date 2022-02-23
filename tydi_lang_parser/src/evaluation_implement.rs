@@ -167,14 +167,14 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
             let streamlet_var_type = streamlet_var.read().unwrap().get_type();
             match (*streamlet_var_type.read().unwrap()).clone() {
                 DataType::ProxyStreamlet(streamlet_name, template_exps) => {
-                    let result = evaluation_streamlet::resolve_and_infer_streamlet(streamlet_name.clone(), None, template_exps.clone(), scope.clone(), project.clone());
+                    let result = evaluation_streamlet::resolve_and_infer_streamlet(streamlet_name.clone(), None, template_exps.clone(), implement_scope.clone(), project.clone());
                     if result.is_err() { return Err(result.err().unwrap()); }
                     {
                         implement.write().unwrap().set_derived_streamlet(Some(result.ok().unwrap().clone()));
                     }
                 }
                 DataType::ExternalProxyStreamlet(package_name, streamlet_name, template_exps) => {
-                    let result = evaluation_streamlet::resolve_and_infer_streamlet(streamlet_name.clone(), Some(package_name.clone()), template_exps.clone(), scope.clone(), project.clone());
+                    let result = evaluation_streamlet::resolve_and_infer_streamlet(streamlet_name.clone(), Some(package_name.clone()), template_exps.clone(), implement_scope.clone(), project.clone());
                     if result.is_err() { return Err(result.err().unwrap()); }
                     {
                         implement.write().unwrap().set_derived_streamlet(Some(result.ok().unwrap().clone()));
@@ -368,12 +368,14 @@ pub fn infer_instance(instance: Arc<RwLock<Instance>>, scope: Arc<RwLock<Scope>>
     }
 
     let resolve_implement_result;
+    let evaluation_scope;
     match package {
         None => {
             //local streamlet
             let find_implement_result = scope.read().unwrap().resolve_implement_from_scope(derived_implement_name.clone());
             if find_implement_result.is_err() { return Err(ImplementEvaluationFail(String::from(find_implement_result.err().unwrap()))); }
             resolve_implement_result = find_implement_result.ok().unwrap();
+            evaluation_scope = scope.clone();
         }
         Some(package_name) => {
             //external streamlet
@@ -386,11 +388,12 @@ pub fn infer_instance(instance: Arc<RwLock<Instance>>, scope: Arc<RwLock<Scope>>
             let find_streamlet_result = external_scope.read().unwrap().resolve_implement_in_current_scope(derived_implement_name.clone());
             if find_streamlet_result.is_err() { return Err(ImplementEvaluationFail(String::from(find_streamlet_result.err().unwrap()))); }
             resolve_implement_result = find_streamlet_result.ok().unwrap();
+            evaluation_scope = external_scope.clone();
         }
     }
 
     //evaluation implement
-    let evaluated_implement = infer_implement(resolve_implement_result.clone(), derived_implement_template_exps.clone(), scope.clone(), project.clone())?;
+    let evaluated_implement = infer_implement(resolve_implement_result.clone(), derived_implement_template_exps.clone(), evaluation_scope.clone(), project.clone())?;
 
     //set derived implement
     {
@@ -782,7 +785,7 @@ pub fn resolve_and_infer_implement(implement_name: String, package_name: Option<
             let result = external_scope.read().unwrap().resolve_implement_in_current_scope(implement_name.clone());
             if result.is_err() { return Err(ImplementEvaluationFail(String::from(result.err().unwrap()))); }
             let implement = result.ok().unwrap();
-            return infer_implement(implement.clone(), implement_template_exps.clone(), scope.clone(), project.clone())
+            return infer_implement(implement.clone(), implement_template_exps.clone(), external_scope.clone(), project.clone())
         }
     }
 }
