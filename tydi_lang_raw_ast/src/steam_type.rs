@@ -1,5 +1,7 @@
+use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use deep_clone::DeepClone;
+use tydi_il::ToTydiIL;
 use crate::logical_data_type::LogicalDataType;
 use crate::error::ErrorCode;
 use crate::{generate_access, generate_get, generate_set, generate_set_in_arc_rwlock, inferred, infer_logical_data_type};
@@ -116,6 +118,25 @@ impl DeepClone for LogicalStream {
             direction: self.direction.deep_clone(),
             keep: self.keep.deep_clone(),
         }
+    }
+}
+
+impl ToTydiIL for LogicalStream {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>) -> String {
+        let output_alias_map = format!("\
+        Stream(data: {},throughput: {},dimensionality: {},synchronicity: {},complexity: {},direction: {},user: {},keep: {},)",
+                                       self.data_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map),
+                                       String::from((*self.throughput.read().unwrap()).clone()),
+                                       String::from((*self.dimension.read().unwrap()).clone()),
+                                       String::from(String::from(self.synchronicity.clone())),
+                                       String::from((*self.complexity.read().unwrap()).clone()),
+                                       String::from(String::from(self.direction.clone())),
+                                       self.user_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map),
+                                       String::from((*self.keep.read().unwrap()).clone()),
+        );
+        type_alias_map.insert(self.name.clone(), output_alias_map);
+
+        return self.name.clone();
     }
 }
 

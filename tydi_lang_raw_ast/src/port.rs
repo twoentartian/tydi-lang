@@ -1,13 +1,15 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use deep_clone::DeepClone;
 use variable::Variable;
 use crate::logical_data_type::LogicalDataType;
-use crate::util::{generate_padding, PrettyPrint};
+use crate::util::{generate_padding, PrettyPrint, EnableDocument};
 use crate::{generate_access, generate_get, generate_set};
 use crate::error::ErrorCode;
 use crate::inferable::{Inferable};
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
+use derived_macro::EnableDocument;
+use crate::tydi_il;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PortDirection {
@@ -58,12 +60,13 @@ impl From<PortArray> for String {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, EnableDocument)]
 pub struct Port {
     name: String,
     port_type: Inferable<Arc<RwLock<LogicalDataType>>>,
     direction: PortDirection,
     array_type: PortArray,
+    docu: Option<String>,
 }
 
 impl DeepClone for Port {
@@ -73,7 +76,32 @@ impl DeepClone for Port {
             port_type: self.port_type.deep_clone(),
             direction: self.direction.deep_clone(),
             array_type: self.array_type.deep_clone(),
+            docu: self.docu.deep_clone(),
         }
+    }
+}
+
+impl tydi_il::ToTydiIL for Port {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>) -> String {
+        let mut output = String::from("");
+
+        //document
+        match &self.docu {
+            None => {}
+            Some(docu) => {
+                output.push_str(&format!("{}\n", docu));
+            }
+        }
+
+        output.push_str(&format!("{}: {} {}",
+                                 self.name.clone(),
+                                 match self.direction {
+                                     PortDirection::Input => "in",
+                                     PortDirection::Output => "out",
+                                     PortDirection::Unknown => unreachable!(),
+                                 },
+                                 self.port_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map)));
+        return output;
     }
 }
 
@@ -89,6 +117,7 @@ impl Port {
             port_type: type_exp.clone(),
             direction: direction_,
             array_type: PortArray::SinglePort,
+            docu: None,
         }
     }
 
@@ -98,6 +127,7 @@ impl Port {
             port_type: type_exp.clone(),
             direction: direction_,
             array_type: PortArray::ArrayPort(array_.clone()),
+            docu: None,
         }
     }
 }

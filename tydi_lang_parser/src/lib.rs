@@ -26,12 +26,12 @@ use tydi_lang_raw_ast::implement::ImplementType;
 mod test_lex;
 mod test_parse_project;
 mod test_evaluation_simple;
-mod evaluation_var;
-mod evaluation_type;
-mod evaluation_streamlet;
-mod evaluation_implement;
-mod evaluation;
-mod built_in_ids;
+pub mod evaluation_var;
+pub mod evaluation_type;
+pub mod evaluation_streamlet;
+pub mod evaluation_implement;
+pub mod evaluation;
+pub mod built_in_ids;
 mod util;
 
 #[derive(Parser)]
@@ -290,6 +290,7 @@ fn parse_implement_body_declare_instance(statement: Pairs<Rule>, scope: Arc<RwLo
     let mut derived_implement_package: Option<String> = None;
     let mut derived_implement_name = String::from("");
     let mut derived_implement_argexps = vec![];
+    let mut instance_docu: Option<String> = None;
     for element in statement.into_iter() {
         match element.as_rule() {
             Rule::ID => {
@@ -312,20 +313,29 @@ fn parse_implement_body_declare_instance(statement: Pairs<Rule>, scope: Arc<RwLo
                 let var = Variable::new(String::from(""), DataType::IntType, element.as_str().to_string());
                 instance_array_type = InstanceArray::ArrayInstance(Arc::new(RwLock::new(var)));
             },
+            Rule::DOCUMENT => {
+                instance_docu = Some(element.as_str().to_string());
+            },
             _ => { unreachable!() },
         }
     }
 
     match instance_array_type {
         InstanceArray::ArrayInstance(array_) => {
-            let result = scope.write().unwrap().new_instance_array(instance_name, derived_implement_package, not_inferred!(infer_implement!(), derived_implement_name), derived_implement_argexps, array_.clone());
+            let result = scope.write().unwrap().new_instance_array(instance_name.clone(), derived_implement_package, not_inferred!(infer_implement!(), derived_implement_name), derived_implement_argexps, array_.clone());
             if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
         },
         InstanceArray::SingleInstance => {
-            let result = scope.write().unwrap().new_instance(instance_name, derived_implement_package, not_inferred!(infer_implement!(), derived_implement_name), derived_implement_argexps);
+            let result = scope.write().unwrap().new_instance(instance_name.clone(), derived_implement_package, not_inferred!(infer_implement!(), derived_implement_name), derived_implement_argexps);
             if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
         },
         _ => { unreachable!() }
+    }
+
+    //document
+    let inst = scope.read().unwrap().resolve_instance_in_current_scope(instance_name.clone()).unwrap();
+    {
+        inst.write().unwrap().set_document(instance_docu);
     }
 
     return Ok(());
@@ -523,6 +533,9 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                 let mut lhs_rhs_counter = 0;
                 for element in single_stat.clone().into_inner().into_iter() {
                     match element.as_rule() {
+                        Rule::DOCUMENT => {
+                            connection.set_document(Some(element.as_str().to_string()));
+                        },
                         Rule::LogicalTypeSlice => {
                             let result = parse_logical_type_slice(element.into_inner(), scope.clone());
                             if result.is_err() { return Err(result.err().unwrap()); }
@@ -622,6 +635,9 @@ fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
             Rule::ImplementationBody => {
                 let result = parse_implement_body(element.into_inner(), implement.get_scope());
                 if result.is_err() { return Err(result.err().unwrap()); }
+            },
+            Rule::DOCUMENT => {
+                implement.set_document(Some(element.as_str().to_string()));
             },
             _ => { unreachable!() },
         }
@@ -882,6 +898,9 @@ fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
             Rule::ID => {
                 streamlet.set_name(element.as_str().to_string());
             },
+            Rule::DOCUMENT => {
+                streamlet.set_document(Some(element.as_str().to_string()));
+            },
             Rule::Arg => {
                 let result = parse_arg_to_var(element.into_inner(), streamlet.get_scope());
                 if result.is_err() { return Err(result.err().unwrap()); }
@@ -1024,14 +1043,24 @@ fn parse_const_assign(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
 
 fn parse_type_assign(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     let mut id = String::from("");
+    let mut docu: Option<String> = None;
     for element in statement.clone().into_iter() {
         match element.as_rule() {
+            Rule::DOCUMENT => {
+                //currently we don't support document on type
+                todo!("currently we don't support document on type");
+                docu = Some(element.as_str().to_string());
+            }
             Rule::ID => { id = element.clone().as_str().to_string() },
             Rule::LogicalType => {
                 let result = get_logical_type(element.clone().into_inner(), id.clone(),scope.clone());
                 if result.is_err() { return Err(result.err().unwrap()); }
-                let result = scope.write().unwrap().new_logical_data_type(id.clone(), result.ok().unwrap().clone());
+                let mut logical_data_type = TypeAlias::new(id.clone(), inferred!(infer_logical_data_type!(), Arc::new(RwLock::new(result.ok().unwrap().clone()))));
+                logical_data_type.set_document(docu.clone());
+                let result = scope.write().unwrap().with_type_alias(Arc::new(RwLock::new(logical_data_type)));
                 if result.is_err() { return Err(ParserErrorCode::AnalysisCodeStructureFail(format!("{}-{:?}", String::from(result.err().unwrap()), element.clone().as_span()))); }
+                //let result = scope.write().unwrap().new_logical_data_type(id.clone(), result.ok().unwrap().clone());
+                //if result.is_err() { return Err(ParserErrorCode::AnalysisCodeStructureFail(format!("{}-{:?}", String::from(result.err().unwrap()), element.clone().as_span()))); }
             },
             _ => { unreachable!() },
         }

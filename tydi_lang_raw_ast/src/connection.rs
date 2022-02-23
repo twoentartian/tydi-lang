@@ -8,7 +8,8 @@ use crate::{generate_get, generate_access, generate_set};
 use crate::inferable::{Inferable};
 use crate::port::Port;
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
-use crate::util::{generate_padding, PrettyPrint};
+use crate::util::{generate_padding, PrettyPrint, EnableDocument};
+use derived_macro::EnableDocument;
 use crate::variable::Variable;
 
 #[derive(Clone, Debug)]
@@ -39,7 +40,7 @@ impl From<PortOwner> for String {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, EnableDocument)]
 pub struct Connection {
     name: String,
 
@@ -51,6 +52,8 @@ pub struct Connection {
     rhs_port_owner: PortOwner,
     rhs_port_array_type: PortArray,
     delay: Arc<RwLock<Variable>>,
+
+    docu: Option<String>,
 }
 
 impl DeepClone for Connection {
@@ -66,6 +69,8 @@ impl DeepClone for Connection {
             rhs_port_owner: self.rhs_port_owner.deep_clone(),
             rhs_port_array_type: self.rhs_port_array_type.deep_clone(),
             delay: self.delay.deep_clone(),
+
+            docu: self.docu.deep_clone(),
         }
     }
 }
@@ -93,6 +98,7 @@ impl Connection {
             rhs_port_owner: PortOwner::UnknownPortOwner,
             rhs_port_array_type: PortArray::UnknownPortArray,
             delay: Arc::new(RwLock::new(delay_.clone())),
+            docu: None,
         }
     }
 }

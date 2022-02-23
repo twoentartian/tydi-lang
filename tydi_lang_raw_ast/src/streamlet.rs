@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 use deep_clone::DeepClone;
 use evaluated_flag::{EvaluatedState, EvaluatedFlag};
@@ -11,7 +11,9 @@ use crate::inferable::Inferable;
 use crate::logical_data_type::LogicalDataType;
 use crate::port::PortDirection;
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
-use crate::util::{generate_padding, PrettyPrint};
+use crate::util::{generate_padding, PrettyPrint, EnableDocument};
+use derived_macro::EnableDocument;
+use crate::tydi_il;
 
 #[derive(Clone, Debug)]
 pub enum StreamletType {
@@ -52,10 +54,11 @@ impl PrettyPrint for StreamletType {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, EnableDocument)]
 pub struct Streamlet {
     name: String,
 
+    docu: Option<String>,
     streamlet_type: StreamletType,
     scope: Arc<RwLock<Scope>>,
     evaluated_state: EvaluatedState,
@@ -68,10 +71,38 @@ impl DeepClone for Streamlet {
             streamlet_type: self.streamlet_type.deep_clone(),
             scope: self.scope.deep_clone(),
             evaluated_state: self.evaluated_state.deep_clone(),
+            docu: self.docu.deep_clone(),
         };
         {
             output.scope.write().unwrap().set_self_ref(output.scope.clone());
         }
+        return output;
+    }
+}
+
+impl tydi_il::ToTydiIL for Streamlet {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>) -> String {
+        let mut output = String::from("");
+
+        //document
+        match &self.docu {
+            None => {}
+            Some(docu) => { output.push_str(&format!("{}\n", docu)); }
+        }
+
+        let streamlet_ports = self.scope.read().unwrap().ports.clone();
+        let mut streamlet_port_content = String::from("");
+        for (_,port) in streamlet_ports {
+            let str = port.read().unwrap().to_tydi_il(type_alias_map);
+            streamlet_port_content.push_str(&str);
+        }
+
+        output.push_str(&format!("\
+        streamlet {} = (\
+          {}\
+        );\
+        ", self.name.clone(), streamlet_port_content));
+
         return output;
     }
 }
@@ -106,6 +137,7 @@ impl Streamlet {
             streamlet_type: type_,
             scope: scope_,
             evaluated_state: NotEvaluate,
+            docu: None,
         }
     }
 

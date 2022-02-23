@@ -10,8 +10,9 @@ use crate::inferable::Inferable;
 use crate::port::{Port};
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
 use crate::streamlet::Streamlet;
-use crate::util::{generate_padding, PrettyPrint};
+use crate::util::{generate_padding, PrettyPrint, EnableDocument};
 use crate::variable::Variable;
+use derived_macro::EnableDocument;
 
 #[derive(Clone, Debug)]
 pub enum ImplementType {
@@ -58,7 +59,7 @@ impl PrettyPrint for ImplementType {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, EnableDocument)]
 pub struct Implement {
     name: String,
 
@@ -69,6 +70,8 @@ pub struct Implement {
     derived_streamlet: Option<Arc<RwLock<Streamlet>>>,
 
     evaluated_state: EvaluatedState,
+
+    docu: Option<String>,
 }
 
 impl DeepClone for Implement {
@@ -82,6 +85,8 @@ impl DeepClone for Implement {
             derived_streamlet: self.derived_streamlet.deep_clone(),
 
             evaluated_state: self.evaluated_state.deep_clone(),
+
+            docu: self.docu.deep_clone(),
         };
         {
             output.scope.write().unwrap().set_self_ref(output.scope.clone());
@@ -126,6 +131,8 @@ impl Implement {
             derived_streamlet: None,
 
             evaluated_state: NotEvaluate,
+
+            docu: None,
         }
     }
 

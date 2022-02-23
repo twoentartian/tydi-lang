@@ -235,7 +235,7 @@ fn evaluate_implement_mt() {
             {
                 println!("{}", project.read().unwrap().pretty_print(0, false));
             }
-            let result = crate::evaluation::evaluation_project_mt(project.clone(), None);
+            let result = crate::evaluation::evaluation_project_mt(project.clone(), true, true, None);
             if result.is_err() {
                 for single_err in result.err().unwrap() {
                     println!("{}", String::from(single_err));
@@ -286,7 +286,7 @@ fn evaluate_implement_mt_benchmark() {
             match result {
             Ok(project) => {
                 let start = Instant::now();
-                let result = crate::evaluation::evaluation_project_mt(project.clone(), Some(worker));
+                let result = crate::evaluation::evaluation_project_mt(project.clone(), true, true, trueSome(worker));
                 let stop = Instant::now();
                 evaluation_time = stop - start;
                 if result.is_err() {

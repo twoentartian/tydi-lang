@@ -1,5 +1,7 @@
 use std::sync::{Arc, RwLock};
 use deep_clone::DeepClone;
+use scope::HashMap;
+use tydi_il::ToTydiIL;
 use crate::data_type::DataType;
 use crate::error::ErrorCode;
 use crate::{generate_get, inferred};
@@ -25,6 +27,28 @@ impl DeepClone for LogicalGroup {
             output.scope.write().unwrap().set_self_ref(output.scope.clone());
         }
         return output;
+    }
+}
+
+impl ToTydiIL for LogicalGroup {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>) -> String {
+        let mut output_alias_map = String::from("");
+        let types_in_group = self.scope.read().unwrap().types.clone();
+        let mut first = true;
+        for (name, type_) in types_in_group {
+            let logical_type = type_.read().unwrap().get_type_infer().get_raw_value();
+            let logical_type = (*logical_type.read().unwrap()).clone();
+            output_alias_map.push_str(&format!("{}: {}", name, logical_type.to_tydi_il(type_alias_map)));
+            if first {
+                first = false;
+                output_alias_map.push_str(",");
+            }
+        }
+        let output_alias_map = format!("Group({})", output_alias_map);
+
+        type_alias_map.insert(self.name.clone(), output_alias_map);
+
+        return self.name.clone();
     }
 }
 
@@ -87,6 +111,28 @@ impl DeepClone for LogicalUnion {
             output.scope.write().unwrap().set_self_ref(output.scope.clone());
         }
         return output;
+    }
+}
+
+impl ToTydiIL for LogicalUnion {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>) -> String {
+        let mut output_alias_map = String::from("");
+        let types_in_union = self.scope.read().unwrap().types.clone();
+        let mut first = true;
+        for (name, type_) in types_in_union {
+            let logical_type = type_.read().unwrap().get_type_infer().get_raw_value();
+            let logical_type = (*logical_type.read().unwrap()).clone();
+            output_alias_map.push_str(&format!("{}: {}", name, logical_type.to_tydi_il(type_alias_map)));
+            if first {
+                first = false;
+                output_alias_map.push_str(",");
+            }
+        }
+        let output_alias_map = format!("Union({})", output_alias_map);
+
+        type_alias_map.insert(self.name.clone(), output_alias_map);
+
+        return self.name.clone();
     }
 }
 

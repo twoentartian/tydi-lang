@@ -7,7 +7,8 @@ use crate::{generate_get, generate_set, generate_access};
 use crate::inferable::{Inferable, InferState, NewInferable};
 use crate::variable::Variable;
 use crate::scope::{Scope, ScopeRelationType, ScopeType};
-use crate::util::{generate_padding, PrettyPrint};
+use crate::util::{generate_padding, PrettyPrint, EnableDocument};
+use derived_macro::EnableDocument;
 
 #[derive(Clone, Debug)]
 pub enum InstanceArray {
@@ -35,7 +36,7 @@ impl From<InstanceArray> for String {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, EnableDocument)]
 pub struct Instance {
     name: String,
     package: Option<String>,
@@ -43,6 +44,8 @@ pub struct Instance {
     implement_type: Inferable<Arc<RwLock<Implement>>>,
     implement_template_argexp: Vec<Arc<RwLock<Variable>>>,
     array_type: InstanceArray,
+
+    docu: Option<String>,
 }
 
 impl DeepClone for Instance {
@@ -54,6 +57,8 @@ impl DeepClone for Instance {
             implement_type: self.implement_type.deep_clone(),
             implement_template_argexp: self.implement_template_argexp.deep_clone(),
             array_type: self.array_type.deep_clone(),
+
+            docu: self.docu.deep_clone(),
         }
     }
 }
@@ -74,6 +79,7 @@ impl Instance {
                     implement_type: <Inferable<Arc<RwLock<Implement>>> as NewInferable<Arc<RwLock<Implement>>>>::_new_inferred(streamlet_type_exp_.get_raw_exp(), streamlet_type_exp_.get_raw_value()),
                     implement_template_argexp: template_argexp,
                     array_type: InstanceArray::SingleInstance,
+                    docu: None,
                 }
             }
             InferState::NotInferred => {
@@ -83,6 +89,7 @@ impl Instance {
                     implement_type: <Inferable<Arc<RwLock<Implement>>> as NewInferable<Arc<RwLock<Implement>>>>::_new(streamlet_type_exp_.get_raw_exp()),
                     implement_template_argexp: template_argexp,
                     array_type: InstanceArray::SingleInstance,
+                    docu: None,
                 }
             }
         }
@@ -97,6 +104,7 @@ impl Instance {
                     implement_type: <Inferable<Arc<RwLock<Implement>>> as NewInferable<Arc<RwLock<Implement>>>>::_new_inferred(streamlet_type_exp_.get_raw_exp(), streamlet_type_exp_.get_raw_value()),
                     implement_template_argexp: template_argexp,
                     array_type: InstanceArray::ArrayInstance(array_),
+                    docu: None,
                 }
             }
             InferState::NotInferred => {
@@ -106,6 +114,7 @@ impl Instance {
                     implement_type: <Inferable<Arc<RwLock<Implement>>> as NewInferable<Arc<RwLock<Implement>>>>::_new(streamlet_type_exp_.get_raw_exp()),
                     implement_template_argexp: template_argexp,
                     array_type: InstanceArray::ArrayInstance(array_),
+                    docu: None,
                 }
             }
         }

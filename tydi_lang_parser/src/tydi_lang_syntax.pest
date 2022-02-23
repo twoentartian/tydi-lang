@@ -13,13 +13,15 @@ INT = _{ (((INT_RAW_BIN | INT_RAW_OCT | INT_RAW_HEX | INT_RAW_NORAML) ~ "u")
 BOOL = @{ ("true" | "false") ~ !(ASCII_ALPHA | ASCII_DIGIT | "_") }
 FLOAT = @{ ('1'..'9' ~ ASCII_DIGIT* ~ "." ~ ASCII_DIGIT*) | ("0" ~ "." ~ ASCII_DIGIT*) ~ !(ASCII_DIGIT) }
 
+STR_CHAR = @{ ' '..'!' | '#'..'[' | ']'..'~' | "\\\t" | "\\n" | "\\t" | "\\\\"}
+STR = @{ "\"" ~ STR_CHAR* ~ "\"" }
+
 LINE_COMMENT = _{ "//" ~  (!NEWLINE ~ ANY)* ~ (NEWLINE | EOI)}
 BLOCK_COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
 COMMENT = _{ LINE_COMMENT | BLOCK_COMMENT }
 WHITESPACE = _{ " " | "\t" | "\r" | "\n"}
 
-STR_CHAR = @{ ' '..'!' | '#'..'[' | ']'..'~' | "\\\t" | "\\n" | "\\t" | "\\\\"}
-STR = @{ "\"" ~ STR_CHAR* ~ "\"" }
+DOCUMENT = { "#" ~ (!"#" ~ ANY)* ~ "#" }
 
 ///////////////////////  end of lex.sdf3 ///////////////////////
 
@@ -75,7 +77,6 @@ InfixOp = _{ OP_LeftShift | OP_RightShift | OP_LogicalAnd | OP_LogicalOr | OP_Lo
     OP_BitAnd = { "&" }
     OP_BitOr = { "|" }
 
-
 ExpLog = { "log" ~ Exp ~ "(" ~ Exp ~ ")"}
 ExpBitWiseNot = { "~" ~ "(" ~ Exp ~ ")" ~ Exp }
 ExpIndex = { ID ~ "[" ~ Exp ~ "]" }
@@ -129,6 +130,7 @@ SubItem = _{ (SubItemItem | SubItemDeclareConst) }
 ///////////////////////  start of streamlet.sdf3  ///////////////////////
 ////1.StreamLet
 StreamLet = _{
+DOCUMENT? ~
 "streamlet" ~ ID ~ StreamLetArgs? ~ "{" ~
   StreamLetBody+ ~
 "}"
@@ -150,15 +152,16 @@ InternalId = { ID }
 ExternalId = { ID ~ "." ~ ID }
 Extern_Intern_Id = { ExternalId | InternalId }
 Implementation = _{
+DOCUMENT? ~
 "impl" ~ ID ~ ImplementationArgs? ~ "of" ~ Extern_Intern_Id ~ ArgExps? ~ "{" ~
   ImplementationBody* ~
 "}"
 }
 ImplementationArgs = _{ "<" ~ Arg ~ ("," ~ Arg)* ~ ">" }
-ImplementationBodyDeclareInstance = { "instance" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" ~ "," }
-ImplementationBodyDeclareInstanceArray = { "instance" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" ~ "[" ~ Exp ~ "]" ~ "," }
-ImplementationBodyDeclareNet = { LogicalTypeSlice ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
-ImplementationBodyDeclareDelayedNet = { LogicalTypeSlice ~ "=" ~ Exp ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
+ImplementationBodyDeclareInstance = { DOCUMENT? ~ "instance" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" ~ "," }
+ImplementationBodyDeclareInstanceArray = { DOCUMENT? ~ "instance" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" ~ "[" ~ Exp ~ "]" ~ "," }
+ImplementationBodyDeclareNet = { DOCUMENT? ~ LogicalTypeSlice ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
+ImplementationBodyDeclareDelayedNet = { DOCUMENT? ~ LogicalTypeSlice ~ "=" ~ Exp ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
 ImplementationBodyDeclareConstInImpl = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
 ImplementationBodyDeclareProcess = { "process" ~ "{" ~ "}" ~ "," }
 ImplementationBodyIfBlock = {
@@ -221,7 +224,7 @@ ImplInst = _{ "impl" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" }
 
 
 ///////////////////////  start of statement.sdf3  ///////////////////////
-StatementTypeAssign = { "type" ~ ID ~ "=" ~ LogicalType ~ ";" }
+StatementTypeAssign = { DOCUMENT? ~ "type" ~ ID ~ "=" ~ LogicalType ~ ";" }
 StatementConstAssign = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ ";" }
 StatementDeclareStreamLet = { StreamLet ~ ";" }
 StatementDeclareImplementation = { Implementation ~ ";" }

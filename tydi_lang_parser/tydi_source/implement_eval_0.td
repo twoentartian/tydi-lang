@@ -13,6 +13,7 @@ type Group temp_group {
 
 const var = type temp_group.v;
 
+//#type documentation#
 type bit8_stream = Stream(Bit(8), d = 5);
 
 streamlet basic0 {
@@ -20,6 +21,7 @@ streamlet basic0 {
   out: Stream(Bit(1)) out,
 };
 
+#streamlet documentation#
 streamlet streamlet1<i:int, t:type> {
   const v = i,
   in : Stream(t) in, //anonymous type
@@ -36,16 +38,19 @@ impl impl1 of streamlet1<var, type Bit(1)> {
   //const v = 5,
   const v2 = v * 2,
   instance test_inst(impl0) [v],
+  #net documentation#
   test_inst[0].out[0] =v2=> test_inst[v-1].in,
 };
 
-
+#impl documentation#
 impl impl2<i:int, ts: impl of implement_eval_1.basic1> of implement_eval_1.basic1 {
   instance test_inst(impl0),
 };
 
 impl impl3 of streamlet1<var, type Bit(1)> {
   const bool_var = false,
+
+  #instance documentation#
   instance test_inst(impl2<10, impl impl0>),
   if (bool_var) {
     instance test_inst1(impl2<10, impl impl0>),

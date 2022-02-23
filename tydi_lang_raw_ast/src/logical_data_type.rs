@@ -1,5 +1,7 @@
 use std::sync::{Arc, RwLock};
 use deep_clone::DeepClone;
+use scope::HashMap;
+use tydi_il::ToTydiIL;
 use crate::bit_null_type::LogicalBit;
 use crate::group_union_type::{LogicalGroup, LogicalUnion};
 use crate::steam_type::LogicalStream;
@@ -22,6 +24,27 @@ pub enum LogicalDataType {
     DataUnionType(String, Arc<RwLock<LogicalUnion>>),
     DataStreamType(String, Arc<RwLock<LogicalStream>>),
     DataUserDefinedVarType(String),
+}
+
+impl ToTydiIL for LogicalDataType {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>) -> String {
+        match self {
+            LogicalDataType::DataNull => { return format!("Null"); }
+            LogicalDataType::DataBitType(bit) => {
+                return format!("Bits({})", String::from((*bit.get_bit().read().unwrap()).clone()));
+            }
+            LogicalDataType::DataGroupType(_, target) => {
+                return target.read().unwrap().to_tydi_il(type_alias_map);
+            }
+            LogicalDataType::DataUnionType(_, target) => {
+                return target.read().unwrap().to_tydi_il(type_alias_map);
+            }
+            LogicalDataType::DataStreamType(_, target) => {
+                return target.read().unwrap().to_tydi_il(type_alias_map);
+            }
+            _ => unreachable!()
+        }
+    }
 }
 
 impl DeepClone for LogicalDataType {
@@ -177,6 +200,17 @@ impl Scope {
         }
 
         self.types.insert(name_.clone(), Arc::new(RwLock::new(TypeAlias::new(name_.clone(), inferred!(infer_logical_data_type!(), Arc::new(RwLock::new(type_)))))));
+        return Ok(());
+    }
+
+    pub fn with_type_alias(&mut self, type_: Arc<RwLock<TypeAlias>>) -> Result<(), ErrorCode> {
+        let name_ = type_.read().unwrap().get_name();
+        match self.types.get(&name_) {
+            None => {}
+            Some(_) => { return Err(ErrorCode::IdRedefined(format!("type {} already defined", name_.clone()))); }
+        };
+
+        self.types.insert(name_.clone(), type_.clone());
         return Ok(());
     }
 }

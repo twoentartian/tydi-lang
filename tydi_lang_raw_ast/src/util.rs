@@ -40,6 +40,11 @@ pub trait PrettyPrint {
     fn pretty_print(&self, depth: u32, verbose: bool) -> String;
 }
 
+pub trait EnableDocument {
+    fn get_document(&self) -> Option<String>;
+    fn set_document(&mut self, document: Option<String>);
+}
+
 pub fn generate_padding(depth: u32) -> String {
     return str::repeat("  ", depth as usize);
 }

@@ -18,6 +18,7 @@ use tydi_lang_raw_ast::port::PortArray;
 use crate::ParserErrorCode;
 use crate::ParserErrorCode::ImplementEvaluationFail;
 use crate::{evaluation_streamlet, evaluation_var};
+
 //
 // pub fn infer_normal_implement_mt_step0(implement: Arc<RwLock<Implement>>, implement_template_exps: Vec<Arc<RwLock<Variable>>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>, thread_pool: & ThreadPool, tx: Sender<Result<(),ParserErrorCode>>) -> Result<Arc<RwLock<Implement>>, ParserErrorCode> {
 //     let implement_scope = implement.read().unwrap().get_scope();
@@ -667,7 +668,7 @@ pub fn infer_port(port_to_infer: Inferable<Arc<RwLock<Port>>>, port_to_infer_own
         }
     }
 
-    let mut infer_output = port_to_infer.clone();
+    let infer_output;
     match port_to_infer_owner.clone() {
         PortOwner::UnknownPortOwner => unreachable!(),
         PortOwner::SelfOwner => {
