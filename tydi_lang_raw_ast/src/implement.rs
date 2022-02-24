@@ -135,12 +135,36 @@ impl tydi_il::ToTydiIL for Implement {
             connection_content.push_str(&format!("{};\n", str));
         }
 
+        //// expand streamlet and print it again in implement
+        // output.push_str(
+        //     &format!("\
+        // {}\
+        // {}streamlet {} = (\n\
+        //   {}\
+        // {}) {{\n\
+        // {}\
+        // {}impl:{{\n\
+        // {}\
+        // {}\
+        // {}}},\n\
+        // {}}};\n\
+        // ",
+        //              streamlet_docu,
+        //              generate_padding(depth), crate::util::rename_id_to_il(self.name.clone()),
+        //              streamlet_port_content,
+        //              generate_padding(depth),
+        //              &docu_str,
+        //              generate_padding(depth + 1),
+        //              instance_content,
+        //              connection_content,
+        //              generate_padding(depth + 1),
+        //              generate_padding(depth)));
+
+        //// don't expand streamlet and use streamlet reference
         output.push_str(
             &format!("\
         {}\
-        {}streamlet {} = (\n\
-          {}\
-        {}) {{\n\
+        {}streamlet {} = {} {{\n\
         {}\
         {}impl:{{\n\
         {}\
@@ -149,15 +173,14 @@ impl tydi_il::ToTydiIL for Implement {
         {}}};\n\
         ",
                      streamlet_docu,
-                     generate_padding(depth), crate::util::rename_id_to_il(self.name.clone()),
-                     streamlet_port_content,
-                     generate_padding(depth),
+                     generate_padding(depth), crate::util::rename_id_to_il(self.name.clone()), crate::util::rename_id_to_il(streamlet.get_name()),
                      &docu_str,
                      generate_padding(depth + 1),
                      instance_content,
                      connection_content,
                      generate_padding(depth + 1),
                      generate_padding(depth)));
+
         return output;
     }
 }

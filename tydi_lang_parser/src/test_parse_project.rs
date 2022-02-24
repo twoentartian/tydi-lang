@@ -10,7 +10,7 @@ fn parse_test0() {
 
     let result = parse_to_memory(String::from("./tydi_source/test0.td"));
     match result {
-        Ok(package) => {
+        Ok((package,_)) => {
             println!("{}", package.pretty_print(0, false));
         }
         Err(e) => { println!("{}", String::from(e))}
@@ -28,7 +28,7 @@ fn parse_test0_mt() {
     let result = parse_multi_files_mt(String::from("test_project"), paths.clone(), None);
 
     match result {
-        Ok(project) => {
+        Ok((project,_)) => {
             println!("{}", project.read().unwrap().pretty_print(0, false));
         }
         Err(errors) => {

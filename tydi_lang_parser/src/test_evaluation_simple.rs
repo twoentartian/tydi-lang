@@ -22,7 +22,7 @@ fn evaluate_simple() {
 
     let result = parse_multi_files_mt(String::from("test_project"), paths.clone(), None);
     match result {
-        Ok(project) => {
+        Ok((project,_)) => {
             {
                 println!("{}", project.read().unwrap().pretty_print(0, false));
             }
@@ -69,7 +69,7 @@ fn evaluate_type() {
 
     let result = parse_multi_files_mt(String::from("test_project"), paths.clone(), None);
     match result {
-        Ok(project) => {
+        Ok((project,_)) => {
             {
                 println!("{}", project.read().unwrap().pretty_print(0, false));
             }
@@ -116,7 +116,7 @@ fn evaluate_streamlet() {
 
     let result = parse_multi_files_mt(String::from("test_project"), paths.clone(), None);
     match result {
-        Ok(project) => {
+        Ok((project,_)) => {
             {
                 println!("{}", project.read().unwrap().pretty_print(0, false));
             }
@@ -173,7 +173,7 @@ fn evaluate_implement() {
 
     let result = parse_multi_files_mt(String::from("test_project"), paths.clone(), None);
     match result {
-        Ok(project) => {
+        Ok((project,_)) => {
             {
                 println!("{}", project.read().unwrap().pretty_print(0, false));
             }
@@ -231,7 +231,7 @@ fn evaluate_implement_mt() {
 
     let result = parse_multi_files_mt(String::from("test_project"), paths.clone(), None);
     match result {
-        Ok(project) => {
+        Ok((project,_)) => {
             {
                 println!("{}", project.read().unwrap().pretty_print(0, false));
             }
@@ -284,9 +284,9 @@ fn evaluate_implement_mt_benchmark() {
         let parser_time = stop - start;
         let evaluation_time;
             match result {
-            Ok(project) => {
+            Ok((project,_)) => {
                 let start = Instant::now();
-                let result = crate::evaluation::evaluation_project_mt(project.clone(), true, true, trueSome(worker));
+                let result = crate::evaluation::evaluation_project_mt(project.clone(), true, true, Some(worker));
                 let stop = Instant::now();
                 evaluation_time = stop - start;
                 if result.is_err() {

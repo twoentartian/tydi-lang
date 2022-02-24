@@ -78,7 +78,7 @@ impl DeepClone for Connection {
 }
 
 impl ToTydiIL for Connection {
-    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, depth: u32) -> String {
+    fn to_tydi_il(&self, _: &mut HashMap<String, String>, depth: u32) -> String {
         let lhs_owner = match &self.lhs_port_owner {
             PortOwner::UnknownPortOwner => { unreachable!() }
             PortOwner::SelfOwner => { String::from("") }

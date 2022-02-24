@@ -762,7 +762,7 @@ impl adder_ <N:int> of adder <N> {
   process{},
 };
 
-instance add_8(adder_<8>);";
+impl add_8(adder_<8>);";
             let mut parse_result = TydiParser::parse(Rule::Start, code).expect("unsuccessful parse");
             println!("{}", parse_result);
             let parse_result = parse_result.next().unwrap();

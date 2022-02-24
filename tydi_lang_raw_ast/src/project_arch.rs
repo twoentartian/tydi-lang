@@ -54,12 +54,12 @@ impl Project {
         }
     }
 
-    pub fn to_tydi_il(&self, project_name: String, generate_streamlet: bool, generate_implement: bool) -> HashMap<String, String> {
+    pub fn to_tydi_il(&self, project_name: String) -> HashMap<String, String> {
         let mut output = HashMap::new();
 
         for (package_name, package) in self.packages.clone() {
             let file_name = format!("{}_{}", project_name.clone(), package_name.clone());
-            let file_content = package.read().unwrap().to_tydi_il(project_name.clone(), generate_streamlet, generate_implement);
+            let file_content = package.read().unwrap().to_tydi_il(project_name.clone());
             output.insert(file_name, file_content);
         }
 
@@ -109,11 +109,11 @@ impl Package {
         }
     }
 
-    pub fn to_tydi_il(&self, project_name: String, generate_streamlet: bool, generate_implement: bool) -> String {
+    pub fn to_tydi_il(&self, project_name: String) -> String {
         let mut type_alias_map: HashMap<String, String> = HashMap::new();
 
         let mut output_streamlet = String::from("");
-        if generate_streamlet {
+        {
             let streamlets = self.scope.read().unwrap().streamlets.clone();
             for (_, streamlet) in streamlets {
                 match streamlet.read().unwrap().get_type() {
@@ -126,7 +126,7 @@ impl Package {
         }
 
         let mut output_implement = String::from("");
-        if generate_implement {
+        {
             let mut output_implement_dependency: HashMap<String, Vec<String>> = HashMap::new();
             let mut output_implement_content: HashMap<String, String> = HashMap::new();
             let mut dependency_exist: HashMap<String, Arc<RwLock<bool>>> = HashMap::new();
@@ -193,7 +193,7 @@ impl Package {
         //types
         let mut types_content = String::from("");
         for (type_name, type_content) in type_alias_map {
-            types_content.push_str(&format!("{}type {} = {};\n", generate_padding(1) ,type_name, type_content));
+            types_content.push_str(&format!("{}type {} = {};\n", generate_padding(1) , crate::util::rename_id_to_il(type_name), type_content));
         }
 
         let output = format!("namespace {}::{} {{\n\

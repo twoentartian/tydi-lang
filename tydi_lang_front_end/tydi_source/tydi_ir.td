@@ -1,6 +1,6 @@
 package tydi_ir;
 
-type bit8_stream = Stream(Bit(8), d = 5);
+type bit8_stream = Stream(Bit(8), d = 5, t = 2.5);
 
 type Group group0 {
   r: Bit(8),
@@ -40,6 +40,7 @@ impl impl_template<i:int> of basic0 {
 streamlet streamlet_template<i:int, t:type> {
   in: t [i] in,
   out: t out,
+  test: Stream(Bit(8)) in,
 };
 
 impl impl_template2<i:int> of streamlet_template<i, type rgb_stream> {

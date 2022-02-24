@@ -81,7 +81,7 @@ pub fn parse_multi_files_st(project_name: String, file_paths: Vec<String>) -> Re
             errors.push(Err(result.err().unwrap()));
             continue;
         }
-        let package = result.ok().unwrap();
+        let (package, _) = result.ok().unwrap();
         let file_path_fs= Path::new(&file_path);
         if Some(OsStr::new(&format!("{}.td", package.get_name()))) != file_path_fs.file_name() {
             error_flag = true;
@@ -103,7 +103,7 @@ pub fn parse_multi_files_st(project_name: String, file_paths: Vec<String>) -> Re
     }
 }
 
-pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worker: Option<usize>) -> Result<Arc<RwLock<project_arch::Project>>, Vec<(String, Result<(),ParserErrorCode>)>> {
+pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worker: Option<usize>) -> Result<(Arc<RwLock<project_arch::Project>>, HashMap<String, String>), Vec<(String, Result<(),ParserErrorCode>)>> {
     use threadpool::ThreadPool;
     use std::sync::mpsc;
     use std::path::Path;
@@ -117,11 +117,13 @@ pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worke
 
     let pool = ThreadPool::new(worker_u32);
     let (tx, rx) = mpsc::channel();
+
+    let ast_trees: Arc<RwLock<HashMap<String, String>>> = Arc::new(RwLock::new(HashMap::new()));
     for file_path_index in 0..file_paths.len() {
         let output_project = output_project.clone();
         let tx_temp = mpsc::Sender::clone(&tx);
         let file_path = file_paths[file_path_index].clone();
-
+        let ast_tree = ast_trees.clone();
         pool.execute(move|| {
             let result = parse_to_memory(file_path.clone());
             if result.is_err() {
@@ -129,7 +131,10 @@ pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worke
                 result.unwrap();
                 return;
             }
-            let package = result.ok().unwrap();
+            let (package, ast) = result.ok().unwrap();
+            {
+                ast_tree.write().unwrap().insert(file_path.clone(), ast);
+            }
             let file_path_fs= Path::new(&file_path);
             if Some(OsStr::new(&format!("{}.td", package.get_name()))) != file_path_fs.file_name() {
                 let result = tx_temp.send((file_path.clone(), Err(FileError(format!("{} has a different package name", file_path.clone())))));
@@ -162,7 +167,7 @@ pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worke
     }
 
     if !error_flag {
-        return Ok(output_project);
+        return Ok((output_project, ast_trees.read().unwrap().clone()));
     }
     else {
         return Err(errors);
@@ -170,27 +175,28 @@ pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worke
 }
 
 
-fn parse_to_memory(file_path: String) -> Result<project_arch::Package, ParserErrorCode> {
+fn parse_to_memory(file_path: String) -> Result<(project_arch::Package, String), ParserErrorCode> {
     let unparsed_file_result = fs::read_to_string(file_path.clone());
     if unparsed_file_result.is_err() { return Err(ParserErrorCode::FileError(unparsed_file_result.err().unwrap().to_string())); }
     let unparsed_file_content = unparsed_file_result.ok().unwrap();
     let tydi_ast_result = TydiParser::parse(Rule::Start, &unparsed_file_content);
     if tydi_ast_result.is_err() { return Err(ParserErrorCode::ParserError(tydi_ast_result.err().unwrap().to_string())); }
     let mut tydi_ast_result = tydi_ast_result.unwrap();
+    let output_ast = format!("{}", tydi_ast_result.clone());
 
     let mut output_package = project_arch::Package::new(String::from("unknown_package"));
 
     let tydi_ast = tydi_ast_result.next().unwrap();
-    match tydi_ast.as_rule() {
+    match tydi_ast.clone().as_rule() {
         Rule::Start => {
-            let inner_rules = tydi_ast.into_inner();
+            let inner_rules = tydi_ast.clone().into_inner();
             let result = parse_start(inner_rules, &mut output_package);
             if result.is_err() { return Err(result.err().unwrap()); }
         }
         _ => unreachable!(),
     }
 
-    return Ok(output_package);
+    return Ok((output_package, output_ast));
 }
 
 fn parse_start(start_elements: Pairs<Rule>, output_package: &mut project_arch::Package) -> Result<(), ParserErrorCode> {

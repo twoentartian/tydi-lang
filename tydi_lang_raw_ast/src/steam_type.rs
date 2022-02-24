@@ -145,9 +145,9 @@ impl ToTydiIL for LogicalStream {
                     generate_padding(depth+1), String::from((*self.keep.read().unwrap()).clone()),
                     generate_padding(depth),
             );
-        type_alias_map.insert(self.name.clone(), output_alias_map);
+        type_alias_map.insert(crate::util::rename_id_to_il(self.name.clone()), output_alias_map);
 
-        return self.name.clone();
+        return crate::util::rename_id_to_il(self.name.clone());
     }
 }
 

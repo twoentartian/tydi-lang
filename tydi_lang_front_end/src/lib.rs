@@ -15,7 +15,7 @@ use tydi_lang_parser::evaluation;
 use tydi_lang_raw_ast::util::PrettyPrint;
 
 
-pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec<String>, output_path: Option<String>, flag_compile_streamlet: bool, flag_compile_implement: bool, worker: Option<usize>) -> Result<Arc<RwLock<Project>>, String> {
+pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec<String>, output_path: Option<String>, worker: Option<usize>) -> Result<Arc<RwLock<Project>>, String> {
     //get project name
     let real_project_name;
     match project_name {
@@ -43,9 +43,11 @@ pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec
     //parse front end
     let result = tydi_lang_parser::parse_multi_files_mt(real_project_name.clone(), tydi_source_path.clone(), worker);
     let project_architecture;
+    let ast_trees;
     match result {
-        Ok(project) => {
+        Ok((project, asts)) => {
             project_architecture = project;
+            ast_trees = asts;
         }
         Err(errors) => {
             let mut err_msg = String::from("");
@@ -60,6 +62,25 @@ pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec
     }
 
     {
+        let output_ast_path = format!("{}/0_ast", real_output_path.clone());
+        if !Path::new(&output_ast_path).exists() {
+            let result = fs::create_dir(output_ast_path.clone());
+            if result.is_err() { return Err(format!("failed to create output ast folder({})", output_ast_path.clone())); }
+        }
+
+        for (src_file_path, ast)  in ast_trees {
+            let file_name = Path::new(&src_file_path).file_name().unwrap().to_str().unwrap();
+            let output_file_path = format!("{}/{}.ast.txt", output_ast_path.clone(), file_name);
+            let mut file = fs::File::create(&output_file_path).unwrap();
+            file.write_all(ast.as_bytes()).unwrap();
+        }
+
+        let parser_output_file_path = format!("{}/1_parser_output.txt", real_output_path.clone());
+        let mut file = fs::File::create(&parser_output_file_path).unwrap();
+        let content = project_architecture.read().unwrap().pretty_print(0,false);
+        file.write_all(content.as_bytes()).unwrap();
+    }
+    {
         let parser_output_file_path = format!("{}/1_parser_output.txt", real_output_path.clone());
         let mut file = fs::File::create(&parser_output_file_path).unwrap();
         let content = project_architecture.read().unwrap().pretty_print(0,false);
@@ -67,7 +88,7 @@ pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec
     }
 
     //evaluation project
-    let result = evaluation::evaluation_project_mt(project_architecture.clone(), flag_compile_streamlet, flag_compile_implement, worker);
+    let result = evaluation::evaluation_project_mt(project_architecture.clone(), true, true, worker);
     if result.is_err() {
         let mut err_msg = String::from("");
         for error_code in result.err().unwrap() {
@@ -90,7 +111,7 @@ pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec
         if result.is_err() { return Err(format!("failed to create output til folder({})", output_til_path.clone())); }
     }
 
-    let output_til = project_architecture.read().unwrap().to_tydi_il(real_project_name.clone(), flag_compile_streamlet, flag_compile_implement);
+    let output_til = project_architecture.read().unwrap().to_tydi_il(real_project_name.clone());
     for (file_name, file_content) in output_til {
         let output_til_file_path = format!("{}/{}.til", output_til_path.clone(), file_name);
         let result = File::create(output_til_file_path.clone());
