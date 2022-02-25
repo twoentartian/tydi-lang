@@ -1,9 +1,11 @@
-use ::{evaluation_streamlet, evaluation_type};
+#[allow(unused_imports)]
 use evaluation_implement;
+#[allow(unused_imports)]
 use tydi_lang_raw_ast::implement::ImplementType;
+#[allow(unused_imports)]
 use tydi_lang_raw_ast::scope::{PrettyPrint, StreamletType};
-
-use crate::{parse_multi_files_mt, evaluation_var};
+#[allow(unused_imports)]
+use crate::{parse_multi_files_mt, evaluation_var, evaluation_streamlet, evaluation_type};
 
 #[test]
 fn evaluate_simple() {

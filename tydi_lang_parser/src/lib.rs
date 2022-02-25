@@ -1070,8 +1070,8 @@ fn parse_type_assign(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resul
         match element.as_rule() {
             Rule::DOCUMENT => {
                 //currently we don't support document on type
-                todo!("currently we don't support document on type");
                 docu = Some(element.as_str().to_string());
+                todo!("currently we don't support document on type");
             }
             Rule::ID => { id = element.clone().as_str().to_string() },
             Rule::LogicalType => {

@@ -4,16 +4,15 @@ extern crate chrono;
 extern crate tydi_lang_parser;
 extern crate tydi_lang_raw_ast;
 
-use chrono::{Datelike, Timelike};
 use std::fs;
 use std::fs::File;
 use std::path::Path;
 use std::io::Write;
 use std::sync::{Arc, RwLock};
+use chrono::{Datelike, Timelike};
 use tydi_lang_raw_ast::project_arch::Project;
 use tydi_lang_parser::evaluation;
 use tydi_lang_raw_ast::util::PrettyPrint;
-
 
 pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec<String>, output_path: Option<String>, worker: Option<usize>) -> Result<Arc<RwLock<Project>>, String> {
     //get project name

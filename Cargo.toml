@@ -8,6 +8,8 @@ members = [
     "tydi_lang_raw_ast",
     "tydi_lang_parser",
     "tydi_lang_front_end",
+    "derived_macro",
+    "tydi_compiler",
 ]
 
 

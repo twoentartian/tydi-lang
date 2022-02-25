@@ -1,5 +1,5 @@
+#[allow(unused_imports)]
 use crate::{parse_to_memory,parse_multi_files_mt};
-
 
 #[test]
 fn parse_test0() {

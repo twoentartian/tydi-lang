@@ -1,6 +1,7 @@
 ///////////////////////  start of lex.sdf3  ///////////////////////
 ID_BLOCK_LIST = { !("impl " | "streamlet " | "const " | "int " | "str " | "bool " | "float " | "type " | "instance " ) }
-ID = @{ ID_BLOCK_LIST ~ (ASCII_ALPHA | "_") ~ (ASCII_ALPHA | ASCII_DIGIT | "_")*  ~ !(ASCII_ALPHA | ASCII_DIGIT | "_") }
+ID_INVALID_CHAR = { !( ("_" ~ ("_")+ ) ) }
+ID = @{ ID_BLOCK_LIST ~ (ID_INVALID_CHAR ~ ( ASCII_ALPHA | "_" )) ~ (ID_INVALID_CHAR ~ ( ASCII_ALPHA | ASCII_DIGIT | "_" ))*  ~ !(ASCII_ALPHA | ASCII_DIGIT | "_") }
 
 
 INT_RAW_NORAML = @{ ASCII_DIGIT  ~ (ASCII_DIGIT | "_")* ~ !(ASCII_DIGIT | "_")}

@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use crate::tydi_frontend_compile;
 
 #[test]

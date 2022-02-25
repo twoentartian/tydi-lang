@@ -1,0 +1,13 @@
+[package]
+name = "tydi_compiler"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tydi_lang_front_end = { path = "../tydi_lang_front_end" }
+chrono = "0.4.19"
+til-vhdl = { git = "https://github.com/matthijsr/til-vhdl.git" }
+tydi-common = { git = "https://github.com/matthijsr/til-vhdl.git" }
+til-parser = { git = "https://github.com/matthijsr/til-vhdl.git" }

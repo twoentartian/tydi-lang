@@ -103,12 +103,12 @@ impl tydi_il::ToTydiIL for Implement {
         //document
         let docu_str = match &self.docu {
             None => { String::from("") }
-            Some(docu) => { format!("{}{}\n", generate_padding(depth+1), docu) }
+            Some(docu) => { format!("{}", docu) }
         };
         let streamlet = self.derived_streamlet.as_ref().unwrap().read().unwrap();
         let streamlet_docu = match streamlet.get_document() {
             None => { String::from("") }
-            Some(docu) => { format!("{}{}\n", generate_padding(depth), docu) }
+            Some(docu) => { format!("{}", docu) }
         };
 
         //streamlet_ports
@@ -163,18 +163,18 @@ impl tydi_il::ToTydiIL for Implement {
         //// don't expand streamlet and use streamlet reference
         output.push_str(
             &format!("\
-        {}\
+        {}{}\n\
         {}streamlet {} = {} {{\n\
-        {}\
-        {}impl:{{\n\
+        {}impl:{}\n\
+        {}{{\n\
         {}\
         {}\
         {}}},\n\
         {}}};\n\
         ",
-                     streamlet_docu,
+                     generate_padding(depth), streamlet_docu,
                      generate_padding(depth), crate::util::rename_id_to_il(self.name.clone()), crate::util::rename_id_to_il(streamlet.get_name()),
-                     &docu_str,
+                     generate_padding(depth + 1), &docu_str,
                      generate_padding(depth + 1),
                      instance_content,
                      connection_content,
