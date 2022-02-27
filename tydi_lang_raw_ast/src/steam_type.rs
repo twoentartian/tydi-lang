@@ -122,7 +122,10 @@ impl DeepClone for LogicalStream {
 }
 
 impl ToTydiIL for LogicalStream {
-    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, depth:u32) -> String {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, (String, Vec<String>)>, depth:u32) -> String {
+        let data_logical_type = self.data_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map, 1);
+        let user_logical_type = self.user_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map, 1);
+
         let output_alias_map =
             format!("\
         Stream (\n\
@@ -135,17 +138,17 @@ impl ToTydiIL for LogicalStream {
         {}user: {},\n\
         {}keep: {},\n\
         {})",
-                    generate_padding(depth+1), self.data_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map, 1),
+                    generate_padding(depth+1), data_logical_type.clone(),
                     generate_padding(depth+1), String::from((*self.throughput.read().unwrap()).clone()),
                     generate_padding(depth+1), String::from((*self.dimension.read().unwrap()).clone()),
                     generate_padding(depth+1), String::from(String::from(self.synchronicity.clone())),
                     generate_padding(depth+1), String::from((*self.complexity.read().unwrap()).clone()),
                     generate_padding(depth+1), String::from(String::from(self.direction.clone())),
-                    generate_padding(depth+1), self.user_type.get_raw_value().read().unwrap().to_tydi_il(type_alias_map, 1),
+                    generate_padding(depth+1), user_logical_type.clone(),
                     generate_padding(depth+1), String::from((*self.keep.read().unwrap()).clone()),
                     generate_padding(depth),
             );
-        type_alias_map.insert(crate::util::rename_id_to_il(self.name.clone()), output_alias_map);
+        type_alias_map.insert(crate::util::rename_id_to_il(self.name.clone()), (output_alias_map, vec![data_logical_type, user_logical_type]));
 
         return crate::util::rename_id_to_il(self.name.clone());
     }

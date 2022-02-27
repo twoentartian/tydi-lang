@@ -2,51 +2,36 @@ package tydi_ir;
 
 type bit8_stream = Stream(Bit(8), d = 5, t = 2.5);
 
-type Group group0 {
+type Group rgb {
   r: Bit(8),
   g: Bit(8),
   b: Bit(8),
 };
 
-type rgb_stream = Stream(group0);
+type rgb_stream = Stream(rgb);
 
-#streamlet docu basic0#
-streamlet basic0 {
-  #port document#
-  in: bit8_stream in,
-  out: bit8_stream out,
+
+streamlet data_bypass<data_type: type> {
+  input: data_type in,
+  output: data_type out,
 };
 
-#impl docu basic0_1#
-impl basic0_1 of basic0 {
-
+impl impl_data_bypass<data_type: type> of data_bypass<type data_type> {
+  input => output,
 };
 
-#impl docu impl_basic0#
-impl impl_basic0 of basic0 {
-
-  #instance document#
-  instance test_inst(basic0_1),
-
-  #connection document#
-  in =1=> test_inst.in,
-  test_inst.out => out,
+streamlet data_demux<channel:int, data_type: type> {
+  inputs: data_type [channel] in,
+  outputs: data_type [channel] out,
 };
 
-impl impl_template<i:int> of basic0 {
-  instance test_inst(basic0_1) [i],
+impl impl_data_demux<channel:int, data_type: type> of data_demux<channel, type data_type> {
+  instance bypass(impl_data_bypass<type data_type>) [channel],
+  for i in (0=1=>channel) {
+    bypass[i].output => outputs[i],
+    inputs[i] => bypass[i].input,
+  }
 };
 
-streamlet streamlet_template<i:int, t:type> {
-  in: t [i] in,
-  out: t out,
-  test: Stream(Bit(8)) in,
-};
-
-impl impl_template2<i:int> of streamlet_template<i, type rgb_stream> {
-  instance test_inst(basic0_1) [i],
-};
-
-impl impl_template_instance_1(impl_template<3>);
-
-impl impl_template_instance_2(impl_template2<5>);
+impl data_demux_rgb_5(impl_data_demux<5, type rgb_stream>);
+impl data_demux_rgb_100(impl_data_demux<100, type rgb_stream>);

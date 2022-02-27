@@ -72,7 +72,7 @@ impl DeepClone for ScopeRelationship {
 
 impl ScopeRelationship {
     generate_get!(name, String, get_name);
-    generate_get!(target_scope, Arc<RwLock<Scope>>, get_target_scope);
+    generate_access!(target_scope, Arc<RwLock<Scope>>, get_target_scope, set_target_scope);
 
     pub fn new(target_scope_: Arc<RwLock<Scope>>, relationship_: ScopeRelationType) -> Self {
         Self {
@@ -156,7 +156,7 @@ pub struct Scope {
 
 impl DeepClone for Scope {
     fn deep_clone(&self) -> Self {
-        return Self {
+        let mut output = Self {
             name: self.name.clone(),
             scope_type: self.scope_type.deep_clone(),
             self_ref: None,
@@ -173,7 +173,9 @@ impl DeepClone for Scope {
 
             if_blocks: self.if_blocks.deep_clone(),
             for_blocks: self.for_blocks.deep_clone(),
-        }
+        };
+
+        output
     }
 }
 

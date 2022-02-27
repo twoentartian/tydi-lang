@@ -12,6 +12,7 @@ use crate::util::{generate_padding, PrettyPrint, EnableDocument};
 use derived_macro::EnableDocument;
 use scope::HashMap;
 use tydi_il::ToTydiIL;
+use util::rename_id_to_il;
 use crate::variable::Variable;
 
 #[derive(Clone, Debug)]
@@ -23,7 +24,13 @@ pub enum PortOwner {
 
 impl DeepClone for PortOwner {
     fn deep_clone(&self) -> Self {
-        return self.clone();//clone() rather than deep clone: the streamlet/variable is a ref of parent instance
+        match self.clone() {
+            PortOwner::ExternalOwner(name, streamlet, var) => {
+                ///IMPORTANT Notice: we use clone on streamlet because we believe they have common parent streamlet and it won;t change during compile time
+                return PortOwner::ExternalOwner(name.deep_clone(), streamlet.clone(), var.deep_clone());
+            }
+            _ => { return self.clone() }
+        };
     }
 }
 
@@ -78,20 +85,54 @@ impl DeepClone for Connection {
 }
 
 impl ToTydiIL for Connection {
-    fn to_tydi_il(&self, _: &mut HashMap<String, String>, depth: u32) -> String {
+    fn to_tydi_il(&self, _: &mut HashMap<String, (String, Vec<String>)>, depth: u32) -> String {
         let lhs_owner = match &self.lhs_port_owner {
             PortOwner::UnknownPortOwner => { unreachable!() }
             PortOwner::SelfOwner => { String::from("") }
-            PortOwner::ExternalOwner(name, _, _) => { format!("{}.",name) }
+            PortOwner::ExternalOwner(name, _, array_index) => {
+                let owner_name = match array_index {
+                    Some(array_index) => {
+                        format!("{}@{}",name, String::from((*array_index.read().unwrap()).clone()))
+                    }
+                    None => {
+                        format!("{}",name)
+                    }
+                };
+                format!("{}.", crate::util::rename_id_to_il(owner_name))
+            }
         };
         let rhs_owner = match &self.rhs_port_owner {
             PortOwner::UnknownPortOwner => { unreachable!() }
             PortOwner::SelfOwner => { String::from("") }
-            PortOwner::ExternalOwner(name, _, _) => { format!("{}.",name) }
+            PortOwner::ExternalOwner(name, _, array_index) => {
+                let owner_name = match array_index {
+                    Some(array_index) => {
+                        format!("{}@{}",name, String::from((*array_index.read().unwrap()).clone()))
+                    }
+                    None => {
+                        format!("{}",name)
+                    }
+                };
+                format!("{}.", crate::util::rename_id_to_il(owner_name))
+            }
         };
 
         let lhs_port_name = self.lhs_port.get_raw_value().read().unwrap().get_name();
         let rhs_port_name = self.rhs_port.get_raw_value().read().unwrap().get_name();
+
+        // let lhs_port_name = match self.lhs_port_array_type.clone() {
+        //     PortArray::UnknownPortArray => { unreachable!() }
+        //     PortArray::SinglePort => { lhs_port_name }
+        //     PortArray::ArrayPort(i) => { format!("{}@{}", lhs_port_name, String::from((*i.read().unwrap()).clone())) }
+        // };
+        // let rhs_port_name = match self.rhs_port_array_type.clone() {
+        //     PortArray::UnknownPortArray => { unreachable!() }
+        //     PortArray::SinglePort => { rhs_port_name }
+        //     PortArray::ArrayPort(i) => { format!("{}@{}", rhs_port_name, String::from((*i.read().unwrap()).clone())) }
+        // };
+
+        let lhs_port_name = rename_id_to_il(lhs_port_name);
+        let rhs_port_name = rename_id_to_il(rhs_port_name);
 
         return format!("{}{}{} -- {}{}", generate_padding(depth), lhs_owner, lhs_port_name, rhs_owner, rhs_port_name);
     }

@@ -392,6 +392,12 @@ pub fn infer_instance(instance: Arc<RwLock<Instance>>, scope: Arc<RwLock<Scope>>
         }
     }
 
+    // //evaluation derived_implement_template_exps
+    // for derived_implement_template_exp in &derived_implement_template_exps {
+    //     let result = evaluation_var::infer_variable(derived_implement_template_exp.clone(), scope.clone(), project.clone());
+    //     if result.is_err() { return Err(result.err().unwrap()); }
+    // }
+
     //evaluation implement
     let evaluated_implement = infer_implement(resolve_implement_result.clone(), derived_implement_template_exps.clone(), evaluation_scope.clone(), project.clone())?;
 

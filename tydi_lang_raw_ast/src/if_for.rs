@@ -129,7 +129,8 @@ impl DeepClone for IfScope {
             else_element: self.else_element.deep_clone(),
         };
         {
-            output.scope.write().unwrap().set_self_ref(output.scope.clone());
+            let mut output_write = output.scope.write().unwrap();
+            output_write.set_self_ref(output.scope.clone());
         }
         return output;
     }

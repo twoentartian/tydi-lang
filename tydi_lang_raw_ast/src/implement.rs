@@ -92,12 +92,34 @@ impl DeepClone for Implement {
         {
             output.scope.write().unwrap().set_self_ref(output.scope.clone());
         }
+
+        //change the scope relationship of if & for scope
+        {
+            let if_blocks = output.scope.read().unwrap().if_blocks.clone();
+            for (_, if_block) in if_blocks {
+                let if_block_read = if_block.read().unwrap();
+                let if_block_scope = if_block_read.get_scope();
+                let mut scope_write = if_block_scope.write().unwrap();
+                for (_, rela) in &mut scope_write.scope_relationships {
+                    rela.set_target_scope(output.scope.clone());
+                }
+            }
+            let for_blocks = output.scope.read().unwrap().for_blocks.clone();
+            for (_, for_block) in for_blocks {
+                let for_block_read = for_block.read().unwrap();
+                let for_block_scope = for_block_read.get_scope();
+                let mut scope_write = for_block_scope.write().unwrap();
+                for (_, rela) in &mut scope_write.scope_relationships {
+                    rela.set_target_scope(output.scope.clone());
+                }
+            }
+        }
         return output;
     }
 }
 
 impl tydi_il::ToTydiIL for Implement {
-    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, depth:u32) -> String {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, (String, Vec<String>)>, depth:u32) -> String {
         let mut output = String::from("");
 
         //document

@@ -27,7 +27,7 @@ pub enum LogicalDataType {
 }
 
 impl ToTydiIL for LogicalDataType {
-    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, depth: u32) -> String {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, (String, Vec<String>)>, depth: u32) -> String {
         match self {
             LogicalDataType::DataNull => { return format!("Null"); }
             LogicalDataType::DataBitType(bit) => {

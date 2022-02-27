@@ -212,6 +212,11 @@ impl Variable {
         }
     }
 
+    pub fn clear_infer_result(&mut self) {
+        use inferable::InferState;
+        self.var_value.set_infer_state(InferState::NotInferred);
+    }
+
 }
 
 impl From<Variable> for String {

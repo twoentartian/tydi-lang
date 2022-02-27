@@ -103,7 +103,16 @@ fn main() {
 
     let compile_result = tydi_lang_front_end::tydi_frontend_compile(Some(real_project_name.clone()), src_file_path, Some(real_output_path.clone()), worker);
     if compile_result.is_err() {
-        panic!("{}", compile_result.err().unwrap());
+        let (project_arch, err_msg) = compile_result.err().unwrap();
+        match project_arch {
+            Some(project_arch) => {
+                use tydi_lang_raw_ast::util::PrettyPrint;
+                std::fs::write(format!("{}/{}", real_output_path.clone(), "err_arch.txt"), project_arch.read().unwrap().pretty_print(0, false));
+            }
+            None => {}
+        }
+
+        panic!("{}", err_msg);
     }
 
     println!("generating Tydi IR - done");

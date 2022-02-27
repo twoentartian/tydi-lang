@@ -13,8 +13,8 @@ type rgb_stream = Stream(group0);
 #streamlet docu basic0#
 streamlet basic0 {
   #port document#
-  in: bit8_stream in,
-  out: bit8_stream out,
+  d_in: bit8_stream in,
+  d_out: bit8_stream out,
 };
 
 #impl docu basic0_1#
@@ -29,8 +29,8 @@ impl impl_basic0 of basic0 {
   instance test_inst(basic0_1),
 
   #connection document#
-  in =1=> test_inst.in,
-  test_inst.out => out,
+  d_in =1=> test_inst.d_in,
+  test_inst.d_out => d_out,
 };
 
 impl impl_template<i:int> of basic0 {
@@ -38,8 +38,8 @@ impl impl_template<i:int> of basic0 {
 };
 
 streamlet streamlet_template<i:int, t:type> {
-  in: t [i] in,
-  out: t out,
+  d_in: t [i] in,
+  d_out: t out,
   test: Stream(Bit(8)) in,
 };
 

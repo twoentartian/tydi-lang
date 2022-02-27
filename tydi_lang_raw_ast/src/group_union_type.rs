@@ -31,10 +31,11 @@ impl DeepClone for LogicalGroup {
 }
 
 impl ToTydiIL for LogicalGroup {
-    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, _:u32) -> String {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, (String, Vec<String>)>, _:u32) -> String {
         let mut output_alias_map = String::from("");
         let types_in_group = self.scope.read().unwrap().types.clone();
         let mut first = true;
+        let mut type_dependency = vec![];
         for (name, type_) in types_in_group {
             if first {
                 first = false;
@@ -45,11 +46,13 @@ impl ToTydiIL for LogicalGroup {
 
             let logical_type = type_.read().unwrap().get_type_infer().get_raw_value();
             let logical_type = (*logical_type.read().unwrap()).clone();
-            output_alias_map.push_str(&format!("{}: {}", name, logical_type.to_tydi_il(type_alias_map, 1)));
+            let sub_type_name = logical_type.to_tydi_il(type_alias_map, 1);
+            output_alias_map.push_str(&format!("{}: {}", name, sub_type_name.clone()));
+            type_dependency.push(sub_type_name.clone());
         }
         let output_alias_map = format!("Group({})", output_alias_map);
 
-        type_alias_map.insert(crate::util::rename_id_to_il(self.name.clone()), output_alias_map);
+        type_alias_map.insert(crate::util::rename_id_to_il(self.name.clone()), (output_alias_map, type_dependency));
 
         return crate::util::rename_id_to_il(self.name.clone());
     }
@@ -118,10 +121,11 @@ impl DeepClone for LogicalUnion {
 }
 
 impl ToTydiIL for LogicalUnion {
-    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, String>, _:u32) -> String {
+    fn to_tydi_il(&self, type_alias_map: &mut HashMap<String, (String, Vec<String>)>, _:u32) -> String {
         let mut output_alias_map = String::from("");
         let types_in_union = self.scope.read().unwrap().types.clone();
         let mut first = true;
+        let mut type_dependency: Vec<String> = vec![];
         for (name, type_) in types_in_union {
             if first {
                 first = false;
@@ -132,11 +136,13 @@ impl ToTydiIL for LogicalUnion {
 
             let logical_type = type_.read().unwrap().get_type_infer().get_raw_value();
             let logical_type = (*logical_type.read().unwrap()).clone();
-            output_alias_map.push_str(&format!("{}: {}", name, logical_type.to_tydi_il(type_alias_map, 1)));
+            let type_name = logical_type.to_tydi_il(type_alias_map, 1);
+            output_alias_map.push_str(&format!("{}: {}", name, type_name.clone()));
+            type_dependency.push(type_name.clone());
         }
         let output_alias_map = format!("Union({})", output_alias_map);
 
-        type_alias_map.insert(crate::util::rename_id_to_il(self.name.clone()), output_alias_map);
+        type_alias_map.insert(crate::util::rename_id_to_il(self.name.clone()), (output_alias_map, type_dependency));
 
         return crate::util::rename_id_to_il(self.name.clone());
     }

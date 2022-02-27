@@ -66,9 +66,9 @@ impl DeepClone for Instance {
 }
 
 impl ToTydiIL for Instance {
-    fn to_tydi_il(&self, _: &mut HashMap<String, String>, depth:u32) -> String {
+    fn to_tydi_il(&self, _: &mut HashMap<String, (String, Vec<String>)>, depth:u32) -> String {
         let implement_name = self.get_implement_type().get_raw_value().read().unwrap().get_name();
-        let output = format!("{}{} = {}", generate_padding(depth), rename_id_to_il(self.get_name()), implement_name);
+        let output = format!("{}{} = {}", generate_padding(depth), rename_id_to_il(self.get_name()), rename_id_to_il(implement_name));
         return output;
     }
 }

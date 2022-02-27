@@ -711,6 +711,7 @@ dependencies = [
  "til-vhdl",
  "tydi-common",
  "tydi_lang_front_end",
+ "tydi_lang_raw_ast",
 ]
 
 [[package]]

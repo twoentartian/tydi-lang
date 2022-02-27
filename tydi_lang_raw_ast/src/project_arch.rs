@@ -110,7 +110,7 @@ impl Package {
     }
 
     pub fn to_tydi_il(&self, project_name: String) -> String {
-        let mut type_alias_map: HashMap<String, String> = HashMap::new();
+        let mut type_alias_map: HashMap<String, (String, Vec<String>)> = HashMap::new();
 
         let mut output_streamlet = String::from("");
         {
@@ -190,10 +190,43 @@ impl Package {
             }
         }
 
-        //types
+        //types: and analyzing type dependency
         let mut types_content = String::from("");
-        for (type_name, type_content) in type_alias_map {
-            types_content.push_str(&format!("{}type {} = {};\n", generate_padding(1) , crate::util::rename_id_to_il(type_name), type_content));
+        let mut type_exist: HashMap<String, Arc<RwLock<bool>>> = HashMap::new();
+        for (type_name, (_, _)) in type_alias_map.clone() {
+            type_exist.insert(type_name.clone(), Arc::new(RwLock::new(false)));
+        }
+        let mut type_dependency_map: HashMap<String, (String, Vec<Arc<RwLock<bool>>>)> = HashMap::new();
+        for (type_name, (type_content, type_dependency)) in &type_alias_map {
+            let mut type_dependencies = vec![];
+            for single_type_dependency in type_dependency {
+                if single_type_dependency.starts_with("Bits(") { continue; }
+                if *single_type_dependency == String::from("Null") { continue; }
+                let raw_type_dependency = type_exist.get(single_type_dependency).unwrap();
+                type_dependencies.push(raw_type_dependency.clone());
+            }
+            type_dependency_map.insert(type_name.clone(), (type_content.clone(), type_dependencies));
+        }
+
+        let mut current_processed_type = 0;
+        while current_processed_type < type_dependency_map.len() {
+            for (type_name, (type_content, type_dependencies)) in &type_dependency_map {
+                let mut type_dependencies_satisfied = true;
+                for type_dependency in type_dependencies {
+                    if *type_dependency.read().unwrap() == false {
+                        type_dependencies_satisfied = false;
+                    }
+                }
+
+                let mut target_type_exist = type_exist.get(type_name).unwrap().write().unwrap();
+                if type_dependencies_satisfied && (*target_type_exist == false) {
+                    types_content.push_str(&format!("{}type {} = {};\n", generate_padding(1) , crate::util::rename_id_to_il(type_name.clone()), type_content));
+                    current_processed_type = current_processed_type + 1;
+                    {
+                        *target_type_exist = true;
+                    }
+                }
+            }
         }
 
         let output = format!("namespace {}::{} {{\n\
