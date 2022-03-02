@@ -506,14 +506,14 @@ type A = Union A {
 streamlet adder<N : int> {
   a : Bit(N) in,
   b : Bit(N) in,
-  out : Bit(N) out,
+  Out : Bit(N) out,
   overflow: Bit(1) out,
 };
 
 streamlet demux<N:int, DATATYPE : type> {
-  in : DATATYPE in,
+  In : DATATYPE in,
   selection : Bit(8) in,
-  out : DATATYPE[N] out,
+  Out : DATATYPE[N] out,
 };
 
 // define an implementation for a streamlet
@@ -527,7 +527,7 @@ streamlet adder_4 {
   c : Bit(8) in,
   d : Bit(8) in,
   overflow: Bit(1) out,
-  out : Bit(8) out,
+  Out : Bit(8) out,
 };
 
 impl adder_4port_8bit of adder_4port<8> {
@@ -539,9 +539,9 @@ impl adder_4port_8bit of adder_4port<8> {
   self.b => adder_1.b,
   self.c => adder_2.a,
   self.d => adder_2.b,
-  adder1.out => adder_3.a,
-  adder2.out => adder_3.b,
-  adder3.out => self.out \"netName\",
+  adder1.Out => adder_3.a,
+  adder2.Out => adder_3.b,
+  adder3.Out => self.Out \"netName\",
 
   process{},
 };
@@ -555,9 +555,9 @@ impl adder_8bit of adder<8> {
   self.b => adder_1.b,
   self.c => adder_2.a,
   self.d => adder_2.b,
-  adder1.out => adder_3.a,
-  adder2.out => adder_3.b,
-  adder3.out => self.out \"netName\",
+  adder1.Out => adder_3.a,
+  adder2.Out => adder_3.b,
+  adder3.Out => self.Out \"netName\",
 
   process{},
 };
@@ -569,9 +569,9 @@ impl adder_4_3adders of adder_4 {
   self.b => adders[0].b, // maybe sugering: [self.a,self.b] => [adder_1.a, adder_1.b]
   self.c => adders[1].a,
   self.d => adders[1].b,
-  adders[0].out => adders[2].a,
-  adders[1].out => adders[2].b,
-  adders[2].out => self.out \"netName\",
+  adders[0].Out => adders[2].a,
+  adders[1].Out => adders[2].b,
+  adders[2].Out => self.Out \"netName\",
 
   process{},
 };";
@@ -604,9 +604,9 @@ impl adder_4_3adders<flag:bool> of adder_4 {
     self.b => adders[0].b, // maybe sugering: [self.a,self.b] => [adder_1.a, adder_1.b]
     self.c => adders[1].a,
     self.d => adders[1].b,
-    adders[0].out => adders[2].a,
-    adders[1].out => adders[2].b,
-    adders[2].out => self.out \"netName\",
+    adders[0].Out => adders[2].a,
+    adders[1].Out => adders[2].b,
+    adders[2].Out => self.Out \"netName\",
 
 
     for i in (0 =1=> 5) {
@@ -621,9 +621,9 @@ impl adder_4_3adders<flag:bool> of adder_4 {
     self.b => adder_1.b, // maybe sugering: [self.a,self.b] => [adder_1.a, adder_1.b]
     self.c => adder_2.a,
     self.d => adder_2.b,
-    adder1.out => adder_3.a,
-    adder2.out => adder_3.b,
-    adder3.out => self.out \"netName\",
+    adder1.Out => adder_3.a,
+    adder2.Out => adder_3.b,
+    adder3.Out => self.Out \"netName\",
 
 
   process{},
@@ -655,7 +655,7 @@ streamlet adder<N : int> {
   a : Bit(N) in,
   b : Bit(N) in,
   c: Null out,
-  out : Bit(N) out,
+  Out : Bit(N) out,
   overflow: Bit(1) out,
 };
 
@@ -667,7 +667,7 @@ impl adder_8b <n:int> of adder<8> {
 streamlet adder <N: int> {
   inputs: Bit(8) [N] in,
   overflow: Bit(1) [N / 2] out,
-  out : Bit(8) [N / 2] out,
+  Out : Bit(8) [N / 2] out,
   global_overflow : Bit(1) out,
 };
 
@@ -679,7 +679,7 @@ impl adder_ <N:int> of adder <N> {
     self.inputs[i*2+1] => adders[i].b,
     adders[i].overflow => self.overflow[i],
     adders[i].overflow => and_gate.input[i],
-    adders[i].out => self.out,
+    adders[i].Out => self.Out,
   }
   and_gate.output => self.overflow,
 
@@ -708,7 +708,7 @@ impl adder_ <N:int> of adder <N> {
             let code = "package test;
 streamlet adder<N:int> {
   inputs: Bit(8) [N] in,
-  out : Bit(8) [N/2] in,
+  Out : Bit(8) [N/2] in,
   overflow : Bit(1) out,
 };
 
@@ -720,7 +720,7 @@ impl adder_ <N:int> of adder <N> {
     self.inputs[i*2+1] => adders[i].b,
     adders[i].overflow => self.overflow[i],
     adders[i].overflow => and_gate.input[i],
-    adders[i].out =1=> self.out,
+    adders[i].Out =1=> self.Out,
   }
   and_gate.output => global_overflow,
 
@@ -756,7 +756,7 @@ impl adder_ <N:int> of adder <N> {
     self.inputs[i*2+1] => adders[i].b,
     adders[i].overflow => self.overflow[i],
     adders[i].overflow => and_gate.input[i],
-    adders[i].out =1=> self.out,
+    adders[i].Out =1=> self.Out,
   }
   and_gate.output => global_overflow,
 
@@ -851,8 +851,8 @@ type stream1 = Stream(Bit(8));
 
 streamlet sl0<i:int, t:type> {
   const i0 = 1,
-  in : stream0 in,
-  out : stream0 out,
+  port_in : stream0 in,
+  port_out : stream0 out,
 
   in_ : stream1 in,
 
@@ -861,16 +861,16 @@ streamlet sl0<i:int, t:type> {
 };
 
 streamlet sl1 {
-  in : stream0 in,
-  out : stream0 out,
+  port_in : stream0 in,
+  port_out : stream0 out,
 
   in_array : stream0 [num_stream] in,
   out_array : stream0 [num_stream] out,
 };
 
 streamlet sl2 {
-  in : external. stream0 in,
-  out : stream0 out,
+  port_in : external. stream0 in,
+  port_out : stream0 out,
 
   in_array : stream0 [num_stream] in,
   out_array : stream0 [num_stream] out,
@@ -884,7 +884,7 @@ impl tmux<n: int, ts: impl of sl0<num_instance, type Bit(1)>> of sl0<n, type str
   instance test_inst(ts),
   instance external_inst(external.streamlet),
 
-  test_inst.out => test_inst.in,
+  test_inst.Out => test_inst.In,
 
   process{},
 };
@@ -900,7 +900,7 @@ impl temp_impl2 of sl1 {
 impl tmux2<n: int, ts: impl of sl1> of sl0<n, type stream0> {
   instance test_inst(ts),
 
-  test_inst.out =1=> test_inst.in,
+  test_inst.Out =1=> test_inst.In,
 
   process{},
 };
@@ -911,8 +911,8 @@ impl test2 of sl1 {
 
 //////////////////////////////REGION3
 streamlet sl4<i:int> {
-  in : stream0 in,
-  out : stream0 out,
+  port_in : stream0 in,
+  port_out : stream0 out,
 };
 
 
@@ -921,12 +921,50 @@ impl temp_impl3 of sl4<1> {
 };
 impl tmux3<n: int, ts: impl of external.sl4<1> > of sl0<n, type stream0> {
   instance test_inst(ts),
-  test_inst.out => test_inst.in,
+  test_inst.Out => test_inst.In,
   process{},
 };
 impl test3 of sl1 {
   instance inst0(tmux3<1, impl e.temp_impl3>),
 };";
+            let mut parse_result = TydiParser::parse(Rule::Start, code).expect("unsuccessful parse");
+            println!("{}", parse_result);
+            let parse_result = parse_result.next().unwrap();
+            let mut pass: bool = false;
+
+            match parse_result.as_rule() {
+                Rule::Start => {
+                    let value: &str = parse_result.as_str();
+                    if value == code {
+                        pass = true;
+                    }
+                }
+                _ => unreachable!(),
+            }
+            assert!(pass);
+        }
+    }
+    #[test]
+    fn parse_clockdomain() {
+        {
+            let code = "package test;
+
+import external_package;
+
+const flag = true;
+const num_instance = 8;
+const num_stream = 2;
+
+const ck = 10MHz;
+
+streamlet sl1 {
+  port_in : stream0 in `200MHz,
+  port_out : stream0 out `200MHz,
+
+  in_array : stream0 [num_stream] in `ck,
+  out_array : stream0 [num_stream] out `ck,
+};
+";
             let mut parse_result = TydiParser::parse(Rule::Start, code).expect("unsuccessful parse");
             println!("{}", parse_result);
             let parse_result = parse_result.next().unwrap();

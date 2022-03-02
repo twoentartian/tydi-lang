@@ -1,5 +1,7 @@
 package tydi_ir;
 
+const cd = 100MHz;
+
 type bit8_stream = Stream(Bit(8), d = 5, t = 2.5);
 
 type Group group0 {
@@ -13,8 +15,8 @@ type rgb_stream = Stream(group0);
 #streamlet docu basic0#
 streamlet basic0 {
   #port document#
-  d_in: bit8_stream in,
-  d_out: bit8_stream out,
+  d_in: bit8_stream in `cd,
+  d_out: bit8_stream out `cd,
 };
 
 #impl docu basic0_1#
@@ -37,16 +39,16 @@ impl impl_template<i:int> of basic0 {
   instance test_inst(basic0_1) [i],
 };
 
-streamlet streamlet_template<i:int, t:type> {
-  d_in: t [i] in,
-  d_out: t out,
-  test: Stream(Bit(8)) in,
+streamlet streamlet_template<i:int, t:type, cd: clockdomain> {
+  d_in: t [i] in `cd,
+  d_out: t out `cd,
+  test: Stream(Bit(8)) in `cd,
 };
 
-impl impl_template2<i:int> of streamlet_template<i, type rgb_stream> {
+impl impl_template2<i:int, cd: clockdomain> of streamlet_template<i, type rgb_stream, cd> {
   instance test_inst(basic0_1) [i],
 };
 
 impl impl_template_instance_1(impl_template<3>);
 
-impl impl_template_instance_2(impl_template2<5>);
+impl impl_template_instance_2(impl_template2<5, 500kHz>);

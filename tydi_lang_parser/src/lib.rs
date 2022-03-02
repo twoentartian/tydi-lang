@@ -610,6 +610,7 @@ fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                     DataType::StringType => {}
                     DataType::BoolType => {}
                     DataType::FloatType => {}
+                    DataType::ClockDomainType => {}
                     DataType::ArrayType(_) => {}
                     DataType::LogicalDataType(_) => {}
                     DataType::ProxyImplementOfStreamlet(_,_) => {}
@@ -916,6 +917,7 @@ fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                     DataType::StringType => {}
                     DataType::BoolType => {}
                     DataType::FloatType => {}
+                    DataType::ClockDomainType => {}
                     DataType::ArrayType(_) => {}
                     DataType::LogicalDataType(_) => {}
                     _ => return Err(AnalysisCodeStructureFail(format!("unaccepted streamlet template arg")))
@@ -926,6 +928,7 @@ fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                 let mut port_dir = PortDirection::Unknown;
                 let mut exp = String::from("");
                 let mut logical_type= LogicalDataType::UnknownLogicalDataType;
+                let mut clock_domain: Option<Variable> = None;
                 let mut docu: Option<String> = None;
                 for item in element.clone().into_inner().into_iter() {
                     match item.as_rule() {
@@ -945,27 +948,44 @@ fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                         Rule::DOCUMENT => {
                             docu = Some(item.as_str().to_string());
                         },
+                        Rule::Exp => {
+                            clock_domain = Some(Variable::new(String::from(""), DataType::ClockDomainType, item.as_str().to_string()));
+                        }
                         _ => { unreachable!() }
                     }
                 }
 
                 let result = streamlet.new_port(exp.clone(), inferred!(infer_logical_data_type!(), Arc::new(RwLock::new(logical_type))), port_dir);
+                if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
+
+                //set document
+                let streamlet_scope = streamlet.get_scope();
+                let port = streamlet_scope.read().unwrap().resolve_port_in_current_scope(exp.clone()).unwrap();
                 match docu {
                     None => {}
                     Some(docu) => {
-                        let streamlet_scope = streamlet.get_scope();
-                        let port = streamlet_scope.read().unwrap().resolve_port_in_current_scope(exp.clone()).unwrap();
                         port.write().unwrap().set_document(Some(docu));
                     }
                 }
 
-                if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
+                //set clockdomain
+                match clock_domain {
+                    None => {
+                        port.write().unwrap().set_clock_domain(Arc::new(RwLock::new(Variable::new_with_value(String::from(""), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::Default)))));
+                    }
+                    Some(var) => {
+                        port.write().unwrap().set_clock_domain(Arc::new(RwLock::new(var)) );
+                    }
+                }
             },
             Rule::StreamLetBodyStreamLetPortArray => {
                 let mut port_dir = PortDirection::Unknown;
                 let mut exp = String::from("");
                 let mut logical_type= LogicalDataType::UnknownLogicalDataType;
                 let mut array_var = Variable::new_int(String::from(""), 0);
+                let mut array_var_flag = true;
+                let mut clock_domain: Option<Variable> = None;
+                let mut docu: Option<String> = None;
                 for item in element.clone().into_inner().into_iter() {
                     match item.as_rule() {
                         Rule::ID => {
@@ -982,16 +1002,42 @@ fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                             port_dir = result.ok().unwrap();
                         },
                         Rule::Exp => {
-                            array_var = Variable::new(String::from(""), DataType::IntType, item.as_str().to_string());
+                            if array_var_flag {
+                                array_var_flag = false;
+                                array_var = Variable::new(String::from(""), DataType::IntType, item.as_str().to_string());
+                            }
+                            else {
+                                clock_domain = Some(Variable::new(String::from(""), DataType::ClockDomainType, item.as_str().to_string()));
+                            }
                         },
                         Rule::DOCUMENT => {
-
+                            docu = Some(item.as_str().to_string());
                         },
                         _ => { unreachable!() }
                     }
                 }
                 let result = streamlet.new_port_array(exp.clone(), inferred!(infer_logical_data_type!(), Arc::new(RwLock::new(logical_type))), port_dir, Arc::new(RwLock::new(array_var)));
                 if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
+
+                //set document
+                let streamlet_scope = streamlet.get_scope();
+                let port = streamlet_scope.read().unwrap().resolve_port_in_current_scope(exp.clone()).unwrap();
+                match docu {
+                    None => {}
+                    Some(docu) => {
+                        port.write().unwrap().set_document(Some(docu));
+                    }
+                }
+
+                //set clockdomain
+                match clock_domain {
+                    None => {
+                        port.write().unwrap().set_clock_domain(Arc::new(RwLock::new(Variable::new_with_value(String::from(""), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::Default)))));
+                    }
+                    Some(var) => {
+                        port.write().unwrap().set_clock_domain(Arc::new(RwLock::new(var)));
+                    }
+                }
             },
             Rule::StreamLetBodyDeclareConstInStreamlet => {
                 let result = parse_const_assign(element.into_inner(), streamlet.get_scope());
@@ -1036,6 +1082,7 @@ fn convert_type_str_to_type(type_exp: String) -> Result<DataType, ParserErrorCod
     else if type_exp == String::from("[float]") { data_type = DataType::ArrayType(Arc::new(RwLock::new(DataType::FloatType))); }
     else if type_exp == String::from("[str]") { data_type = DataType::ArrayType(Arc::new(RwLock::new(DataType::StringType))); }
     else if type_exp == String::from("[bool]") { data_type = DataType::ArrayType(Arc::new(RwLock::new(DataType::BoolType))); }
+    else if type_exp == String::from("clockdomain") { data_type = DataType::ClockDomainType; }
     else { unreachable!() }
 
     return Ok(data_type);

@@ -1,4 +1,3 @@
-
 #[macro_export]
 macro_rules! generate_set {
     ($id:ident, $t: ty, $id_set_func:ident) => {

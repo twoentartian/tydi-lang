@@ -11,12 +11,43 @@ pub use crate::error::ErrorCode;
 use crate::inferable::{Inferable, NewInferable};
 
 #[derive(Clone, Debug)]
+pub enum ClockDomainValue {
+    Unknown,
+    Default,
+    Hz(f32),
+    #[allow(non_camel_case_types)]
+    kHz(f32),
+    MHz(f32),
+    GHz(f32),
+}
+
+impl From<ClockDomainValue> for String {
+    fn from(cd: ClockDomainValue) -> Self {
+        match cd {
+            ClockDomainValue::Unknown => { format!("UnknownClockDomain") }
+            ClockDomainValue::Default => { format!("DefaultClockDomain") }
+            ClockDomainValue::Hz(v) => { format!("{}Hz", v) }
+            ClockDomainValue::kHz(v) => { format!("{}kHz", v) }
+            ClockDomainValue::MHz(v) => { format!("{}MHz", v) }
+            ClockDomainValue::GHz(v) => { format!("{}GHz", v) }
+        }
+    }
+}
+
+impl DeepClone for ClockDomainValue {
+    fn deep_clone(&self) -> Self {
+        return self.clone();
+    }
+}
+
+#[derive(Clone, Debug)]
 pub enum VariableValue {
     Unknown,
     Int(i32),
     Bool(bool),
     Float(f32),
     Str(String),
+    ClockDomain(ClockDomainValue),
     ArrayInt(Vec<i32>),
     ArrayBool(Vec<bool>),
     ArrayFloat(Vec<f32>),
@@ -41,6 +72,7 @@ impl From<VariableValue> for String {
             VariableValue::Bool(v) => { format!("{}", v) }
             VariableValue::Float(v) => { format!("{}", v) }
             VariableValue::Str(v) => { format!("{}", v) }
+            VariableValue::ClockDomain(v) => { String::from(v) }
             VariableValue::ArrayInt(v) => {
                 let mut output = String::from("");
                 if v.len() == 0 { output = String::from(""); }
@@ -137,6 +169,14 @@ impl Variable {
             name: name_.clone(),
             var_type: Arc::new(RwLock::new(type_)),
             var_value: <Inferable<VariableValue> as NewInferable<VariableValue>>::_new(exp_.clone()),
+        }
+    }
+
+    pub fn new_empty() -> Self {
+        Self {
+            name: String::from(""),
+            var_type: Arc::new(RwLock::new(DataType::UnknownType)),
+            var_value: <Inferable<VariableValue> as NewInferable<VariableValue>>::_new(String::from("")),
         }
     }
 

@@ -26,7 +26,7 @@ impl DeepClone for PortOwner {
     fn deep_clone(&self) -> Self {
         match self.clone() {
             PortOwner::ExternalOwner(name, streamlet, var) => {
-                ///IMPORTANT Notice: we use clone on streamlet because we believe they have common parent streamlet and it won;t change during compile time
+                //IMPORTANT Notice: we use clone on streamlet because we believe they have common parent streamlet and it won't change during compile time
                 return PortOwner::ExternalOwner(name.deep_clone(), streamlet.clone(), var.deep_clone());
             }
             _ => { return self.clone() }

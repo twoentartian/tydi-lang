@@ -8,6 +8,7 @@ use pest::prec_climber as pcl;
 use tydi_lang_raw_ast::logical_data_type::LogicalDataType;
 use tydi_lang_raw_ast::project_arch::Project;
 use tydi_lang_raw_ast::scope::{Scope, Variable, DataType, InferState, VariableValue};
+use tydi_lang_raw_ast::variable::ClockDomainValue;
 use crate::ParserErrorCode;
 use crate::evaluation_type;
 
@@ -775,6 +776,32 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
                     unreachable!()
                 }
             }
+            Rule::ClockDomainExp => {
+                let mut clockdomain_exp = term_inner.as_str().to_string();
+                if clockdomain_exp.ends_with("GHz") {
+                    clockdomain_exp = clockdomain_exp.replace("GHz", "");
+                    let freq = clockdomain_exp.parse::<f32>().expect("not a valid clockdomain");
+                    return Ok(Variable::new_with_value(String::from(""), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::GHz(freq))));
+                }
+                else if clockdomain_exp.ends_with("MHz") {
+                    clockdomain_exp = clockdomain_exp.replace("MHz", "");
+                    let freq = clockdomain_exp.parse::<f32>().expect("not a valid clockdomain");
+                    return Ok(Variable::new_with_value(String::from(""), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::MHz(freq))));
+                }
+                else if clockdomain_exp.ends_with("kHz") {
+                    clockdomain_exp = clockdomain_exp.replace("kHz", "");
+                    let freq = clockdomain_exp.parse::<f32>().expect("not a valid clockdomain");
+                    return Ok(Variable::new_with_value(String::from(""), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::kHz(freq))));
+                }
+                else if clockdomain_exp.ends_with("Hz") {
+                    clockdomain_exp = clockdomain_exp.replace("Hz", "");
+                    let freq = clockdomain_exp.parse::<f32>().expect("not a valid clockdomain");
+                    return Ok(Variable::new_with_value(String::from(""), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::Hz(freq))));
+                }
+                else {
+                    unreachable!()
+                }
+            }
 
             Rule::ArrayRange => {
                 let mut exp_vars: Vec<Variable> = vec![];
@@ -1059,6 +1086,7 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
                             VariableValue::Int(v) => { lhs_str = v.to_string(); }
                             VariableValue::Str(v) => { lhs_str = String::from(v); }
                             VariableValue::Bool(v) => { lhs_str = v.to_string(); }
+                            VariableValue::ClockDomain(v) => { lhs_str = String::from(v); }
                             _ => return Err(ExpressionEvaluationFail(format!("+ operator only supports append string with int/float/bool/string")))
                         }
                         match rhs_value {
@@ -1066,6 +1094,7 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
                             VariableValue::Int(v) => { rhs_str = v.to_string(); }
                             VariableValue::Str(v) => { rhs_str = String::from(v); }
                             VariableValue::Bool(v) => { rhs_str = v.to_string(); }
+                            VariableValue::ClockDomain(v) => { rhs_str = String::from(v); }
                             _ => return Err(ExpressionEvaluationFail(format!("+ operator only supports append string with int/float/bool/string")))
                         }
                         output.push_str(&lhs_str);
@@ -1483,7 +1512,7 @@ pub fn infer_variable(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, pro
     let var_type = var.read().unwrap().get_type();
     let mut inferred_value;
     match (*var_type.read().unwrap()).clone() {
-        DataType::UnknownType | DataType::IntType | DataType::StringType | DataType::BoolType | DataType::FloatType | DataType::ArrayType(_) => {
+        DataType::UnknownType | DataType::IntType | DataType::StringType | DataType::BoolType | DataType::FloatType | DataType::ClockDomainType | DataType::ArrayType(_) => {
             let raw_exp = var.read().unwrap().get_var_value().get_raw_exp();
             let value_result = parse_eval_exp(raw_exp.clone(), scope.clone(), project.clone());
             if value_result.is_err() {

@@ -47,12 +47,17 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                 //infer port type
                 {
                     let port_type = port_read.get_type().get_raw_value();
-                    let result = evaluation_type::infer_logical_type(port_type.clone(), streamlet_scope.clone(), project.clone());
-                    if result.is_err() { return Err(result.err().unwrap()); }
+                    evaluation_type::infer_logical_type(port_type.clone(), streamlet_scope.clone(), project.clone())?;
                     match (*port_type.read().unwrap()).clone() {
                         LogicalDataType::DataStreamType(_, _) => { /*correct*/ }
                         _ => { return Err(StreamletEvaluationFail(format!("the logical type of streamlet port must be a stream"))); }
                     };
+                }
+
+                //infer clockdomain
+                {
+                    let cd = port_read.get_clock_domain();
+                    evaluation_var::infer_variable(cd.clone(), streamlet_scope.clone(), project.clone())?;
                 }
 
                 //expand port array
@@ -147,7 +152,7 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                 let linking_var_name_index = linking_var_name.find(&*crate::built_in_ids::ARG_PREFIX).unwrap();
                 let linking_var_name = (&linking_var_name[linking_var_name_index+5 ..]).to_string();
                 match streamlet_arg_type.clone() {
-                    DataType::IntType | DataType::StringType | DataType::BoolType | DataType::FloatType | DataType::ArrayType(_) => {
+                    DataType::IntType | DataType::StringType | DataType::BoolType | DataType::FloatType | DataType::ClockDomainType | DataType::ArrayType(_) => {
                         let linking_var = Arc::new(RwLock::new(Variable::new_with_value(linking_var_name.clone(), streamlet_arg_type.clone(), template_exp.read().unwrap().get_var_value().get_raw_value())));
                         let result = cloned_streamlet_scope.write().unwrap().with_variable(linking_var);
                         if result.is_err() { return Err(StreamletEvaluationFail(format!("failed to create linking variable({}): {}", linking_var_name.clone(), String::from(result.err().unwrap())))); }

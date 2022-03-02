@@ -265,7 +265,7 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
                 let linking_var_name_index = linking_var_name.find(&*crate::built_in_ids::ARG_PREFIX).unwrap();
                 let linking_var_name = (&linking_var_name[linking_var_name_index+5 ..]).to_string();
                 match template_arg_type.clone() {
-                    DataType::IntType | DataType::StringType | DataType::BoolType | DataType::FloatType | DataType::ArrayType(_) => {
+                    DataType::IntType | DataType::StringType | DataType::BoolType | DataType::FloatType | DataType::ClockDomainType | DataType::ArrayType(_) => {
                         let linking_var = Arc::new(RwLock::new(Variable::new_with_value(linking_var_name.clone(), template_arg_type.clone(), template_exp.read().unwrap().get_var_value().get_raw_value())));
                         let result = cloned_implement_scope.write().unwrap().with_variable(linking_var);
                         if result.is_err() { return Err(ImplementEvaluationFail(format!("failed to create linking variable({}): {}", linking_var_name.clone(), String::from(result.err().unwrap())))); }

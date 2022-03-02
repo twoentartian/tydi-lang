@@ -1,3 +1,4 @@
+use tydi_lang_raw_ast::util::PrettyPrint;
 #[allow(unused_imports)]
 use crate::tydi_frontend_compile;
 
@@ -21,7 +22,14 @@ pub fn test() {
 
     let result = tydi_frontend_compile(Some(String::from("test_project")), paths, Some(String::from("./output")),None);
     if result.is_err() {
-        println!("{}",result.err().unwrap());
+        let (project,msg) = result.err().unwrap();
+        println!("{}", msg);
+        match project {
+            None => {}
+            Some(project) => {
+                println!("{}", project.read().unwrap().pretty_print(0, true));
+            }
+        }
         assert!(false);
     }
 

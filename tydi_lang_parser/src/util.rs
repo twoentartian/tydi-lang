@@ -21,6 +21,9 @@ pub fn generate_template_instance_name(template_name: String, template_exps: &Ve
             VariableValue::Str(v) => {
                 template_exp_string.push_str(&format!("@{}", v.to_string()));
             }
+            VariableValue::ClockDomain(v) => {
+                template_exp_string.push_str(&format!("@{}", String::from(v)));
+            }
             VariableValue::LogicalDataType(type_) => {
                 template_exp_string.push_str(&format!("@{}", String::from((*type_.read().unwrap()).clone())))
             }

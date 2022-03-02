@@ -17,6 +17,7 @@ pub enum DataType {
     StringType,
     BoolType,
     FloatType,
+    ClockDomainType,
     ArrayType(Arc<RwLock<DataType>>),
 
     EmptyLogicalDataType,
@@ -97,6 +98,12 @@ impl PartialEq for DataType {
                     _ => false,
                 }
             },
+            DataType::ClockDomainType => {
+                return match other {
+                    DataType::ClockDomainType => true,
+                    _ => false,
+                }
+            },
 
             DataType::ArrayType(t0) => {
                 return match other {
@@ -155,6 +162,7 @@ impl From<DataType> for String {
             DataType::StringType => { String::from("string") }
             DataType::BoolType => { String::from("bool") }
             DataType::FloatType => { String::from("float") }
+            DataType::ClockDomainType => { String::from("clockdomain") }
             DataType::ArrayType(inner_data_type) => {
                 let inner_type = inner_data_type.read().unwrap();
                 let inner_type_str = String::from((*inner_type).clone());

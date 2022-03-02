@@ -7,7 +7,7 @@ use crate::util::{generate_padding, PrettyPrint, EnableDocument};
 use crate::{generate_access, generate_get, generate_set};
 use crate::error::ErrorCode;
 use crate::inferable::{Inferable};
-use crate::scope::{Scope, ScopeRelationType, ScopeType};
+use crate::scope::{Scope, ScopeRelationType, ScopeType, DataType};
 use derived_macro::EnableDocument;
 use crate::tydi_il;
 
@@ -66,6 +66,7 @@ pub struct Port {
     port_type: Inferable<Arc<RwLock<LogicalDataType>>>,
     direction: PortDirection,
     array_type: PortArray,
+    clock_domain: Arc<RwLock<Variable>>,
     docu: Option<String>,
 }
 
@@ -76,6 +77,7 @@ impl DeepClone for Port {
             port_type: self.port_type.deep_clone(),
             direction: self.direction.deep_clone(),
             array_type: self.array_type.deep_clone(),
+            clock_domain: self.clock_domain.deep_clone(),
             docu: self.docu.deep_clone(),
         }
     }
@@ -112,6 +114,7 @@ impl Port {
     generate_access!(port_type, Inferable<Arc<RwLock<LogicalDataType>>>, get_type, set_type);
     generate_get!(direction, PortDirection, get_direction);
     generate_access!(array_type, PortArray, get_array_type, set_array_type);
+    generate_access!(clock_domain, Arc<RwLock<Variable>>, get_clock_domain, set_clock_domain);
 
     pub fn new(name_: String, type_exp: Inferable<Arc<RwLock<LogicalDataType>>>, direction_: PortDirection) -> Self {
         Self {
@@ -119,6 +122,7 @@ impl Port {
             port_type: type_exp.clone(),
             direction: direction_,
             array_type: PortArray::SinglePort,
+            clock_domain: Arc::new(RwLock::new(Variable::new(String::from(""), DataType::ClockDomainType, String::from("")))),
             docu: None,
         }
     }
@@ -129,6 +133,7 @@ impl Port {
             port_type: type_exp.clone(),
             direction: direction_,
             array_type: PortArray::ArrayPort(array_.clone()),
+            clock_domain: Arc::new(RwLock::new(Variable::new(String::from(""), DataType::ClockDomainType, String::from("")))),
             docu: None,
         }
     }
@@ -138,13 +143,13 @@ impl From<Port> for String {
     fn from(port: Port) -> Self {
         match port.clone().array_type {
             PortArray::UnknownPortArray => {
-                return format!("{}:UnknownPort({},{})", port.get_name(), String::from(port.get_type().clone()), String::from(port.direction.clone()) );
+                return format!("{}:UnknownPort({},{}) `{}", port.get_name(), String::from(port.get_type().clone()), String::from(port.direction.clone()), String::from((*port.clock_domain.read().unwrap()).clone()) );
             },
             PortArray::SinglePort => {
-                return format!("{}:Port({},{})", port.get_name(), String::from(port.get_type().clone()), String::from(port.direction.clone()) );
+                return format!("{}:Port({},{}) `{}", port.get_name(), String::from(port.get_type().clone()), String::from(port.direction.clone()), String::from((*port.clock_domain.read().unwrap()).clone()) );
             },
             PortArray::ArrayPort(array) => {
-                return format!("{}:PortArray[{}]({},{})", port.get_name(), String::from((*array.read().unwrap()).clone()), String::from(port.get_type().clone()), String::from(port.direction.clone()) );
+                return format!("{}:PortArray[{}]({},{}) `{}", port.get_name(), String::from((*array.read().unwrap()).clone()), String::from(port.get_type().clone()), String::from(port.direction.clone()), String::from((*port.clock_domain.read().unwrap()).clone()) );
             },
         }
     }

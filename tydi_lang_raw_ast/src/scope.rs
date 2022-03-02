@@ -156,7 +156,7 @@ pub struct Scope {
 
 impl DeepClone for Scope {
     fn deep_clone(&self) -> Self {
-        let mut output = Self {
+        let output = Self {
             name: self.name.clone(),
             scope_type: self.scope_type.deep_clone(),
             self_ref: None,
