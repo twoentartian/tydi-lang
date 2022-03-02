@@ -9,7 +9,7 @@ extern crate threadpool;
 use std::fs;
 use std::sync::{Arc, RwLock};
 
-use ParserErrorCode::{AnalysisCodeStructureFail, FileError};
+use ParserErrorCode::{AnalysisCodeStructureFail, FileError, ImplementEvaluationFail};
 use pest::{Parser};
 use pest::iterators::{Pairs};
 use tydi_lang_raw_ast::bit_null_type::LogicalBit;
@@ -422,8 +422,8 @@ fn parse_else_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(),
     for item in block.into_iter() {
         match item.clone().as_rule() {
             Rule::ImplementationBody => {
-                let result = parse_implement_body(item.into_inner(), scope.clone());
-                if result.is_err() { return Err(result.err().unwrap()); }
+                let process = parse_implement_body(item.into_inner(), scope.clone())?;
+                if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in else block"))); }
             }
             _ => { unreachable!() }
         }
@@ -438,8 +438,8 @@ fn parse_elif_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>, elif_block: &
                 elif_block.set_elif_exp(Arc::new(RwLock::new(Variable::new(String::from(""), DataType::BoolType, item.as_str().to_string()))));
             }
             Rule::ImplementationBody => {
-                let result = parse_implement_body(item.into_inner(), scope.clone());
-                if result.is_err() { return Err(result.err().unwrap()); }
+                let process = parse_implement_body(item.into_inner(), scope.clone())?;
+                if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in elif block"))); }
             }
             _ => { unreachable!() }
         }
@@ -447,7 +447,8 @@ fn parse_elif_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>, elif_block: &
     return Ok(());
 }
 
-fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result</*process:*/Option<String>, ParserErrorCode> {
+    let mut output_process: Option<String> = None;
     for single_stat in statement.into_iter() {
         match single_stat.clone().as_rule() {
             Rule::ImplementationBodyDeclareInstance => {
@@ -473,8 +474,8 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                             }
                         },
                         Rule::ImplementationBody => {
-                            let result = parse_implement_body(item.into_inner(), if_block.get_scope().clone());
-                            if result.is_err() { return Err(result.err().unwrap()); }
+                            let process = parse_implement_body(item.into_inner(), if_block.get_scope().clone())?;
+                            if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in if block"))); }
                         },
                         Rule::ElifBlock => {
                             let name = format!("elif-{}-{}", item.clone().as_span().start(), item.clone().as_span().end());
@@ -519,8 +520,8 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                             for_block.set_array_exp(Arc::new(RwLock::new(Variable::new(String::from(""), DataType::UnknownType, item.as_str().to_string()))));
                         }
                         Rule::ImplementationBody => {
-                            let result = parse_implement_body(item.into_inner(), for_block.get_scope().clone());
-                            if result.is_err() { return Err(result.err().unwrap()); }
+                            let process = parse_implement_body(item.into_inner(), for_block.get_scope().clone())?;
+                            if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in for block"))); }
                         }
                         _ => { unreachable!() }
                     }
@@ -532,7 +533,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                 }
             },
             Rule::ImplementationBodyDeclareProcess => {
-                todo!()
+                output_process = Some(single_stat.as_str().to_string());
             },
             Rule::ImplementationBodyDeclareNet | Rule::ImplementationBodyDeclareDelayedNet => {
                 let mut connection = Connection::new(String::from(""), not_inferred!(infer_port!(), String::from("")), not_inferred!(infer_port!(), String::from("")), Variable::new_int(String::from(""), 0));
@@ -589,7 +590,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
         }
     }
 
-    return Ok(());
+    return Ok(output_process);
 }
 
 fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
@@ -640,8 +641,8 @@ fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                 }
             },
             Rule::ImplementationBody => {
-                let result = parse_implement_body(element.into_inner(), implement.get_scope());
-                if result.is_err() { return Err(result.err().unwrap()); }
+                let process = parse_implement_body(element.into_inner(), implement.get_scope())?;
+                implement.set_simulation_process(process);
             },
             Rule::DOCUMENT => {
                 implement.set_document(Some(element.as_str().to_string()));

@@ -71,7 +71,7 @@ pub struct Implement {
     derived_streamlet: Option<Arc<RwLock<Streamlet>>>,
 
     evaluated_state: EvaluatedState,
-
+    simulation_process: Option<String>,
     docu: Option<String>,
 }
 
@@ -86,6 +86,7 @@ impl DeepClone for Implement {
             derived_streamlet: self.derived_streamlet.deep_clone(),
 
             evaluated_state: self.evaluated_state.deep_clone(),
+            simulation_process: self.simulation_process.deep_clone(),
 
             docu: self.docu.deep_clone(),
         };
@@ -223,6 +224,7 @@ impl Implement {
     generate_get!(scope, Arc<RwLock<Scope>>, get_scope);
     generate_access!(derived_streamlet_var, Arc<RwLock<Variable>>, get_derived_streamlet_var, set_derived_streamlet_var);
     generate_access!(derived_streamlet, Option<Arc<RwLock<Streamlet>>>, get_derived_streamlet, set_derived_streamlet);
+    generate_access!(simulation_process, Option<String>, get_simulation_process, set_simulation_process);
 
     pub fn get_instance_impl_dependency(&self) -> Vec<String> {
         let mut output = vec![];
@@ -253,6 +255,7 @@ impl Implement {
             derived_streamlet: None,
 
             evaluated_state: NotEvaluate,
+            simulation_process: None,
 
             docu: None,
         }
@@ -294,6 +297,8 @@ impl PrettyPrint for Implement {
         output.push_str(&format!("{}Implement({})<{}> -> {}{{\n", generate_padding(depth), self.name.clone(), String::from(self.implement_type.clone()), derived_streamlet_representation));
         //enter scope
         output.push_str(&format!("{}", self.scope.read().unwrap().pretty_print(depth+1, verbose)));
+        //enter simulation process
+        output.push_str(&format!("simulation_process{{{:?}}}", self.simulation_process.clone()));
         //leave Implement
         output.push_str(&format!("{}}}", generate_padding(depth)));
 

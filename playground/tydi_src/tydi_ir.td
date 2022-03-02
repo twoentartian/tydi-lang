@@ -34,4 +34,4 @@ impl impl_data_demux<channel:int, data_type: type> of data_demux<channel, type d
 };
 
 impl data_demux_rgb_5(impl_data_demux<5, type rgb_stream>);
-impl data_demux_rgb_100(impl_data_demux<100, type rgb_stream>);
+impl data_demux_rgb_100(impl_data_demux<5, type rgb_stream>);

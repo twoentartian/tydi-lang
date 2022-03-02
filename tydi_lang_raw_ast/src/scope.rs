@@ -73,6 +73,7 @@ impl DeepClone for ScopeRelationship {
 impl ScopeRelationship {
     generate_get!(name, String, get_name);
     generate_access!(target_scope, Arc<RwLock<Scope>>, get_target_scope, set_target_scope);
+    generate_get!(relationship, ScopeRelationType, get_relationship);
 
     pub fn new(target_scope_: Arc<RwLock<Scope>>, relationship_: ScopeRelationType) -> Self {
         Self {

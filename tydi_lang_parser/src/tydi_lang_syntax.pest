@@ -174,7 +174,7 @@ ImplementationBodyDeclareInstanceArray = { DOCUMENT? ~ "instance" ~ ID ~ "(" ~ E
 ImplementationBodyDeclareNet = { DOCUMENT? ~ LogicalTypeSlice ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
 ImplementationBodyDeclareDelayedNet = { DOCUMENT? ~ LogicalTypeSlice ~ "=" ~ Exp ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
 ImplementationBodyDeclareConstInImpl = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
-ImplementationBodyDeclareProcess = { "process" ~ "{" ~ "}" ~ "," }
+ImplementationBodyDeclareProcess = { "process" ~ "{" ~ Simulation_Block ~ "}" ~ "," }
 ImplementationBodyIfBlock = {
 "if" ~ "(" ~ Exp ~ ")" ~ "{" ~
   ImplementationBody* ~
@@ -254,3 +254,52 @@ StartElementAStatement = { Statement }
 StartElementAImport = { "import" ~ ID ~ ";" }
 StartElement = _{ (StartElementAStatement |  StartElementAImport) }
 ///////////////////////  end of start.sdf3  ///////////////////////
+
+
+///////////////////////  start of Simulation process  ///////////////////////
+ExpSubStream = { ID ~ "->" ~ ID ~ ("->" ~ ID)* }
+ItemInGroupUnion = { ID ~ "=" ~ Exp }
+ExpGroup = { "Group" ~ "(" ~ ItemInGroupUnion ~ ("," ~ ItemInGroupUnion)? ~ ")" }
+ExUnion = { "Union" ~ "(" ~ ItemInGroupUnion ~ ("," ~ ItemInGroupUnion)? ~ ")" }
+ExpInSimulation = { ExpSubStream | ExpGroup | ExUnion }
+Exp_SimulationExt = { ExpInSimulation | Exp }
+
+DeclareState = { "state" ~ ID ~ "=" ~ Exp }
+ProcessFunction = { ID ~ "(" ~ ( Exp_SimulationExt ~ ( "," ~ Exp_SimulationExt )* )? ~ ")" }
+EventLogicOp = { Op_Event_And | Op_Event_Or }
+  Op_Event_And = { "&&" }
+  Op_Event_Or = { "||" }
+
+ProcessEvent = { "event" ~ ProcessFunction ~ ( EventLogicOp ~ ProcessFunction )* ~
+  "{" ~ AEventStatement* ~ "}"
+  }
+
+AssignState = { "assign" ~ ID ~ "=" ~ Exp }
+AEventStatement = { (AssignState ~ ";") | (ProcessFunction ~ ";") | Process_IfBlock | Process_ForBlock }
+
+Process_IfBlock = {
+"if" ~ "(" ~ Exp ~ ")" ~ "{" ~
+  AEventStatement* ~
+"}" ~
+Process_ElifBlock* ~
+Process_ElseBlock?
+}
+Process_ElifBlock = {
+"elif" ~ "(" ~ Exp ~ ")" ~ "{" ~
+  AEventStatement* ~
+"}"
+}
+Process_ElseBlock = {
+"else" ~ "{" ~
+  AEventStatement* ~
+"}"
+}
+Process_ForBlock = {
+"for" ~ ID ~ "in" ~ Exp ~ "{" ~
+  AEventStatement* ~
+"}"
+}
+
+Simulation_Block_Element = { (DeclareState ~ ";") | (ProcessFunction ~ ";") | ProcessEvent ~ ";" }
+Simulation_Block = { Simulation_Block_Element* }
+///////////////////////  end of Simulation process  ///////////////////////

@@ -8,8 +8,6 @@ use std::ffi::OsStr;
 use std::path::Path;
 use chrono::{Datelike, Timelike};
 
-
-
 fn source(path: impl AsRef<Path>) -> String {
     std::fs::read_to_string(path).unwrap()
 }
