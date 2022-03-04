@@ -1,93 +1,46 @@
-package tydi_ir;
-
-const cd = 100MHz;
+package tydi_ir; //package name must be the same with the file name
 
 type bit8_stream = Stream(Bit(8), d = 5, t = 2.5);
 
-type Group group0 {
-  r: Bit(8),
-  g: Bit(8),
-  b: Bit(8),
+const eight = 8;
+
+type Group rgb {
+  r: Bit(eight),
+  g: Bit(eight),
+  b: Bit(eight),
 };
 
-type rgb_stream = Stream(group0);
+type rgb_stream = Stream(rgb);
 
-#streamlet docu basic0#
-streamlet basic0 {
-  #port document#
-  d_in: bit8_stream in `cd,
-  d_out: bit8_stream out `cd,
+streamlet component {
+  input: rgb_stream in,
+  output: rgb_stream out,
 };
 
-#impl docu basic0_1#
-impl basic0_1 of basic0 {
-
+impl component_impl0 of component {
+  input => output,
 };
 
-#impl docu impl_basic0#
-impl impl_basic0 of basic0 {
-
-  #instance document#
-  instance test_inst(basic0_1),
-
-  #connection document#
-  d_in =1=> test_inst.d_in,
-  test_inst.d_out => d_out,
+impl component_impl1 of component {
+  input => output,
 };
 
-impl impl_template<i:int> of basic0 {
-  instance test_inst(basic0_1) [i],
-
-  process {
-    state component_state = "0"; // init state as 0
-    set_ack(data_in_0, 2);
-    set_ack(data_in_1, 1);
-
-    event receive(data_in_0) && receive(data_in_1) {
-      if (component_state == "0") {
-        delay_cycle(5, 100MHz);
-        send(data_out_0, 0b11110000);
-        //do we need read(data_in_0)?
-
-        //for composite data types: Group(a: Bit(8), b: Bit(8))
-        send(data_out_0, Group(a=0x11110000, b=0x11110000));
-        send(data_out_0, Union(a=0x11110000));
-        //for composite data types: Group(a: Bit(8), b: Stream(Bit(8)))
-        send(data_out_0->b, 0x11110000);
-        //
-        //
-
-        assign component_state = "1";
-      }
-      elif (component_state == "1") {
-        assign component_state = "2";
-      }
-      elif (component_state == "2") {
-        assign component_state = "1";
-      }
-      ack(data_in_1);
-      ack(data_in_0);
-    };
-
-    event receive(data_in_0) {
-      ack(data_in_0);
-    };
-
-  },
-
-
+impl component_impl2 of component {
+  input => output,
 };
 
-streamlet streamlet_template<i:int, t:type, cd: clockdomain> {
-  d_in: t [i] in `cd,
-  d_out: t out `cd,
-  test: Stream(Bit(8)) in `cd,
+
+streamlet larger_component {
+  input: rgb_stream [2] in,
+  output: rgb_stream [2] out,
 };
 
-impl impl_template2<i:int, cd: clockdomain> of streamlet_template<i, type rgb_stream, cd> {
-  instance test_inst(basic0_1) [i],
+impl impl_larger_component<ts: impl of component> of larger_component {
+  instance inst(ts) [2],
+  for i in (0=1=>2) {
+    input[i] => inst[i].input,
+    inst[i].output => output[i],
+  }
 };
 
-impl impl_template_instance_1(impl_template<3>);
-
-impl impl_template_instance_2(impl_template2<5, 500kHz>);
+impl impl_larger_component0(impl_larger_component<impl component_impl0>);

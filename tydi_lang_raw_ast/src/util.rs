@@ -65,5 +65,10 @@ pub fn rename_id_to_il(name: String) -> String {
     let output = output.replace("$", "IG");
     let output = output.replace("(", "IW");
     let output = output.replace(")", "IM");
+    let output = output.replace(",", "II");
+    let output = output.replace("=", "EQ");
+    let output = output.replace("\"", "");
+
+    let output = output.replace(" ", "");
     return output;
 }

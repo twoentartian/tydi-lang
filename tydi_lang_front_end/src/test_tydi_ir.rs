@@ -27,7 +27,7 @@ pub fn test() {
         match project {
             None => {}
             Some(project) => {
-                println!("{}", project.read().unwrap().pretty_print(0, true));
+                println!("{}", project.read().unwrap().pretty_print(0, false));
             }
         }
         assert!(false);

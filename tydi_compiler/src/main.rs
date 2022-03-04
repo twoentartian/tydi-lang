@@ -105,7 +105,7 @@ fn main() {
         match project_arch {
             Some(project_arch) => {
                 use tydi_lang_raw_ast::util::PrettyPrint;
-                std::fs::write(format!("{}/{}", real_output_path.clone(), "err_arch.txt"), project_arch.read().unwrap().pretty_print(0, false));
+                std::fs::write(format!("{}/{}", real_output_path.clone(), "err_arch.txt"), project_arch.read().unwrap().pretty_print(0, false)).expect("error to write the err_arch.txt");
             }
             None => {}
         }
