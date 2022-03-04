@@ -322,7 +322,11 @@ impl PrettyPrint for Implement {
             None => String::from((*derived_streamlet_var.read().unwrap()).clone()),
             Some(streamlet) => String::from((*streamlet.read().unwrap()).clone()),
         };
-        output.push_str(&format!("{}Implement({})<{}> -> {}{{\n", generate_padding(depth), self.name.clone(), String::from(self.implement_type.clone()), derived_streamlet_representation));
+        let parent_ref = match &self.parent_implement_ref {
+            None => { format!("") }
+            Some(parent_ref) => { format!("==ref==>{}", parent_ref.read().unwrap().get_name()) }
+        };
+        output.push_str(&format!("{}Implement({}{})<{}> -> {}{{\n", generate_padding(depth), self.name.clone(), parent_ref, String::from(self.implement_type.clone()), derived_streamlet_representation));
         //enter scope
         output.push_str(&format!("{}", self.scope.read().unwrap().pretty_print(depth+1, verbose)));
         //enter simulation process
