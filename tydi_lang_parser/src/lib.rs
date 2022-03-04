@@ -464,7 +464,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                 if result.is_err() { return Err(result.err().unwrap()); }
             },
             Rule::ImplementationBodyIfBlock => {
-                let name = format!("if-{}-{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
+                let name = format!("if_{}_{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
                 let mut if_block: IfScope = IfScope::new(name.clone(), Arc::new(RwLock::new(Variable::new_bool(String::from(""), true))));
                 for item in single_stat.clone().into_inner().into_iter() {
                     match item.as_rule() {
@@ -478,7 +478,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                             if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in if block"))); }
                         },
                         Rule::ElifBlock => {
-                            let name = format!("elif-{}-{}", item.clone().as_span().start(), item.clone().as_span().end());
+                            let name = format!("elif_{}_{}", item.clone().as_span().start(), item.clone().as_span().end());
                             let mut elif_block = ElifScope::new(name);
                             let result = parse_elif_block(item.into_inner(), elif_block.get_scope(), &mut elif_block);
                             if result.is_err() { return Err(result.err().unwrap()); }
@@ -487,7 +487,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                             if_block.set_elif(previous_elifs);
                         },
                         Rule::ElseBlock => {
-                            let name = format!("else-{}-{}", item.clone().as_span().start(), item.clone().as_span().end());
+                            let name = format!("else_{}_{}", item.clone().as_span().start(), item.clone().as_span().end());
                             let else_block = ElseScope::new(name);
                             let result = parse_else_block(item.into_inner(), else_block.get_scope().clone());
                             if result.is_err() { return Err(result.err().unwrap()); }
@@ -503,7 +503,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                 }
             },
             Rule::ImplementationBodyForBlock => {
-                let name = format!("for-{}-{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
+                let name = format!("for_{}_{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
                 let temp_var = Arc::new(RwLock::new(Variable::new_bool(String::from(""), true)));
                 let mut for_block: ForScope = ForScope::new(name.clone(), temp_var.clone(), temp_var.clone());
                 for item in single_stat.clone().into_inner().into_iter() {
@@ -937,7 +937,7 @@ fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                             exp = item.as_str().to_string();
                         },
                         Rule::LogicalType => {
-                            let result = get_logical_type(item.clone().into_inner(), format!("{}{}", &*crate::built_in_ids::GENERATED_ID_PREFIX, item.as_str().to_string()),streamlet.get_scope());
+                            let result = get_logical_type(item.clone().into_inner(), format!("{}Type{}_{}", &*crate::built_in_ids::GENERATED_ID_PREFIX, item.as_span().start_pos().pos(), item.as_span().end_pos().pos()),streamlet.get_scope());
                             if result.is_err() { return Err(result.err().unwrap()); }
                             logical_type = result.ok().unwrap();
                         },
@@ -993,7 +993,7 @@ fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                             exp = item.as_str().to_string();
                         },
                         Rule::LogicalType => {
-                            let result = get_logical_type(item.clone().into_inner(), format!("{}{}", &*crate::built_in_ids::GENERATED_ID_PREFIX, item.as_str().to_string()),streamlet.get_scope());
+                            let result = get_logical_type(item.clone().into_inner(), format!("{}Type{}_{}", &*crate::built_in_ids::GENERATED_ID_PREFIX, item.as_span().start_pos().pos(), item.as_span().end_pos().pos()),streamlet.get_scope());
                             if result.is_err() { return Err(result.err().unwrap()); }
                             logical_type = result.ok().unwrap();
                         },
