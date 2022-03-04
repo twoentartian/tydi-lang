@@ -477,7 +477,7 @@ pub fn infer_clone_connections_and_instances(source_scope: Arc<RwLock<Scope>>, d
         for (_, instance) in source_scope.read().unwrap().instances.clone() {
             let mut cloned_instance = (*instance.read().unwrap()).clone();
             let name = cloned_instance.get_name();
-            cloned_instance.set_name(format!("{}@{}", name, if_for_id.clone()));
+            cloned_instance.set_name(format!("{}", name));
             let result = dest_scope_write.with_instance(Arc::new(RwLock::new(cloned_instance)));
             if result.is_err() { return Err(ImplementEvaluationFail(String::from(result.err().unwrap()))); }
         }
