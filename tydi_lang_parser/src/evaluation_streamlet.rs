@@ -50,7 +50,10 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                     evaluation_type::infer_logical_type(port_type.clone(), streamlet_scope.clone(), project.clone())?;
                     match (*port_type.read().unwrap()).clone() {
                         LogicalDataType::DataStreamType(_, _) => { /*correct*/ }
-                        _ => { return Err(StreamletEvaluationFail(format!("the logical type of streamlet port must be a stream"))); }
+                        _ => {
+                            streamlet.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                            return Err(StreamletEvaluationFail(format!("the logical type of streamlet port must be a stream")));
+                        }
                     };
                 }
 
@@ -68,27 +71,39 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                         PortArray::SinglePort => { /*do nothing*/ }
                         PortArray::ArrayPort(array_var) => {
                             let result = evaluation_var::infer_variable(array_var.clone(), streamlet_scope.clone(), project.clone());
-                            if result.is_err() { return Err(result.err().unwrap()); }
+                            if result.is_err() {
+                                streamlet.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                                return Err(result.err().unwrap());
+                            }
 
                             let array_var_read = array_var.read().unwrap();
                             let array_var_value = array_var_read.get_var_value().get_raw_value();
                             match array_var_value {
                                 VariableValue::Int(value) => {
-                                    if value <= 0 { return Err(StreamletEvaluationFail(format!("the length of streamlet port array must be a positive number"))); }
+                                    if value <= 0 {
+                                        streamlet.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                                        return Err(StreamletEvaluationFail(format!("the length of streamlet port array must be a positive number")));
+                                    }
                                     for i in 0..value {
                                         let mut new_port = (*port.read().unwrap()).clone();
                                         new_port.set_name(format!("{}@{}", port_read.get_name(), i.to_string()));
                                         new_port.set_array_type(PortArray::SinglePort);
                                         //let result = streamlet_scope.write().unwrap().new_port(format!("{}@{}", port_read.get_name(), i.to_string()), inferred!(infer_logical_data_type!(), port_type.clone()), port_read.get_direction());
                                         let result = streamlet_scope.write().unwrap().with_port(Arc::new(RwLock::new(new_port)));
-                                        if result.is_err() { return Err(StreamletEvaluationFail(String::from(result.err().unwrap()))); }
+                                        if result.is_err() {
+                                            streamlet.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                                            return Err(StreamletEvaluationFail(String::from(result.err().unwrap())));
+                                        }
                                     }
                                     //remove the array port in scope
                                     {
                                         streamlet_scope.write().unwrap().ports.remove(&port_read.get_name()).unwrap();
                                     }
                                 }
-                                _ => return Err(StreamletEvaluationFail(format!("the length of a port array must be an integer")))
+                                _ => {
+                                    streamlet.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                                    return Err(StreamletEvaluationFail(format!("the length of a port array must be an integer")));
+                                }
                             }
                         }
                     }
