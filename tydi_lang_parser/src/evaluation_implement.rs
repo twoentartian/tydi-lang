@@ -168,19 +168,28 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
             match (*streamlet_var_type.read().unwrap()).clone() {
                 DataType::ProxyStreamlet(streamlet_name, template_exps) => {
                     let result = evaluation_streamlet::resolve_and_infer_streamlet(streamlet_name.clone(), None, template_exps.clone(), implement_scope.clone(), project.clone());
-                    if result.is_err() { return Err(result.err().unwrap()); }
+                    if result.is_err() {
+                        implement.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                        return Err(result.err().unwrap());
+                    }
                     {
                         implement.write().unwrap().set_derived_streamlet(Some(result.ok().unwrap().clone()));
                     }
                 }
                 DataType::ExternalProxyStreamlet(package_name, streamlet_name, template_exps) => {
                     let result = evaluation_streamlet::resolve_and_infer_streamlet(streamlet_name.clone(), Some(package_name.clone()), template_exps.clone(), implement_scope.clone(), project.clone());
-                    if result.is_err() { return Err(result.err().unwrap()); }
+                    if result.is_err() {
+                        implement.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                        return Err(result.err().unwrap());
+                    }
                     {
                         implement.write().unwrap().set_derived_streamlet(Some(result.ok().unwrap().clone()));
                     }
                 }
-                _ => { return Err(ImplementEvaluationFail(format!("implement must derive from a streamlet"))); }
+                _ => {
+                    implement.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                    return Err(ImplementEvaluationFail(format!("implement must derive from a streamlet")));
+                }
             }
 
             //infer instances
