@@ -73,6 +73,8 @@ pub struct Implement {
     evaluated_state: EvaluatedState,
     simulation_process: Option<String>,
     docu: Option<String>,
+
+    parent_implement_ref: Option<Arc<RwLock<Implement>>>,
 }
 
 impl DeepClone for Implement {
@@ -89,6 +91,8 @@ impl DeepClone for Implement {
             simulation_process: self.simulation_process.deep_clone(),
 
             docu: self.docu.deep_clone(),
+
+            parent_implement_ref: self.parent_implement_ref.clone(),//we use shallow clone here because parent implement should not change.
         };
         {
             output.scope.write().unwrap().set_self_ref(output.scope.clone());
@@ -225,13 +229,36 @@ impl Implement {
     generate_access!(derived_streamlet_var, Arc<RwLock<Variable>>, get_derived_streamlet_var, set_derived_streamlet_var);
     generate_access!(derived_streamlet, Option<Arc<RwLock<Streamlet>>>, get_derived_streamlet, set_derived_streamlet);
     generate_access!(simulation_process, Option<String>, get_simulation_process, set_simulation_process);
+    generate_access!(parent_implement_ref, Option<Arc<RwLock<Implement>>>, get_parent_ref, set_parent_ref);
+
+    //find the most elder parent implement
+    fn get_parent_implement(&self) -> Option<Arc<RwLock<Implement>>> {
+        return match self.parent_implement_ref.clone() {
+            None => { None }
+            Some(parent_ref) => {
+                if parent_ref.read().unwrap().parent_implement_ref.is_none() {
+                    Some(parent_ref.clone())
+                } else {
+                    parent_ref.read().unwrap().get_parent_implement()
+                }
+            }
+        }
+    }
 
     pub fn get_instance_impl_dependency(&self) -> Vec<String> {
         let mut output = vec![];
         let instances = self.scope.read().unwrap().instances.clone();
         for (_, instance) in instances {
             let instance_impl = instance.read().unwrap().get_implement_type().get_raw_value();
-            output.push(instance_impl.read().unwrap().get_name());
+            let has_parent_ref = instance_impl.read().unwrap().get_parent_implement();
+            match has_parent_ref {
+                None => {
+                    output.push(instance_impl.read().unwrap().get_name());
+                }
+                Some(has_parent_ref) => {
+                    output.push(has_parent_ref.read().unwrap().get_name());
+                }
+            }
         }
         return output;
     }
@@ -258,6 +285,7 @@ impl Implement {
             simulation_process: None,
 
             docu: None,
+            parent_implement_ref: None,
         }
     }
 
@@ -298,7 +326,7 @@ impl PrettyPrint for Implement {
         //enter scope
         output.push_str(&format!("{}", self.scope.read().unwrap().pretty_print(depth+1, verbose)));
         //enter simulation process
-        output.push_str(&format!("simulation_process{{{:?}}}", self.simulation_process.clone()));
+        output.push_str(&format!("{}simulation_process{{{:?}}}\n", generate_padding(depth+1), self.simulation_process.clone()));
         //leave Implement
         output.push_str(&format!("{}}}", generate_padding(depth)));
 

@@ -316,8 +316,16 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
                         //deep clone
                         let mut cloned_implement = arg_implement.read().unwrap().deep_clone();
                         cloned_implement.set_name(linking_var_name.clone());
-                        let result = cloned_implement_scope.write().unwrap().with_implement(Arc::new(RwLock::new(cloned_implement)));
-                        if result.is_err() { return Err(ImplementEvaluationFail(String::from(result.err().unwrap()))); }
+                        {
+                            let result = cloned_implement_scope.write().unwrap().with_implement(Arc::new(RwLock::new(cloned_implement)));
+                            if result.is_err() { return Err(ImplementEvaluationFail(String::from(result.err().unwrap()))); }
+                        }
+
+                        //change the parent reference of the cloned implement
+                        {
+                            let cloned_implement = cloned_implement_scope.read().unwrap().resolve_implement_in_current_scope(linking_var_name.clone()).unwrap();
+                            cloned_implement.write().unwrap().set_parent_ref(Some(arg_implement.clone()));
+                        }
                     }
                     DataType::ExternalProxyImplementOfStreamlet(package_name, streamlet_name, streamlet_template_exps) => {
                         let result = resolve_and_infer_streamlet(streamlet_name, Some(package_name), streamlet_template_exps, implement_scope.clone(), project.clone());
@@ -347,8 +355,16 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
                         //deep clone
                         let mut cloned_implement = arg_implement.read().unwrap().deep_clone();
                         cloned_implement.set_name(linking_var_name.clone());
-                        let result = cloned_implement_scope.write().unwrap().with_implement(Arc::new(RwLock::new(cloned_implement)));
-                        if result.is_err() { return Err(ImplementEvaluationFail(String::from(result.err().unwrap()))); }
+                        {
+                            let result = cloned_implement_scope.write().unwrap().with_implement(Arc::new(RwLock::new(cloned_implement)));
+                            if result.is_err() { return Err(ImplementEvaluationFail(String::from(result.err().unwrap()))); }
+                        }
+
+                        //change the parent reference of the cloned implement
+                        {
+                            let cloned_implement = cloned_implement_scope.read().unwrap().resolve_implement_in_current_scope(linking_var_name.clone()).unwrap();
+                            cloned_implement.write().unwrap().set_parent_ref(Some(arg_implement.clone()));
+                        }
                     }
                     _ => { unreachable!() }
                 };
