@@ -19,10 +19,10 @@ type Group rgb {
 
 #streamlet documentation#
 streamlet rgb_bypass {
-  input: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) in,
-  output: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) out,
-  input2: Stream(rgb) in,
-  output2: Stream(rgb) out,
+  input: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) in `100kHz,
+  output: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) out `100kHz,
+  input2: Stream(rgb) in `10MHz,
+  output2: Stream(rgb) out `10MHz,
 };
 
 #implement documentation#
