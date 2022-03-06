@@ -195,24 +195,40 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
             //infer instances
             let instances_in_implement = implement_scope.read().unwrap().instances.clone();
             for (_, instance) in instances_in_implement {
-                infer_instance(instance.clone(), implement_scope.clone(), project.clone())?;
+                let result = infer_instance(instance.clone(), implement_scope.clone(), project.clone());
+                if result.is_err() {
+                    implement.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                    return Err(result.err().unwrap());
+                }
             }
 
             //infer connection
             for (_, connection) in implement_scope.read().unwrap().connections.clone() {
-                infer_connection(connection.clone(), implement.clone(), implement_scope.clone(), project.clone())?;
+                let result = infer_connection(connection.clone(), implement.clone(), implement_scope.clone(), project.clone());
+                if result.is_err() {
+                    implement.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                    return Err(result.err().unwrap());
+                }
             }
 
             //infer if block
             let if_blocks = implement_scope.read().unwrap().if_blocks.clone();
             for (_, if_block) in if_blocks {
-                infer_if_block(if_block.clone(), implement.clone(), implement_scope.clone(), project.clone())?;
+                let result = infer_if_block(if_block.clone(), implement.clone(), implement_scope.clone(), project.clone());
+                if result.is_err() {
+                    implement.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                    return Err(result.err().unwrap());
+                }
             }
 
             //infer for block
             let for_blocks = implement_scope.read().unwrap().for_blocks.clone();
             for (_, for_block) in for_blocks {
-                infer_for_block(for_block.clone(), implement.clone(), implement_scope.clone(), project.clone())?;
+                let result = infer_for_block(for_block.clone(), implement.clone(), implement_scope.clone(), project.clone());
+                if result.is_err() {
+                    implement.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                    return Err(result.err().unwrap());
+                }
             }
 
             {

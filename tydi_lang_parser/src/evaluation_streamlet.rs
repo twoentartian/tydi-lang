@@ -47,7 +47,11 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                 //infer port type
                 {
                     let port_type = port_read.get_type().get_raw_value();
-                    evaluation_type::infer_logical_type(port_type.clone(), streamlet_scope.clone(), project.clone())?;
+                    let result = evaluation_type::infer_logical_type(port_type.clone(), streamlet_scope.clone(), project.clone());
+                    if result.is_err() {
+                        streamlet.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                        return Err(result.err().unwrap());
+                    }
                     match (*port_type.read().unwrap()).clone() {
                         LogicalDataType::DataStreamType(_, _) => { /*correct*/ }
                         _ => {
@@ -60,7 +64,11 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                 //infer clockdomain
                 {
                     let cd = port_read.get_clock_domain();
-                    evaluation_var::infer_variable(cd.clone(), streamlet_scope.clone(), project.clone())?;
+                    let result = evaluation_var::infer_variable(cd.clone(), streamlet_scope.clone(), project.clone());
+                    if result.is_err() {
+                        streamlet.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                        return Err(result.err().unwrap());
+                    }
                 }
 
                 //expand port array
