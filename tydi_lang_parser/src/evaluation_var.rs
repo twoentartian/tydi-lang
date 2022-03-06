@@ -104,7 +104,7 @@ fn eval_explog(explog: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
     }
 
     //compute
-    let output_val = (base_raw_value as f32).log(log_raw_value);
+    let output_val = (log_raw_value as f32).log(base_raw_value);
     return Ok(Variable::new_float(String::from(""), output_val));
 }
 
