@@ -230,6 +230,59 @@ fn parse_start(start_elements: Pairs<Rule>, output_package: &mut project_arch::P
     return Ok(());
 }
 
+fn parse_function(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+    let mut function_name = String::from("");
+    let mut exps: Vec<Arc<RwLock<Variable>>> = vec![];
+    let mut start_pos = 0;
+    let mut end_pos = 0;
+    for item in statement.into_iter() {
+        match item.as_rule() {
+            Rule::ID => {
+                function_name = item.as_str().to_string();
+            }
+            Rule::Exp => {
+                exps.push(Arc::new(RwLock::new(Variable::new(String::from(""), DataType::UnknownType, item.as_str().to_string()))));
+                start_pos = item.as_span().start_pos().pos();
+                end_pos = item.as_span().end_pos().pos();
+            }
+            _ => { unreachable!() },
+        }
+    }
+
+    //assert function
+    if function_name == "assert" {
+        if exps.len() == 1 {
+            let exp = exps[0].clone();
+            let mut assert = Assert::new(format!("assert_{}_{}", start_pos, end_pos));
+            assert.set_var(exp.clone());
+            let result = scope.write().unwrap().with_assert(Arc::new(RwLock::new(assert)));
+            if result.is_err() {
+                return Err(ParserErrorCode::AnalysisCodeStructureFail(String::from(result.err().unwrap())));
+            }
+        }
+        else if exps.len() == 2 {
+            let exp = exps[0].clone();
+            let msg = exps[1].clone();
+            let mut assert = Assert::new(format!("assert_{}_{}", start_pos, end_pos));
+            assert.set_var(exp.clone());
+            assert.set_msg(Some(msg.clone()));
+
+            let result = scope.write().unwrap().with_assert(Arc::new(RwLock::new(assert)));
+            if result.is_err() {
+                return Err(ParserErrorCode::AnalysisCodeStructureFail(String::from(result.err().unwrap())));
+            }
+        }
+        else {
+            return Err(ParserErrorCode::AnalysisCodeStructureFail(format!("assert function only accepts one or two arguments")));
+        }
+    }
+    else {
+        return Err(ParserErrorCode::AnalysisCodeStructureFail(format!("unknown function: {}", function_name.clone())));
+    }
+
+    return Ok(());
+}
+
 fn parse_statement(statement: Pairs<Rule>, output_package: &mut project_arch::Package) -> Result<(), ParserErrorCode> {
     for element in statement.into_iter() {
         match element.as_rule() {
@@ -250,6 +303,9 @@ fn parse_statement(statement: Pairs<Rule>, output_package: &mut project_arch::Pa
             },
             Rule::StatementDeclareImplInst => {
                 parse_global_instance(element.into_inner(), output_package.scope.clone())?;
+            }
+            Rule::Function => {
+                parse_function(element.into_inner(), output_package.scope.clone())?;
             }
             _ => { unreachable!() },
         }

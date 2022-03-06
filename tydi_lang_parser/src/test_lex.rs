@@ -984,10 +984,43 @@ streamlet sl1 {
     }
 
     #[test]
+    fn parse_assert_values() {
+        {
+            let code = "package test;
+
+import external_package;
+
+const flag = true;
+const num_instance = 8;
+const num_stream = 2;
+
+const ck = 10MHz;
+
+assert(ck == 10MHz);
+";
+            let mut parse_result = TydiParser::parse(Rule::Start, code).expect("unsuccessful parse");
+            println!("{}", parse_result);
+            let parse_result = parse_result.next().unwrap();
+            let mut pass: bool = false;
+
+            match parse_result.as_rule() {
+                Rule::Start => {
+                    let value: &str = parse_result.as_str();
+                    if value == code {
+                        pass = true;
+                    }
+                }
+                _ => unreachable!(),
+            }
+            assert!(pass);
+        }
+    }
+
+    #[test]
     fn parse_simulation_process_block() {
         {
             let code = "
-ackage tydi_ir;
+package tydi_ir;
 
 const cd = 100MHz;
 

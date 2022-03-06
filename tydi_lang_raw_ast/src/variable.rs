@@ -10,7 +10,7 @@ use crate::{generate_get, generate_set, generate_access};
 pub use crate::error::ErrorCode;
 use crate::inferable::{Inferable, NewInferable};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, PartialOrd)]
 pub enum ClockDomainValue {
     Unknown,
     Default,

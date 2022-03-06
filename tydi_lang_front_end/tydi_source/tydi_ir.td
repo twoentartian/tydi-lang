@@ -1,12 +1,22 @@
 package tydi_ir; //package name must be the same with the file name
 
-type bit8_stream = Stream(Bit(8), d = 5, t = 2.5);
+const two = 1 << 1;
+const four = two << 1;
+const eight = two * four;
+const seven = eight - 1;
+const three_point_five = (seven+0.0) / 2; // float
+const test_four = round(three_point_five);
+const test_four2 = ceil(three_point_five);
+const test_three = floor(three_point_five);
 
-const eight = 8;
+const test_log_2_f = log2(2^3);
+const test_log_2 = round(test_log_2_f);
+
+assert(round(test_log_2_f) == 2, "asd");
 
 type Group rgb {
   r: Bit(eight),
-  g: Bit(eight),
+  g: Bit(test_four * test_four2 * test_three * test_log_2),
   b: Bit(eight),
 };
 
@@ -24,23 +34,3 @@ impl component_impl0 of component {
 impl component_impl1 of component {
   input => output,
 };
-
-impl component_impl2 of component {
-  input => output,
-};
-
-
-streamlet larger_component {
-  input: rgb_stream [2] in,
-  output: rgb_stream [2] out,
-};
-
-impl impl_larger_component<ts: impl of component> of larger_component {
-  instance inst(ts) [2],
-  for i in (0=1=>2) {
-    input[i] => inst[i].input,
-    inst[i].output => output[i],
-  }
-};
-
-impl impl_larger_component0(impl_larger_component<impl component_impl0>);

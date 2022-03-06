@@ -12,6 +12,12 @@ const test_three = floor(three_point_five);
 const test_log_2_f = log2(2^3);
 const test_log_2 = round(test_log_2_f);
 
+const error_msgs = {"msg0","msg1"};
+assert(round(test_log_2_f) == 3, error_msgs[0]);
+assert(round(test_four) == 4);
+assert(round(test_four2) == 4);
+assert(round(test_three) == 3, error_msgs[0]);
+
 type Group rgb {
   r: Bit(eight),
   g: Bit(test_four * test_four2 * test_three * test_log_2),

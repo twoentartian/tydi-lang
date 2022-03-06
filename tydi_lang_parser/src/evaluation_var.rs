@@ -282,6 +282,21 @@ fn eval_op_equal(lhs:Variable, rhs: Variable, lhs_type: DataType, rhs_type: Data
         }
         return Ok(lhs == rhs);
     }
+    else if lhs_type == DataType::ClockDomainType && rhs_type == DataType::ClockDomainType {
+        let lhs_value = lhs.get_var_value().get_raw_value();
+        let rhs_value = rhs.get_var_value().get_raw_value();
+        let lhs;
+        let rhs;
+        match lhs_value {
+            VariableValue::ClockDomain(i0) => { lhs = i0; }
+            _ => unreachable!()
+        }
+        match rhs_value {
+            VariableValue::ClockDomain(i1) => { rhs = i1; }
+            _ => unreachable!()
+        }
+        return Ok(lhs == rhs);
+    }
     else {
         return Err(ExpressionEvaluationFail(format!("== / != operator does not support {} + {}", String::from(lhs_type), String::from(rhs_type))));
     }

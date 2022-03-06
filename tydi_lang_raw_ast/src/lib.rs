@@ -20,6 +20,7 @@ pub mod deep_clone;
 pub mod evaluated_flag;
 
 pub mod tydi_il;
+pub mod assert;
 
 mod test_print_project;
 

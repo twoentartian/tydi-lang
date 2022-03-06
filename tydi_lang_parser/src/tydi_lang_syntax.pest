@@ -233,6 +233,9 @@ ArgExp = _{ (ArgExpTypeExp | ArgExpExternalTypeExp | ArgExpImplementExp | ArgExp
 ImplInst = _{ "impl" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" }
 ///////////////////////  end of streamlet.sdf3  ///////////////////////
 
+/////////////////////// start of UTIL BLOCK  ///////////////////////
+Function = { ID ~ "(" ~ (Exp ~ ("," ~ Exp )*)? ~ ")" }
+/////////////////////// end of UTIL BLOCK  ///////////////////////
 
 ///////////////////////  start of statement.sdf3  ///////////////////////
 StatementTypeAssign = { DOCUMENT? ~ "type" ~ ID ~ "=" ~ LogicalType ~ ";" }
@@ -241,10 +244,11 @@ StatementDeclareStreamLet = { StreamLet ~ ";" }
 StatementDeclareImplementation = { Implementation ~ ";" }
 StatementDeclareImplInst = { ImplInst ~ ";" }
 StatementDeclareLogicalDataType = { "type" ~ LogicalType ~ ";" }
+StatementFunctions = _{ Function ~ ";" }
 /// Obsolete
 /// StatementAssertEqualLogicalType = { "assert" ~ "type" ~ "(" ~  LogicalType ~ "==" ~ LogicalType ~ ")" ~ ";" }
 Statement = _{ (StatementTypeAssign | StatementConstAssign | StatementDeclareStreamLet | StatementDeclareImplementation |
-                StatementDeclareImplInst | StatementDeclareLogicalDataType /*| StatementAssertEqualLogicalType*/) }
+                StatementDeclareImplInst | StatementDeclareLogicalDataType | StatementFunctions /*| StatementAssertEqualLogicalType*/) }
 ///////////////////////  end of statement.sdf3  ///////////////////////
 
 

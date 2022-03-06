@@ -1,5 +1,6 @@
 pub use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
+
 use deep_clone::DeepClone;
 
 pub use crate::logical_data_type::*;
@@ -14,6 +15,7 @@ pub use crate::type_alias::TypeAlias;
 pub use crate::instances::{Instance, InstanceArray};
 pub use crate::if_for::{IfScope, ForScope, ElifScope, ElseScope};
 pub use crate::connection::{Connection, PortOwner};
+pub use crate::assert::Assert;
 
 pub use crate::inferable::*;
 pub use crate::error::ErrorCode;
@@ -153,6 +155,8 @@ pub struct Scope {
 
     pub if_blocks: HashMap<String, Arc<RwLock<IfScope>>>,
     pub for_blocks: HashMap<String, Arc<RwLock<ForScope>>>,
+
+    pub asserts: HashMap<String, Arc<RwLock<Assert>>>,
 }
 
 impl DeepClone for Scope {
@@ -174,6 +178,8 @@ impl DeepClone for Scope {
 
             if_blocks: self.if_blocks.deep_clone(),
             for_blocks: self.for_blocks.deep_clone(),
+
+            asserts: self.asserts.deep_clone(),
         };
 
         output
@@ -198,6 +204,7 @@ impl Scope {
             connections: HashMap::new(),
             if_blocks: HashMap::new(),
             for_blocks: HashMap::new(),
+            asserts: HashMap::new(),
         }
     }
 
@@ -301,6 +308,14 @@ impl PrettyPrint for Scope {
             output.push_str(&format!("{}ForBlocks{{\n", generate_padding(depth+1)));
             for (_, inst) in &self.for_blocks {
                 output.push_str(&format!("{}\n", inst.read().unwrap().pretty_print(depth+2, verbose)) );
+            }
+            output.push_str(&format!("{}}}\n", generate_padding(depth+1)));
+        }
+        if !self.asserts.is_empty() || verbose {
+            //enter scope_relationships
+            output.push_str(&format!("{}Asserts{{\n", generate_padding(depth+1)));
+            for (_, assert) in &self.asserts {
+                output.push_str(&format!("{}\n", assert.read().unwrap().pretty_print(depth+2, verbose)) );
             }
             output.push_str(&format!("{}}}\n", generate_padding(depth+1)));
         }
