@@ -15,3 +15,7 @@ cd ..
 cd 4_Abstract_Implement || exit
 sh ./compile.sh
 cd ..
+
+cd 5_Math || exit
+sh ./compile.sh
+cd ..
