@@ -1,11 +1,12 @@
 use std::sync::{Arc, mpsc, RwLock};
 use threadpool::ThreadPool;
 use evaluation_var::infer_variable;
+use tydi_lang_raw_ast::assert::Assert;
 
 use crate::{evaluation_implement, evaluation_streamlet, ParserErrorCode};
 use tydi_lang_raw_ast::implement::ImplementType;
 use tydi_lang_raw_ast::project_arch::Project;
-use tydi_lang_raw_ast::scope::{StreamletType, VariableValue};
+use tydi_lang_raw_ast::scope::{Scope, StreamletType, VariableValue};
 
 pub fn evaluation_project_mt(project: Arc<RwLock<Project>>, flag_streamlet: bool, flag_implement: bool, worker: Option<usize>) -> Result<(), Vec<ParserErrorCode>> {
     let packages = project.clone().read().unwrap().packages.clone();
@@ -103,33 +104,40 @@ pub fn evaluation_project_mt(project: Arc<RwLock<Project>>, flag_streamlet: bool
         let package_scope = package.read().unwrap().get_scope().clone();
         let package_asserts = package_scope.read().unwrap().asserts.clone();
         for (_, assert) in package_asserts.clone() {
-            let assert_var = assert.read().unwrap().get_var();
-            let result = infer_variable(assert_var.clone(), package_scope.clone(), project.clone());
+            let result = verify_assert(assert.clone(), package_scope.clone(), project.clone());
             if result.is_err() { return Err(vec![result.err().unwrap()]); }
-            let assert_var_read = assert_var.read().unwrap();
-            match assert_var_read.get_var_value().get_raw_value() {
-                VariableValue::Bool(v) => {
-                    if !v {
-                        let msg = assert.read().unwrap().get_msg();
-                        match msg {
-                            None => {
-                                return Err(vec![ParserErrorCode::AnalysisCodeStructureFail(format!("assert fails: {}", assert.read().unwrap().get_name()))]);
-                            }
-                            Some(msg) => {
-                                let result = infer_variable(msg.clone(), package_scope.clone(), project.clone());
-                                if result.is_err() {
-                                    return Err(vec![ParserErrorCode::AnalysisCodeStructureFail(format!("assert fails: {} and its error message also fails to infer", assert.read().unwrap().get_name()))]);
-                                }
-                                else {
-                                    return Err(vec![ParserErrorCode::AnalysisCodeStructureFail(format!("assert fails: {} - {}", assert.read().unwrap().get_name(), String::from((*msg.read().unwrap()).clone())))]);
-                                }
-                            }
+        }
+    }
+
+    return Ok(());
+}
+
+pub fn verify_assert(assert: Arc<RwLock<Assert>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<(),ParserErrorCode> {
+    let assert_var = assert.read().unwrap().get_var();
+    let result = infer_variable(assert_var.clone(), scope.clone(), project.clone());
+    if result.is_err() { return Err(result.err().unwrap()); }
+    let assert_var_read = assert_var.read().unwrap();
+    match assert_var_read.get_var_value().get_raw_value() {
+        VariableValue::Bool(v) => {
+            if !v {
+                let msg = assert.read().unwrap().get_msg();
+                match msg {
+                    None => {
+                        return Err(ParserErrorCode::AnalysisCodeStructureFail(format!("assert fails: {}", assert.read().unwrap().get_name())));
+                    }
+                    Some(msg) => {
+                        let result = infer_variable(msg.clone(), scope.clone(), project.clone());
+                        if result.is_err() {
+                            return Err(ParserErrorCode::AnalysisCodeStructureFail(format!("assert fails: {} and its error message also fails to infer", assert.read().unwrap().get_name())));
+                        }
+                        else {
+                            return Err(ParserErrorCode::AnalysisCodeStructureFail(format!("assert fails: {} - {}", assert.read().unwrap().get_name(), String::from((*msg.read().unwrap()).clone()))));
                         }
                     }
                 }
-                _ => { return Err(vec![ParserErrorCode::AnalysisCodeStructureFail(format!("assert function only accepts bool expression"))]); }
             }
         }
+        _ => { return Err(ParserErrorCode::AnalysisCodeStructureFail(format!("assert function only accepts bool expression"))); }
     }
 
     return Ok(());

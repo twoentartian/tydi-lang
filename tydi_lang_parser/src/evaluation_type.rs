@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use evaluation::verify_assert;
 use ParserErrorCode::TypeEvaluationFail;
 use tydi_lang_raw_ast::data_type::DataType;
 
@@ -53,6 +54,11 @@ pub fn infer_logical_type(logical_type: Arc<RwLock<LogicalDataType>>, scope: Arc
                 let result = infer_type_alias(single_type.clone(), group_type_scope.clone(), project.clone());
                 if result.is_err() { return Err(result.err().unwrap()); }
             }
+
+            //infer assert
+            for (_, assert) in group_type_scope.read().unwrap().asserts.clone() {
+                verify_assert(assert.clone(), group_type_scope.clone(), project.clone())?;
+            }
         }
         LogicalDataType::DataUnionType(_, union_type) => {
             let union_type_clone = (*union_type.read().unwrap()).clone();
@@ -60,6 +66,11 @@ pub fn infer_logical_type(logical_type: Arc<RwLock<LogicalDataType>>, scope: Arc
             for (_, single_type) in union_type_scope.read().unwrap().types.clone() {
                 let result = infer_type_alias(single_type.clone(), union_type_scope.clone(), project.clone());
                 if result.is_err() { return Err(result.err().unwrap()); }
+            }
+
+            //infer assert
+            for (_, assert) in union_type_scope.read().unwrap().asserts.clone() {
+                verify_assert(assert.clone(), union_type_scope.clone(), project.clone())?;
             }
         }
         LogicalDataType::DataStreamType(_, stream_type) => {

@@ -134,7 +134,8 @@ LogicalType = { ( LogicalExternalType | LogicalNullType | LogicalBitType | Logic
 
 SubItemItem = { ID ~ ":" ~ LogicalType ~ "," }
 SubItemDeclareConst = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
-SubItem = _{ (SubItemItem | SubItemDeclareConst) }
+SubItemFunction = _{ Function ~ "," }
+SubItem = _{ (SubItemItem | SubItemDeclareConst | SubItemFunction) }
 ///////////////////////  end of logical_type.sdf3  ///////////////////////
 
 
@@ -150,7 +151,8 @@ StreamLetArgs = _{ "<" ~ Arg ~ ("," ~ Arg)* ~ ">" }
 StreamLetBodyStreamLetPort = { DOCUMENT? ~ ID ~ ":" ~ LogicalType ~ Direction ~ ("`" ~ Exp)? ~ "," }
 StreamLetBodyStreamLetPortArray = { DOCUMENT? ~ ID ~ ":" ~ LogicalType ~ "[" ~ Exp ~ "]" ~ Direction ~ ("`" ~ Exp)? ~ "," }
 StreamLetBodyDeclareConstInStreamlet = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
-StreamLetBody = _{ (StreamLetBodyStreamLetPort | StreamLetBodyStreamLetPortArray | StreamLetBodyDeclareConstInStreamlet)}
+StreamLetBodyFunction = _{ Function ~ "," }
+StreamLetBody = _{ (StreamLetBodyStreamLetPort | StreamLetBodyStreamLetPortArray | StreamLetBodyDeclareConstInStreamlet | StreamLetBodyFunction)}
 DirectionDirIn = { "in" }
 DirectionDirOut = { "out" }
 Direction = { (DirectionDirIn | DirectionDirOut) }
@@ -175,6 +177,7 @@ ImplementationBodyDeclareNet = { DOCUMENT? ~ LogicalTypeSlice ~ "=>" ~ LogicalTy
 ImplementationBodyDeclareDelayedNet = { DOCUMENT? ~ LogicalTypeSlice ~ "=" ~ Exp ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
 ImplementationBodyDeclareConstInImpl = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
 ImplementationBodyDeclareProcess = { "process" ~ "{" ~ Simulation_Block ~ "}" ~ "," }
+ImplementationBodyFunction = _{ Function ~ "," }
 ImplementationBodyIfBlock = {
 "if" ~ "(" ~ Exp ~ ")" ~ "{" ~
   ImplementationBody* ~
@@ -199,7 +202,7 @@ ImplementationBodyForBlock = {
 }
 ImplementationBody = { (ImplementationBodyDeclareInstance | ImplementationBodyDeclareInstanceArray |ImplementationBodyDeclareConstInImpl |
                         ImplementationBodyIfBlock | ImplementationBodyForBlock | ImplementationBodyDeclareProcess |
-                        ImplementationBodyDeclareNet | ImplementationBodyDeclareDelayedNet)}
+                        ImplementationBodyDeclareNet | ImplementationBodyDeclareDelayedNet | ImplementationBodyFunction)}
 
 NetName = { Exp }
 // LogicalTypeSliceLogicalTypeSlice = { ID }

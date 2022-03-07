@@ -1,36 +1,43 @@
 package tydi_ir; //package name must be the same with the file name
 
-const two = 1 << 1;
-const four = two << 1;
-const eight = two * four;
-const seven = eight - 1;
-const three_point_five = (seven+0.0) / 2; // float
-const test_four = round(three_point_five);
-const test_four2 = ceil(three_point_five);
-const test_three = floor(three_point_five);
-
-const test_log_2_f = log2(2^3);
-const test_log_2 = round(test_log_2_f);
-
-assert(round(test_log_2_f) == 2, "asd");
+const x = 4;
 
 type Group rgb {
-  r: Bit(eight),
-  g: Bit(test_four * test_four2 * test_three * test_log_2),
-  b: Bit(eight),
+  const x = 8, //shadowing
+
+  assert(x == 8),
+
+  r: Bit(x),
+  g: Bit(x),
+  b: Bit(x),
 };
 
-type rgb_stream = Stream(rgb);
+assert(type rgb.x == 8);
+assert(x == 4);
 
-streamlet component {
-  input: rgb_stream in,
-  output: rgb_stream out,
+streamlet component<data:type> {
+  const x = type data.x, //deliver the x to the outer scope
+
+  assert(x == 8),
+
+  input: Stream(data) in,
+  output: Stream(data) out,
 };
 
-impl component_impl0 of component {
+assert(streamlet component<type rgb>.x == 8);
+
+impl component_impl<data:type> of component<type data> {
+  const x = streamlet component<type data>.x, //deliver the x to the outer scope
+  assert(x == 8),
+
+  if (false) {
+    assert(x == 8),
+  }
+  else {
+    assert(x == 7),
+  }
+
   input => output,
 };
 
-impl component_impl1 of component {
-  input => output,
-};
+impl component_impl0(component_impl<type rgb>);

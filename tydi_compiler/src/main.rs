@@ -93,7 +93,7 @@ fn main() {
     //ready for compiling
     const VERSION: &'static str = env!("CARGO_PKG_VERSION");
     println!("Tydi compiler version: {}", VERSION);
-    println!("executable path: {:?}", std::env::current_dir());
+    println!("env root path: {:?}", std::env::current_dir());
     println!("project name: {}", real_project_name.clone());
     println!("project output path: {}", real_output_path.clone());
     println!("src files: {:?}", src_file_path.clone());

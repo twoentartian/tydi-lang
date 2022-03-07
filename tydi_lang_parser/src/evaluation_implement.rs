@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use evaluation::verify_assert;
 use evaluation_streamlet::resolve_and_infer_streamlet;
 use evaluation_var::infer_variable;
 use tydi_lang_raw_ast::data_type::DataType;
@@ -229,6 +230,11 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
                     implement.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
                     return Err(result.err().unwrap());
                 }
+            }
+
+            //infer asserts
+            for (_, assert) in implement_scope.read().unwrap().asserts.clone() {
+                verify_assert(assert.clone(), implement_scope.clone(), project.clone())?;
             }
 
             {
@@ -496,6 +502,14 @@ pub fn infer_clone_connections_and_instances(source_scope: Arc<RwLock<Scope>>, d
             infer_if_block(if_block.clone(), implement.clone(), scope.clone(), project.clone())?;
         }
     }
+
+    //assert
+    {
+        for (_, assert) in source_scope.read().unwrap().asserts.clone() {
+            verify_assert(assert.clone(), source_scope.clone(), project.clone())?;
+        }
+    }
+
     //clone
     {
         let mut dest_scope_write = dest_scope.write().unwrap();

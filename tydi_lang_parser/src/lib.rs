@@ -642,6 +642,9 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                     if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
                 }
             },
+            Rule::Function => {
+                parse_function(single_stat.into_inner(), scope.clone())?;
+            },
             _ => { unreachable!() },
         }
     }
@@ -1097,9 +1100,11 @@ fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                 }
             },
             Rule::StreamLetBodyDeclareConstInStreamlet => {
-                let result = parse_const_assign(element.into_inner(), streamlet.get_scope());
-                if result.is_err() { return result; }
+                parse_const_assign(element.into_inner(), streamlet.get_scope())?;
             },
+            Rule::Function => {
+                parse_function(element.into_inner(), streamlet.get_scope())?;
+            }
             _ => { unreachable!() },
         }
     }
@@ -1432,11 +1437,15 @@ fn get_logical_group(items: Pairs<Rule>) -> Result<LogicalGroup, ParserErrorCode
                 group_type.set_name(item.as_str().to_string().clone());
             },
             Rule::SubItemItem => {
-                let result =  parse_type_assign(item.into_inner(), group_type.get_scope());
+                let result = parse_type_assign(item.into_inner(), group_type.get_scope());
                 if result.is_err() { return Err(result.err().unwrap()); }
             },
             Rule::SubItemDeclareConst => {
-                let result =  parse_const_assign(item.into_inner(), group_type.get_scope());
+                let result = parse_const_assign(item.into_inner(), group_type.get_scope());
+                if result.is_err() { return Err(result.err().unwrap()); }
+            },
+            Rule::Function => {
+                let result = parse_function(item.into_inner(), group_type.get_scope());
                 if result.is_err() { return Err(result.err().unwrap()); }
             },
             _ => { unreachable!() },
@@ -1458,6 +1467,10 @@ fn get_logical_union(items: Pairs<Rule>) -> Result<LogicalUnion, ParserErrorCode
             },
             Rule::SubItemDeclareConst => {
                 let result =  parse_const_assign(item.into_inner(), union_type.get_scope());
+                if result.is_err() { return Err(result.err().unwrap()); }
+            },
+            Rule::Function => {
+                let result = parse_function(item.into_inner(), union_type.get_scope());
                 if result.is_err() { return Err(result.err().unwrap()); }
             },
             _ => { unreachable!() },

@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use evaluation::verify_assert;
 use evaluation_var::infer_variable;
 use ParserErrorCode::StreamletEvaluationFail;
 use tydi_lang_raw_ast::data_type::DataType;
@@ -116,6 +117,11 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                         }
                     }
                 }
+            }
+
+            //infer asserts
+            for (_, assert) in streamlet_scope.read().unwrap().asserts.clone() {
+                verify_assert(assert.clone(), streamlet_scope.clone(), project.clone())?;
             }
 
             {
