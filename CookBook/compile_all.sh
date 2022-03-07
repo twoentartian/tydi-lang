@@ -19,3 +19,7 @@ cd ..
 cd 5_Math || exit
 sh ./compile.sh
 cd ..
+
+cd 6_ConstValues || exit
+sh ./compile.sh
+cd ..
