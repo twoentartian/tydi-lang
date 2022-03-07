@@ -104,10 +104,42 @@ impl DeepClone for Implement {
             for (_, if_block) in if_blocks {
                 let if_block_read = if_block.read().unwrap();
                 let if_block_scope = if_block_read.get_scope();
+
+                //if block
                 let mut scope_write = if_block_scope.write().unwrap();
                 for (_, rela) in &mut scope_write.scope_relationships {
-                    rela.set_target_scope(output.scope.clone());
+                    if rela.get_relationship() == ScopeRelationType::IfForScopeRela {
+                        rela.set_target_scope(output.scope.clone());
+                    }
                 }
+
+                //else block
+                let else_block = if_block_read.get_else();
+                match else_block {
+                    None => {}
+                    Some(else_block) => {
+                        let scope = else_block.get_scope();
+                        let mut scope_write = scope.write().unwrap();
+                        for (_, rela) in &mut scope_write.scope_relationships {
+                            if rela.get_relationship() == ScopeRelationType::IfForScopeRela {
+                                rela.set_target_scope(output.scope.clone());
+                            }
+                        }
+                    }
+                }
+
+                //elif block
+                let elif_blocks = if_block_read.get_elif();
+                for elif_block in elif_blocks {
+                    let scope = elif_block.get_scope();
+                    let mut scope_write = scope.write().unwrap();
+                    for (_, rela) in &mut scope_write.scope_relationships {
+                        if rela.get_relationship() == ScopeRelationType::IfForScopeRela {
+                            rela.set_target_scope(output.scope.clone());
+                        }
+                    }
+                }
+
             }
             let for_blocks = output.scope.read().unwrap().for_blocks.clone();
             for (_, for_block) in for_blocks {
