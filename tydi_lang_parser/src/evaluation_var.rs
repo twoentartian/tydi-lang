@@ -563,7 +563,7 @@ fn eval_exp_in_streamlet(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: 
     let output_var_result = streamlet_scope.read().unwrap().resolve_variable_in_current_scope(name_vec[1].clone());
     if output_var_result.is_err() { return Err(ExpressionEvaluationFail(String::from(output_var_result.err().unwrap()))); }
     let output_var = output_var_result.ok().unwrap();
-    infer_variable(output_var.clone(), target_scope.clone(), project.clone())?;
+    infer_variable(output_var.clone(), streamlet_scope.clone(), project.clone())?;
     let output_var_cloned = (*output_var.read().unwrap()).clone();
     Ok(output_var_cloned)
 }
