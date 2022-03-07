@@ -40,4 +40,6 @@ impl component_impl<data:type> of component<type data> {
   input => output,
 };
 
+assert(impl component_impl<type rgb>.x == 8);
+
 impl component_impl0(component_impl<type rgb>);
