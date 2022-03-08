@@ -30,14 +30,27 @@ impl component_impl<data:type> of component<type data> {
   const x = streamlet component<type data>.x, //deliver the x to the outer scope
   assert(x == 8),
 
-  if (false) {
+  if (true) {
     assert(x == 8),
   }
   else {
     assert(x == 7),
   }
 
+  for i in (1=1=>2) {
+    if (true) {
+      assert(x == 8),
+    }
+    else {
+      assert(x == 7),
+    }
+
+    assert(x > 5),
+  }
+
   input => output,
 };
+
+assert(impl component_impl<type rgb>.x == 8);
 
 impl component_impl0(component_impl<type rgb>);

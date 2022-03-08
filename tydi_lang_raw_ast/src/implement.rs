@@ -98,59 +98,80 @@ impl DeepClone for Implement {
             output.scope.write().unwrap().set_self_ref(output.scope.clone());
         }
 
-        //change the scope relationship of if & for scope
-        {
-            let if_blocks = output.scope.read().unwrap().if_blocks.clone();
+        fn update_parent_scope_if_for_iter(target_scope: Arc<RwLock<Scope>>) {
+            let if_blocks = target_scope.read().unwrap().if_blocks.clone();
             for (_, if_block) in if_blocks {
-                let if_block_read = if_block.read().unwrap();
-                let if_block_scope = if_block_read.get_scope();
+                let if_block_scope = if_block.read().unwrap().get_scope();
 
                 //if block
-                let mut scope_write = if_block_scope.write().unwrap();
-                for (_, rela) in &mut scope_write.scope_relationships {
-                    if rela.get_relationship() == ScopeRelationType::IfForScopeRela {
-                        rela.set_target_scope(output.scope.clone());
-                    }
-                }
-
-                //else block
-                let else_block = if_block_read.get_else();
-                match else_block {
-                    None => {}
-                    Some(else_block) => {
-                        let scope = else_block.get_scope();
-                        let mut scope_write = scope.write().unwrap();
+                {
+                    {
+                        let mut scope_write = if_block_scope.write().unwrap();
                         for (_, rela) in &mut scope_write.scope_relationships {
                             if rela.get_relationship() == ScopeRelationType::IfForScopeRela {
-                                rela.set_target_scope(output.scope.clone());
+                                rela.set_target_scope(target_scope.clone());
                             }
+                        }
+                    }
+                    update_parent_scope_if_for_iter(if_block_scope.clone());
+                }
+
+
+                //else block
+                {
+                    let else_block = if_block.read().unwrap().get_else();
+                    match else_block {
+                        None => {}
+                        Some(else_block) => {
+                            let scope = else_block.get_scope();
+                            {
+                                let mut scope_write = scope.write().unwrap();
+                                for (_, rela) in &mut scope_write.scope_relationships {
+                                    if rela.get_relationship() == ScopeRelationType::IfForScopeRela {
+                                        rela.set_target_scope(target_scope.clone());
+                                    }
+                                }
+                            }
+                            update_parent_scope_if_for_iter(scope.clone());
                         }
                     }
                 }
 
                 //elif block
-                let elif_blocks = if_block_read.get_elif();
-                for elif_block in elif_blocks {
-                    let scope = elif_block.get_scope();
-                    let mut scope_write = scope.write().unwrap();
-                    for (_, rela) in &mut scope_write.scope_relationships {
-                        if rela.get_relationship() == ScopeRelationType::IfForScopeRela {
-                            rela.set_target_scope(output.scope.clone());
+                {
+                    let elif_blocks = if_block.read().unwrap().get_elif();
+                    for elif_block in elif_blocks {
+                        let scope = elif_block.get_scope();
+                        {
+                            let mut scope_write = scope.write().unwrap();
+                            for (_, rela) in &mut scope_write.scope_relationships {
+                                if rela.get_relationship() == ScopeRelationType::IfForScopeRela {
+                                    rela.set_target_scope(target_scope.clone());
+                                }
+                            }
                         }
+                        update_parent_scope_if_for_iter(scope.clone());
                     }
                 }
-
             }
-            let for_blocks = output.scope.read().unwrap().for_blocks.clone();
+
+            let for_blocks = target_scope.read().unwrap().for_blocks.clone();
             for (_, for_block) in for_blocks {
                 let for_block_read = for_block.read().unwrap();
                 let for_block_scope = for_block_read.get_scope();
-                let mut scope_write = for_block_scope.write().unwrap();
-                for (_, rela) in &mut scope_write.scope_relationships {
-                    rela.set_target_scope(output.scope.clone());
+                {
+                    let mut scope_write = for_block_scope.write().unwrap();
+                    for (_, rela) in &mut scope_write.scope_relationships {
+                        rela.set_target_scope(target_scope.clone());
+                    }
                 }
+                update_parent_scope_if_for_iter(for_block_scope.clone());
             }
         }
+
+        //change the scope relationship of if & for scope
+        update_parent_scope_if_for_iter(output.scope.clone());
+
         return output;
     }
 }

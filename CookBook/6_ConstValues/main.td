@@ -37,6 +37,10 @@ impl component_impl<data:type> of component<type data> {
     assert(x == 7),
   }
 
+  for i in (1=1=>2) {
+    assert(x == 8),
+  }
+
   input => output,
 };
 
