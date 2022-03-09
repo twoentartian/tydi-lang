@@ -18,6 +18,13 @@ assert(round(test_four) == 4);
 assert(round(test_four2) == 4);
 assert(round(test_three) == 3, error_msgs[0]);
 
+const array = {0,1,2,3,4}; //array expression
+assert(array[0] == 0);
+assert(array[4] == 4);
+const array1 = (0=1=>5); //(start - step -> end) expression
+assert(array1[0] == 0);
+assert(array1[4] == 4);
+
 type Group rgb {
   r: Bit(eight),
   g: Bit(test_four * test_four2 * test_three * test_log_2),

@@ -20,7 +20,7 @@ cd 5_Math || exit
 sh ./compile.sh
 cd ..
 
-cd 6_ConstValues || exit
+cd 6_ConstValues_Assert || exit
 sh ./compile.sh
 cd ..
 
