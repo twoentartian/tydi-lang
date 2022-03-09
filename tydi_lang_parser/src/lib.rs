@@ -706,6 +706,9 @@ fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
             Rule::DOCUMENT => {
                 implement.set_document(Some(element.as_str().to_string()));
             },
+            Rule::ImplementationExternalFlag => {
+                implement.set_external_implement_flag(true);
+            }
             _ => { unreachable!() },
         }
     }

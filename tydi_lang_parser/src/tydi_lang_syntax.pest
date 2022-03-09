@@ -164,12 +164,15 @@ ExpExternalConstInStreamlet = { ID ~ "." ~  "streamlet" ~ ID ~ ArgExps? ~ "." ~ 
 InternalId = { ID }
 ExternalId = { ID ~ "." ~ ID }
 Extern_Intern_Id = { ExternalId | InternalId }
+
+
 Implementation = _{
 DOCUMENT? ~
-"impl" ~ ID ~ ImplementationArgs? ~ "of" ~ Extern_Intern_Id ~ ArgExps? ~ "{" ~
+ImplementationExternalFlag? ~ "impl" ~ ID ~ ImplementationArgs? ~ "of" ~ Extern_Intern_Id ~ ArgExps? ~ "{" ~
   ImplementationBody* ~
 "}"
 }
+ImplementationExternalFlag = { "external" }
 ImplementationArgs = _{ "<" ~ Arg ~ ("," ~ Arg)* ~ ">" }
 ImplementationBodyDeclareInstance = { DOCUMENT? ~ "instance" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" ~ "," }
 ImplementationBodyDeclareInstanceArray = { DOCUMENT? ~ "instance" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" ~ "[" ~ Exp ~ "]" ~ "," }

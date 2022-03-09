@@ -74,6 +74,7 @@ pub struct Implement {
     simulation_process: Option<String>,
     docu: Option<String>,
 
+    external_implement: bool,
     parent_implement_ref: Option<Arc<RwLock<Implement>>>,
 }
 
@@ -92,6 +93,7 @@ impl DeepClone for Implement {
 
             docu: self.docu.deep_clone(),
 
+            external_implement: self.external_implement.clone(),
             parent_implement_ref: self.parent_implement_ref.clone(),//we use shallow clone here because parent implement should not change.
         };
         {
@@ -185,6 +187,7 @@ impl tydi_il::ToTydiIL for Implement {
             None => { String::from("") }
             Some(docu) => { format!("{}", docu) }
         };
+
         let streamlet = self.derived_streamlet.as_ref().unwrap().read().unwrap();
         let streamlet_docu = match streamlet.get_document() {
             None => { String::from("") }
@@ -196,70 +199,60 @@ impl tydi_il::ToTydiIL for Implement {
         let mut streamlet_port_content = String::from("");
         for (_,port) in streamlet_ports {
             let str = port.read().unwrap().to_tydi_il(type_alias_map, depth+1);
-            streamlet_port_content.push_str(&format!("{},\n", str));
+            streamlet_port_content.push_str(&format!("{}{},\n", generate_padding(depth + 1),str));
         }
 
-        //instance
-        let instances = self.scope.read().unwrap().instances.clone();
-        let mut instance_content = String::from("");
-        for (_,instance) in instances {
-            let str = instance.read().unwrap().to_tydi_il(type_alias_map, depth+2);
-            instance_content.push_str(&format!("{};\n", str));
+        if self.external_implement {
+            output.push_str(
+                &format!("\
+                {}{}\n\
+                {}streamlet {} = (\n\
+                {}\
+                {});\n\
+                ",
+                         generate_padding(depth), streamlet_docu,
+                         generate_padding(depth), crate::util::rename_id_to_il(self.name.clone()),
+                         streamlet_port_content,
+                         generate_padding(depth)));
         }
+        else {
+            //instance
+            let instances = self.scope.read().unwrap().instances.clone();
+            let mut instance_content = String::from("");
+            for (_,instance) in instances {
+                let str = instance.read().unwrap().to_tydi_il(type_alias_map, depth+2);
+                instance_content.push_str(&format!("{};\n", str));
+            }
 
-        //connections
-        let connections = self.scope.read().unwrap().connections.clone();
-        let mut connection_content = String::from("");
-        for (_,connection) in connections {
-            let str = connection.read().unwrap().to_tydi_il(type_alias_map, depth+2);
-            connection_content.push_str(&format!("{};\n", str));
+            //connections
+            let connections = self.scope.read().unwrap().connections.clone();
+            let mut connection_content = String::from("");
+            for (_,connection) in connections {
+                let str = connection.read().unwrap().to_tydi_il(type_alias_map, depth+2);
+                connection_content.push_str(&format!("{};\n", str));
+            }
+
+            //// don't expand streamlet and use streamlet reference
+            output.push_str(
+                &format!("\
+                {}{}\n\
+                {}streamlet {} = {} {{\n\
+                {}impl:{}\n\
+                {}{{\n\
+                {}\
+                {}\
+                {}}},\n\
+                {}}};\n\
+                ",
+                         generate_padding(depth), streamlet_docu,
+                         generate_padding(depth), crate::util::rename_id_to_il(self.name.clone()), crate::util::rename_id_to_il(streamlet.get_name()),
+                         generate_padding(depth + 1), &docu_str,
+                         generate_padding(depth + 1),
+                         instance_content,
+                         connection_content,
+                         generate_padding(depth + 1),
+                         generate_padding(depth)));
         }
-
-        //// expand streamlet and print it again in implement
-        // output.push_str(
-        //     &format!("\
-        // {}\
-        // {}streamlet {} = (\n\
-        //   {}\
-        // {}) {{\n\
-        // {}\
-        // {}impl:{{\n\
-        // {}\
-        // {}\
-        // {}}},\n\
-        // {}}};\n\
-        // ",
-        //              streamlet_docu,
-        //              generate_padding(depth), crate::util::rename_id_to_il(self.name.clone()),
-        //              streamlet_port_content,
-        //              generate_padding(depth),
-        //              &docu_str,
-        //              generate_padding(depth + 1),
-        //              instance_content,
-        //              connection_content,
-        //              generate_padding(depth + 1),
-        //              generate_padding(depth)));
-
-        //// don't expand streamlet and use streamlet reference
-        output.push_str(
-            &format!("\
-        {}{}\n\
-        {}streamlet {} = {} {{\n\
-        {}impl:{}\n\
-        {}{{\n\
-        {}\
-        {}\
-        {}}},\n\
-        {}}};\n\
-        ",
-                     generate_padding(depth), streamlet_docu,
-                     generate_padding(depth), crate::util::rename_id_to_il(self.name.clone()), crate::util::rename_id_to_il(streamlet.get_name()),
-                     generate_padding(depth + 1), &docu_str,
-                     generate_padding(depth + 1),
-                     instance_content,
-                     connection_content,
-                     generate_padding(depth + 1),
-                     generate_padding(depth)));
 
         return output;
     }
@@ -283,6 +276,7 @@ impl Implement {
     generate_access!(derived_streamlet, Option<Arc<RwLock<Streamlet>>>, get_derived_streamlet, set_derived_streamlet);
     generate_access!(simulation_process, Option<String>, get_simulation_process, set_simulation_process);
     generate_access!(parent_implement_ref, Option<Arc<RwLock<Implement>>>, get_parent_ref, set_parent_ref);
+    generate_access!(external_implement, bool, get_external_implement_flag, set_external_implement_flag);
 
     //find the most elder parent implement
     fn get_parent_implement(&self) -> Option<Arc<RwLock<Implement>>> {
@@ -338,6 +332,8 @@ impl Implement {
             simulation_process: None,
 
             docu: None,
+
+            external_implement: false,
             parent_implement_ref: None,
         }
     }
