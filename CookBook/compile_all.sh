@@ -23,3 +23,7 @@ cd ..
 cd 6_ConstValues || exit
 sh ./compile.sh
 cd ..
+
+cd 7_External_Implement || exit
+sh ./compile.sh
+cd ..
