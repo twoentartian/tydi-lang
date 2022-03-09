@@ -1,3 +1,4 @@
+use std::path::Path;
 use tydi_lang_raw_ast::util::PrettyPrint;
 #[allow(unused_imports)]
 use crate::tydi_frontend_compile;
@@ -31,6 +32,24 @@ pub fn test() {
             }
         }
         assert!(false);
+    }
+
+    let output_folder_path = format!("{}/{}", real_output_path.clone(), "4_vhdl");
+    let output_folder = Path::new(&output_folder_path);
+    if !output_folder.exists() { std::fs::create_dir(output_folder).expect("cannot create VHDl output folder"); }
+
+    let til_folder_path = format!("{}/{}", real_output_path.clone(), "3_til");
+    let til_folder = Path::new(&til_folder_path);
+    for til_file_result in til_folder.read_dir().expect("cannot read til folder") {
+        match til_file_result {
+            Ok(file) => {
+                let result = parse_to_output(source(file.path()), format!("{}", output_folder_path.clone()));
+                if result.is_err() { panic!("{}", result.err().unwrap().to_string()) }
+            }
+            Err(err) => {
+                panic!("{}", err);
+            }
+        }
     }
 
 }

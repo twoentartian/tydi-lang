@@ -6,7 +6,11 @@ extern crate til_parser;
 
 use std::ffi::OsStr;
 use std::path::Path;
+use std::sync::{Arc, RwLock};
 use chrono::{Datelike, Timelike};
+use tydi_lang_raw_ast::project_arch::Project;
+
+mod test_tydi;
 
 fn source(path: impl AsRef<Path>) -> String {
     std::fs::read_to_string(path).unwrap()
@@ -16,6 +20,48 @@ fn parse_to_output(src: impl Into<String>, dst: String) -> tydi_common::error::R
     let db = til_parser::query::into_query_storage(src)?;
 
     til_vhdl::canonical(&db, dst)
+}
+
+pub fn tydi_compile(project_name: String, src_file_path: Vec<String>, output_path: String, worker: Option<usize>) -> Arc<RwLock<Project>> {
+    let compile_result = tydi_lang_front_end::tydi_frontend_compile(Some(project_name.clone()), src_file_path, Some(output_path.clone()), worker.clone());
+    if compile_result.is_err() {
+        let (project_arch, err_msg) = compile_result.err().unwrap();
+        match project_arch {
+            Some(project_arch) => {
+                use tydi_lang_raw_ast::util::PrettyPrint;
+                std::fs::write(format!("{}/{}", output_path.clone(), "err_arch.txt"), project_arch.read().unwrap().pretty_print(0, false)).expect("error to write the err_arch.txt");
+            }
+            None => {}
+        }
+
+        panic!("{}", err_msg);
+    }
+
+    println!("generating Tydi IR - done");
+
+    let project_arch = compile_result.ok().unwrap();
+
+    let output_folder_path = format!("{}/{}", output_path.clone(), "4_vhdl");
+    let output_folder = Path::new(&output_folder_path);
+    if !output_folder.exists() { std::fs::create_dir(output_folder).expect("cannot create VHDl output folder"); }
+
+    let til_folder_path = format!("{}/{}", output_path.clone(), "3_til");
+    let til_folder = Path::new(&til_folder_path);
+    for til_file_result in til_folder.read_dir().expect("cannot read til folder") {
+        match til_file_result {
+            Ok(file) => {
+                let result = parse_to_output(source(file.path()), format!("{}", output_folder_path.clone()));
+                if result.is_err() { panic!("{}", result.err().unwrap().to_string()) }
+            }
+            Err(err) => {
+                panic!("{}", err);
+            }
+        }
+    }
+
+    println!("generating VHDL - done");
+
+    return project_arch;
 }
 
 fn main() {
@@ -99,42 +145,5 @@ fn main() {
     println!("src files: {:?}", src_file_path.clone());
     println!("worker: {:?}", worker.clone());
 
-    let compile_result = tydi_lang_front_end::tydi_frontend_compile(Some(real_project_name.clone()), src_file_path, Some(real_output_path.clone()), worker);
-    if compile_result.is_err() {
-        let (project_arch, err_msg) = compile_result.err().unwrap();
-        match project_arch {
-            Some(project_arch) => {
-                use tydi_lang_raw_ast::util::PrettyPrint;
-                std::fs::write(format!("{}/{}", real_output_path.clone(), "err_arch.txt"), project_arch.read().unwrap().pretty_print(0, false)).expect("error to write the err_arch.txt");
-            }
-            None => {}
-        }
-
-        panic!("{}", err_msg);
-    }
-
-    println!("generating Tydi IR - done");
-
-    let project_arch = compile_result.ok().unwrap();
-
-    let output_folder_path = format!("{}/{}", real_output_path.clone(), "4_vhdl");
-    let output_folder = Path::new(&output_folder_path);
-    if !output_folder.exists() { std::fs::create_dir(output_folder).expect("cannot create VHDl output folder"); }
-
-    let til_folder_path = format!("{}/{}", real_output_path.clone(), "3_til");
-    let til_folder = Path::new(&til_folder_path);
-    for til_file_result in til_folder.read_dir().expect("cannot read til folder") {
-        match til_file_result {
-            Ok(file) => {
-                let result = parse_to_output(source(file.path()), format!("{}", output_folder_path.clone()));
-                if result.is_err() { panic!("{}", result.err().unwrap().to_string()) }
-            }
-            Err(err) => {
-                panic!("{}", err);
-            }
-        }
-    }
-
-    println!("generating VHDL - done");
-
+    tydi_compile(real_project_name.clone(), src_file_path.clone(), real_output_path.clone(), worker.clone());
 }
