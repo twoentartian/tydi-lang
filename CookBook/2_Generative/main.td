@@ -2,6 +2,10 @@ package main; //package name must be the same with the file name
 
 type bit8_stream = Stream(Bit(8), d = 5, t = 2.5);
 
+type bit8 = Bit(8);
+
+type bit8_1 = Bit(8);//TODO bit8_1 == bit8_1 && bit8 == bit8_1
+
 //data_bypass
 streamlet data_bypass {
   input: bit8_stream in,

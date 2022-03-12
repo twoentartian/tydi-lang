@@ -12,3 +12,4 @@ tydi_lang_raw_ast = { path= "../tydi_lang_raw_ast" }
 lazy_static = "1.4.0"
 num_cpus = "1.13.1"
 threadpool = "1.8.1"
+rand = "0.8.5"

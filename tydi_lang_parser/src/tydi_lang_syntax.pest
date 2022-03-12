@@ -23,7 +23,7 @@ FLOAT = @{ ('1'..'9' ~ ASCII_DIGIT* ~ "." ~ ASCII_DIGIT*) | ("0" ~ "." ~ ASCII_D
 STR_CHAR = @{ ' '..'!' | '#'..'[' | ']'..'~' | "\\\t" | "\\n" | "\\t" | "\\\\"}
 STR = @{ "\"" ~ STR_CHAR* ~ "\"" }
 
-CLOCKDOMAIN = @{ '1'..'9' ~ ASCII_DIGIT*  ~ ("." ~ ASCII_DIGIT+)? ~ ( "GHz" | "MHz" | "kHz" | "Hz" ) }
+//CLOCKDOMAIN = @{ '1'..'9' ~ ASCII_DIGIT*  ~ ("." ~ ASCII_DIGIT+)? ~ ( "GHz" | "MHz" | "kHz" | "Hz" ) }
 
 LINE_COMMENT = _{ "//" ~  (!NEWLINE ~ ANY)* ~ (NEWLINE | EOI)}
 BLOCK_COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
@@ -47,7 +47,7 @@ IntExp = { INT }
 StringExp = { STR }
 BoolExp = { BOOL }
 FloatExp = { FLOAT }
-ClockDomainExp = { CLOCKDOMAIN }
+//ClockDomainExp = { CLOCKDOMAIN }
 
 ArrayExp = { "{" ~ Exp ~ ("," ~ Exp)* ~ "}" }
 ArrayRange = { "(" ~ Exp ~ "=" ~ Exp ~ "=>" ~ Exp ~ ")" }
@@ -57,7 +57,7 @@ UnaryExp = { UnaryOp ~ Exp }
 
 Term = { ( "(" ~ Exp ~ ")" ) |
             ExpLog | ExpBitWiseNot | ExpConstInType | ExpRound | ExpFloor | ExpCeil | ExpIndex |
-            ArrayRange | ArrayExp | ClockDomainExp | IntExp | StringExp | BoolExp | FloatExp | ExternalVar | Var |
+            ArrayRange | ArrayExp /* | ClockDomainExp*/ | IntExp | StringExp | BoolExp | FloatExp | ExternalVar | Var |
             ExpConstInStreamlet | ExpExternalConstInStreamlet | ExpConstInImplement | ExpExternalConstInImplement |
             UnaryExp }
 
@@ -246,6 +246,7 @@ Function = { ID ~ "(" ~ (Exp ~ ("," ~ Exp )*)? ~ ")" }
 ///////////////////////  start of statement.sdf3  ///////////////////////
 StatementTypeAssign = { DOCUMENT? ~ "type" ~ ID ~ "=" ~ LogicalType ~ ";" }
 StatementConstAssign = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ ";" }
+StatementConstDeclare = { "const" ~ ID ~ TypeIndicator ~ ";" }
 StatementDeclareStreamLet = { StreamLet ~ ";" }
 StatementDeclareImplementation = { Implementation ~ ";" }
 StatementDeclareImplInst = { ImplInst ~ ";" }
@@ -253,7 +254,7 @@ StatementDeclareLogicalDataType = { "type" ~ LogicalType ~ ";" }
 StatementFunctions = _{ Function ~ ";" }
 /// Obsolete
 /// StatementAssertEqualLogicalType = { "assert" ~ "type" ~ "(" ~  LogicalType ~ "==" ~ LogicalType ~ ")" ~ ";" }
-Statement = _{ (StatementTypeAssign | StatementConstAssign | StatementDeclareStreamLet | StatementDeclareImplementation |
+Statement = _{ (StatementTypeAssign | StatementConstAssign | StatementConstDeclare | StatementDeclareStreamLet | StatementDeclareImplementation |
                 StatementDeclareImplInst | StatementDeclareLogicalDataType | StatementFunctions /*| StatementAssertEqualLogicalType*/) }
 ///////////////////////  end of statement.sdf3  ///////////////////////
 

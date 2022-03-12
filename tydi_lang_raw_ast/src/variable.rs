@@ -14,11 +14,7 @@ use crate::inferable::{Inferable, NewInferable};
 pub enum ClockDomainValue {
     Unknown,
     Default,
-    Hz(f32),
-    #[allow(non_camel_case_types)]
-    kHz(f32),
-    MHz(f32),
-    GHz(f32),
+    ClockDomain(String),
 }
 
 impl From<ClockDomainValue> for String {
@@ -26,10 +22,7 @@ impl From<ClockDomainValue> for String {
         match cd {
             ClockDomainValue::Unknown => { format!("UnknownClockDomain") }
             ClockDomainValue::Default => { format!("DefaultClockDomain") }
-            ClockDomainValue::Hz(v) => { format!("{}Hz", v) }
-            ClockDomainValue::kHz(v) => { format!("{}kHz", v) }
-            ClockDomainValue::MHz(v) => { format!("{}MHz", v) }
-            ClockDomainValue::GHz(v) => { format!("{}GHz", v) }
+            ClockDomainValue::ClockDomain(str) => { format!("ClockDomain({})", str) }
         }
     }
 }
@@ -138,6 +131,27 @@ impl From<VariableValue> for String {
 impl PrettyPrint for VariableValue {
     fn pretty_print(&self, _: u32, _: bool) -> String {
         return String::from(self.clone());
+    }
+}
+
+impl VariableValue {
+    pub fn try_convert_to(&self, target: &mut Self) -> Result<(), String> {
+        let mut success_flag;
+        match self {
+            VariableValue::Str(cd_name) => {
+                match target {
+                    VariableValue::ClockDomain(cd) => {
+                        target = &mut VariableValue::ClockDomain(ClockDomainValue::ClockDomain(cd_name.clone()));
+                        success_flag = true;
+                    }
+                    _ => { success_flag = false; }
+                }
+            }
+            _ => { success_flag = false; }
+        };
+
+        if success_flag { return Ok(()); }
+        else { return Err(format!("fail to convert from {} to {}", String::from(self.clone()), String::from(target.clone()))) }
     }
 }
 

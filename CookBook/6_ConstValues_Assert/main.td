@@ -16,6 +16,7 @@ assert(type rgb.x == 8);
 assert(x == 4);
 
 streamlet component<data:type> {
+  const data = 8,
   const x = type data.x, //deliver the x to the outer scope
 
   assert(x == 8),

@@ -5,8 +5,10 @@ extern crate pest_derive;
 extern crate lazy_static;
 extern crate num_cpus;
 extern crate threadpool;
+extern crate rand;
 
 use std::fs;
+use std::string::ParseError;
 use std::sync::{Arc, RwLock};
 
 use ParserErrorCode::{AnalysisCodeStructureFail, FileError, ImplementEvaluationFail};
@@ -303,10 +305,13 @@ fn parse_statement(statement: Pairs<Rule>, output_package: &mut project_arch::Pa
             },
             Rule::StatementDeclareImplInst => {
                 parse_global_instance(element.into_inner(), output_package.scope.clone())?;
-            }
+            },
             Rule::Function => {
                 parse_function(element.into_inner(), output_package.scope.clone())?;
-            }
+            },
+            Rule::StatementConstDeclare => {
+                parse_const_declare(element.into_inner(), output_package.scope.clone())?;
+            },
             _ => { unreachable!() },
         }
     }
@@ -1170,6 +1175,36 @@ fn parse_const_assign(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
         let result = convert_type_str_to_type(type_exp);
         if result.is_err() { return Err(result.err().unwrap()); }
         let result = scope.write().unwrap().new_variable(id.clone(), result.ok().unwrap(), exp.clone());
+        if result.is_err() { return Err(AnalysisCodeStructureFail(format!("{}", String::from(result.err().unwrap())))); }
+    }
+    return Ok(());
+}
+
+fn parse_const_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+    let mut id = String::from("");
+    let mut type_exp = String::from("");
+    for element in statement.clone().into_iter() {
+        match element.as_rule() {
+            Rule::ID => { id = element.as_str().to_string() },
+            Rule::TypeIndicatorBasicType => { type_exp = element.as_str().to_string() },
+            Rule::TypeIndicatorBasicArrayType => { type_exp = element.as_str().to_string() },
+            _ => { unreachable!() },
+        }
+    }
+    {
+        let result = convert_type_str_to_type(type_exp);
+        if result.is_err() { return Err(result.err().unwrap()); }
+        let result = result.ok().unwrap();
+        if result == DataType::UnknownType {
+            return Err(AnalysisCodeStructureFail(format!("missing type indicator in the declaring const statement")));
+        }
+
+        use rand::{thread_rng, Rng};
+        use rand::distributions::Alphanumeric;
+        let rand_string: String = thread_rng().sample_iter(&Alphanumeric).take(30).map(char::from).collect();
+        let clock_domain_name = format!("clockdomain_{}", rand_string);
+        let cd_var = Variable::new_with_value(id.clone(), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::ClockDomain(clock_domain_name)));
+        let result = scope.write().unwrap().with_variable(Arc::new(RwLock::new(cd_var)));
         if result.is_err() { return Err(AnalysisCodeStructureFail(format!("{}", String::from(result.err().unwrap())))); }
     }
     return Ok(());

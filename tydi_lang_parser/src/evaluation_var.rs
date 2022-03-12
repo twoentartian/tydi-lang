@@ -791,32 +791,6 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
                     unreachable!()
                 }
             }
-            Rule::ClockDomainExp => {
-                let mut clockdomain_exp = term_inner.as_str().to_string();
-                if clockdomain_exp.ends_with("GHz") {
-                    clockdomain_exp = clockdomain_exp.replace("GHz", "");
-                    let freq = clockdomain_exp.parse::<f32>().expect("not a valid clockdomain");
-                    return Ok(Variable::new_with_value(String::from(""), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::GHz(freq))));
-                }
-                else if clockdomain_exp.ends_with("MHz") {
-                    clockdomain_exp = clockdomain_exp.replace("MHz", "");
-                    let freq = clockdomain_exp.parse::<f32>().expect("not a valid clockdomain");
-                    return Ok(Variable::new_with_value(String::from(""), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::MHz(freq))));
-                }
-                else if clockdomain_exp.ends_with("kHz") {
-                    clockdomain_exp = clockdomain_exp.replace("kHz", "");
-                    let freq = clockdomain_exp.parse::<f32>().expect("not a valid clockdomain");
-                    return Ok(Variable::new_with_value(String::from(""), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::kHz(freq))));
-                }
-                else if clockdomain_exp.ends_with("Hz") {
-                    clockdomain_exp = clockdomain_exp.replace("Hz", "");
-                    let freq = clockdomain_exp.parse::<f32>().expect("not a valid clockdomain");
-                    return Ok(Variable::new_with_value(String::from(""), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::Hz(freq))));
-                }
-                else {
-                    unreachable!()
-                }
-            }
 
             Rule::ArrayRange => {
                 let mut exp_vars: Vec<Variable> = vec![];
@@ -1552,23 +1526,29 @@ pub fn infer_variable(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, pro
         _ => unreachable!(),
     };
 
-    //type check
+    //type check amd assign values
     {
-        if *origin_var_type.read().unwrap() != DataType::UnknownType {
-            let inferred_type = inferred_value.get_type();
-            let origin_type = (*origin_var_type.read().unwrap()).clone();
-            let inferred_type = (*inferred_type.read().unwrap()).clone();
-            if origin_type != inferred_type {
-                return Err(ExpressionEvaluationFail(format!("type mismatch: {} != {}", String::from(origin_type), String::from(inferred_type))));
-            }
+        let inferred_type = inferred_value.get_type();
+        let origin_type = (*origin_var_type.read().unwrap()).clone();
+        let inferred_type = (*inferred_type.read().unwrap()).clone();
+        if origin_type == inferred_type {
+            let mut var_write = var.write().unwrap();
+            var_write.set_var_value(inferred_value.get_var_value());
+            var_write.set_type(inferred_value.get_type());
+
         }
+        else if !origin_type.is_sub_type_of_other(&inferred_type) {
+
+        }
+        else {
+            return Err(ExpressionEvaluationFail(format!("type mismatch and non-sub type: {} != {}", String::from(origin_type), String::from(inferred_type))));
+        }
+
     }
 
     //assign value
     {
-        let mut var_write = var.write().unwrap();
-        var_write.set_var_value(inferred_value.get_var_value());
-        var_write.set_type(inferred_value.get_type());
+
     }
     return Ok(());
 }

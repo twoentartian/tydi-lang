@@ -1,10 +1,13 @@
 package main; //package name must be the same with the file name
 
+
 const int_value: int = 10;
 const bool_value: bool = true;
 const float_value: float = 1.0;
 const str_value: str = "helloworld";
-const clockdomain_value: clockdomain = 50MHz;
+const clockdomain_value: clockdomain = 50MHz-1;
+
+const clockdomain_value2: clockdomain;////TODO
 
 //type indicator is optional
 const int_value2 = 10;

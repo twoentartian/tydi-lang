@@ -52,6 +52,14 @@ impl DeepClone for DataType {
     }
 }
 
+impl DataType {
+    pub fn is_sub_type_of_other(&self, other: &Self) -> bool {
+        if self == &DataType::UnknownType { return true; }
+        if self == &DataType::ClockDomainType && other == &DataType::StringType { return true; }
+        return false;
+    }
+}
+
 impl PartialEq for DataType {
     fn eq(&self, other: &Self) -> bool {
         match self {
