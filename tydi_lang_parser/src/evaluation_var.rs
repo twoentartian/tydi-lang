@@ -5,6 +5,7 @@ use pest::iterators::{Pairs, Pair};
 use pest::prec_climber::{PrecClimber};
 use pest::prec_climber::Assoc::{Left, Right};
 use pest::prec_climber as pcl;
+use tydi_lang_raw_ast::inferable::InferState::Inferred;
 use tydi_lang_raw_ast::logical_data_type::LogicalDataType;
 use tydi_lang_raw_ast::project_arch::Project;
 use tydi_lang_raw_ast::scope::{Scope, Variable, DataType, InferState, VariableValue};
@@ -1531,24 +1532,26 @@ pub fn infer_variable(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, pro
         let inferred_type = inferred_value.get_type();
         let origin_type = (*origin_var_type.read().unwrap()).clone();
         let inferred_type = (*inferred_type.read().unwrap()).clone();
-        if origin_type == inferred_type {
+        if origin_type.compatible(&inferred_type) {
             let mut var_write = var.write().unwrap();
             var_write.set_var_value(inferred_value.get_var_value());
             var_write.set_type(inferred_value.get_type());
-
         }
-        else if !origin_type.is_sub_type_of_other(&inferred_type) {
+        else if origin_type.is_sub_type_of_other(&inferred_type) {
+            let mut converted_inferred_value = var.read().unwrap().get_var_value().clone();
+            converted_inferred_value.set_infer_state(InferState::Inferred);
+            let mut converted_value = converted_inferred_value.get_raw_value();
+            inferred_value.get_var_value().get_raw_value().try_convert_to_in_place(&mut converted_value, &*var_type.read().unwrap());
+            converted_inferred_value.set_raw_value(converted_value);
 
+            let mut var_write = var.write().unwrap();
+            var_write.set_var_value(converted_inferred_value);
+            var_write.set_type(Arc::new(RwLock::new(origin_type)));
         }
         else {
             return Err(ExpressionEvaluationFail(format!("type mismatch and non-sub type: {} != {}", String::from(origin_type), String::from(inferred_type))));
         }
-
     }
 
-    //assign value
-    {
-
-    }
     return Ok(());
 }

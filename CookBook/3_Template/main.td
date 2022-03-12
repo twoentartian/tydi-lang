@@ -35,7 +35,7 @@ impl impl_data_demux<channel:int, data_type: type, cd:clockdomain> of data_demux
   }
 };
 
-const cd0 = 100MHz;
-
+const cd0: clockdomain = "100MHz";
+const cd1: clockdomain;
 impl data_demux_rgb_5(impl_data_demux<5, type rgb_stream, cd0>);
-impl data_demux_rgb_100(impl_data_demux<20, type rgb_stream, 50kHz>);
+impl data_demux_rgb_100(impl_data_demux<20, type rgb_stream, cd1>);

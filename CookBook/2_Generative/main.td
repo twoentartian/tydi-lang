@@ -30,8 +30,8 @@ impl impl_data_bypass2 of data_bypass2 {
 const channel = 10;
 
 streamlet data_bypass_channel {
-  inputs: bit8_stream [channel] in `10kHz,
-  outputs: bit8_stream [channel] out `10kHz,
+  inputs: bit8_stream [channel] in `"10kHz",
+  outputs: bit8_stream [channel] out `"10kHz",
 };
 
 const use_data_bypass2 = true;

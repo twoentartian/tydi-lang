@@ -54,8 +54,17 @@ impl DeepClone for DataType {
 
 impl DataType {
     pub fn is_sub_type_of_other(&self, other: &Self) -> bool {
-        if self == &DataType::UnknownType { return true; }
-        if self == &DataType::ClockDomainType && other == &DataType::StringType { return true; }
+        if *self == DataType::UnknownType { return true; }
+        if *self == DataType::ClockDomainType && *other == DataType::StringType { return true; }
+        return false;
+    }
+}
+
+impl DataType {
+    pub fn compatible(&self, other: &Self) -> bool {
+        if *self == *other { return true; }
+        if *self == DataType::UnknownType || *other == DataType::UnknownType { return true; }
+
         return false;
     }
 }

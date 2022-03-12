@@ -1174,7 +1174,8 @@ fn parse_const_assign(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
     {
         let result = convert_type_str_to_type(type_exp);
         if result.is_err() { return Err(result.err().unwrap()); }
-        let result = scope.write().unwrap().new_variable(id.clone(), result.ok().unwrap(), exp.clone());
+        let type_result = result.ok().unwrap();
+        let result = scope.write().unwrap().new_variable(id.clone(), type_result.clone(), exp.clone());
         if result.is_err() { return Err(AnalysisCodeStructureFail(format!("{}", String::from(result.err().unwrap())))); }
     }
     return Ok(());

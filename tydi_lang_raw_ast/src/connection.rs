@@ -168,7 +168,7 @@ impl Connection {
 
 impl From<Connection> for String {
     fn from(conn: Connection) -> Self {
-        return format!("{}.{}{}={}=>{}.{}{} ({})", String::from(conn.lhs_port_owner), String::from(conn.lhs_port.clone()), String::from(conn.lhs_port_array_type),
+        return format!("{}.{}{} ={}=> {}.{}{} ({})", String::from(conn.lhs_port_owner), String::from(conn.lhs_port.clone()), String::from(conn.lhs_port_array_type),
                        String::from((*conn.delay.read().unwrap()).clone()),
                        String::from(conn.rhs_port_owner), String::from(conn.rhs_port.clone()), String::from(conn.rhs_port_array_type),
                        conn.name.clone());

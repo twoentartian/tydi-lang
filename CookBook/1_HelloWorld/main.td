@@ -5,9 +5,9 @@ const int_value: int = 10;
 const bool_value: bool = true;
 const float_value: float = 1.0;
 const str_value: str = "helloworld";
-const clockdomain_value: clockdomain = 50MHz-1;
+const clockdomain_value: clockdomain = "50MHz-1";
 
-const clockdomain_value2: clockdomain;////TODO
+const clockdomain_value2: clockdomain;////default clockdomain
 
 //type indicator is optional
 const int_value2 = 10;
@@ -22,10 +22,10 @@ type Group rgb {
 
 #streamlet documentation#
 streamlet rgb_bypass {
-  input: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) in `100kHz,
-  output: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) out `100kHz,
-  input2: Stream(rgb) in `10MHz,
-  output2: Stream(rgb) out `10MHz,
+  input: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) in `clockdomain_value,
+  output: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) out `clockdomain_value,
+  input2: Stream(rgb) in `clockdomain_value2,
+  output2: Stream(rgb) out `clockdomain_value2,
 };
 
 #implement documentation#

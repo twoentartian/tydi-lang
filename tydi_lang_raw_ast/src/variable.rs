@@ -135,23 +135,39 @@ impl PrettyPrint for VariableValue {
 }
 
 impl VariableValue {
-    pub fn try_convert_to(&self, target: &mut Self) -> Result<(), String> {
-        let mut success_flag;
+    pub fn try_convert_to(&self, target_type: &DataType) -> Result<Self, String> {
+        let mut target;
         match self {
             VariableValue::Str(cd_name) => {
-                match target {
-                    VariableValue::ClockDomain(cd) => {
-                        target = &mut VariableValue::ClockDomain(ClockDomainValue::ClockDomain(cd_name.clone()));
-                        success_flag = true;
+                match target_type {
+                    DataType::ClockDomainType => {
+                        target = VariableValue::ClockDomain(ClockDomainValue::ClockDomain(cd_name.clone()));
+                        return Ok(target);
                     }
-                    _ => { success_flag = false; }
+                    _ => { }
                 }
             }
-            _ => { success_flag = false; }
+            _ => { }
         };
 
-        if success_flag { return Ok(()); }
-        else { return Err(format!("fail to convert from {} to {}", String::from(self.clone()), String::from(target.clone()))) }
+        return Err(format!("fail to convert from {} to {}", String::from(self.clone()), String::from(target_type.clone())))
+    }
+
+    pub fn try_convert_to_in_place(&self, target: &mut Self, target_type: &DataType) -> Result<(), String> {
+        match self {
+            VariableValue::Str(cd_name) => {
+                match target_type {
+                    DataType::ClockDomainType => {
+                        *target = VariableValue::ClockDomain(ClockDomainValue::ClockDomain(cd_name.clone()));
+                        return Ok(());
+                    }
+                    _ => { }
+                }
+            }
+            _ => { }
+        };
+
+        return Err(format!("fail to convert from {} to {}", String::from(self.clone()), String::from(target.clone())))
     }
 }
 

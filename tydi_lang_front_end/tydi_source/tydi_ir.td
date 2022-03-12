@@ -1,17 +1,34 @@
 package tydi_ir; //package name must be the same with the file name
 
-streamlet s {
-  port_in: Stream(Bit(8)) in,
-  port_out: Stream(Bit(8)) out,
+const int_value: int = 10;
+const bool_value: bool = true;
+const float_value: float = 1.0;
+const str_value: str = "helloworld";
+const clockdomain_value: clockdomain = "50MHz-1";
+
+const clockdomain_value2: clockdomain;////default clockdomain
+
+//type indicator is optional
+const int_value2 = 10;
+
+//define type
+const color_depth = 8;
+type Group rgb {
+  r: Bit(color_depth),
+  g: Bit(color_depth),
+  b: Bit(color_depth),
 };
 
-external impl i of s {
-
+#streamlet documentation#
+streamlet rgb_bypass {
+  input: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) in `clockdomain_value,
+  output: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) out `clockdomain_value,
+  input2: Stream(rgb) in `clockdomain_value2,
+  output2: Stream(rgb) out `clockdomain_value2,
 };
 
-impl i2 of s {
-  instance inner(i),
-
-  inner.port_out => port_out,
-  port_in => inner.port_in,
+#implement documentation#
+impl impl_rgb_bypass of rgb_bypass {
+  input => output,
+  input2 => output2,
 };
