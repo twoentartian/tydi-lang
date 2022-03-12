@@ -85,10 +85,13 @@ pub fn parse_multi_files_st(project_name: String, file_paths: Vec<String>) -> Re
         }
         let (package, _) = result.ok().unwrap();
         let file_path_fs= Path::new(&file_path);
-        if Some(OsStr::new(&format!("{}.td", package.get_name()))) != file_path_fs.file_name() {
-            error_flag = true;
-            errors.push(Err(FileError(format!("{} has a different package name", file_path.clone()))));
-        }
+
+        ////The checking of package name == file name is disabled
+        // if Some(OsStr::new(&format!("{}.td", package.get_name()))) != file_path_fs.file_name() {
+        //     error_flag = true;
+        //     errors.push(Err(FileError(format!("{} has a different package name", file_path.clone()))));
+        // }
+
         let result = output_project.write().unwrap().with_package(package);
         if result.is_err() {
             error_flag = true;
@@ -138,11 +141,14 @@ pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worke
                 ast_tree.write().unwrap().insert(file_path.clone(), ast);
             }
             let file_path_fs= Path::new(&file_path);
-            if Some(OsStr::new(&format!("{}.td", package.get_name()))) != file_path_fs.file_name() {
-                let result = tx_temp.send((file_path.clone(), Err(FileError(format!("{} has a different package name", file_path.clone())))));
-                result.unwrap();
-                return;
-            }
+
+            ////The checking of package name == file name is disabled
+            // if Some(OsStr::new(&format!("{}.td", package.get_name()))) != file_path_fs.file_name() {
+            //     let result = tx_temp.send((file_path.clone(), Err(FileError(format!("{} has a different package name", file_path.clone())))));
+            //     result.unwrap();
+            //     return;
+            // }
+
             {
                 let result = output_project.write().unwrap().with_package(package);
                 if result.is_err() {
