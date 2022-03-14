@@ -51,6 +51,76 @@ pub enum VariableValue {
     Implement(Arc<RwLock<Implement>>),
 }
 
+impl PartialEq for VariableValue {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            VariableValue::Unknown => {
+                return match other {
+                    VariableValue::Unknown => { true }
+                    _ => { false }
+                }
+            }
+            VariableValue::Int(v0) => {
+                return match other {
+                    VariableValue::Int(v1) => { v0 == v1 }
+                    _ => { false }
+                }
+            }
+            VariableValue::Bool(v0) => {
+                return match other {
+                    VariableValue::Bool(v1) => { v0 == v1 }
+                    _ => { false }
+                }
+            }
+            VariableValue::Float(v0) => {
+                return match other {
+                    VariableValue::Float(v1) => { v0 == v1 }
+                    _ => { false }
+                }
+            }
+            VariableValue::Str(v0) => {
+                return match other {
+                    VariableValue::Str(v1) => { v0 == v1 }
+                    _ => { false }
+                }
+            }
+            VariableValue::ClockDomain(v0) => {
+                return match other {
+                    VariableValue::ClockDomain(v1) => { v0 == v1 }
+                    _ => { false }
+                }
+            }
+            VariableValue::ArrayInt(v0) => {
+                return match other {
+                    VariableValue::ArrayInt(v1) => { v0 == v1 }
+                    _ => { false }
+                }
+            }
+            VariableValue::ArrayBool(v0) => {
+                return match other {
+                    VariableValue::ArrayBool(v1) => { v0 == v1 }
+                    _ => { false }
+                }
+            }
+            VariableValue::ArrayFloat(v0) => {
+                return match other {
+                    VariableValue::ArrayFloat(v1) => { v0 == v1 }
+                    _ => { false }
+                }
+            }
+            VariableValue::ArrayStr(v0) => {
+                return match other {
+                    VariableValue::ArrayStr(v1) => { v0 == v1 }
+                    _ => { false }
+                }
+            }
+            _ => todo!()
+        }
+
+        return true;
+    }
+}
+
 impl DeepClone for VariableValue {
     fn deep_clone(&self) -> Self {
         return self.clone();
@@ -136,7 +206,7 @@ impl PrettyPrint for VariableValue {
 
 impl VariableValue {
     pub fn try_convert_to(&self, target_type: &DataType) -> Result<Self, String> {
-        let mut target;
+        let target;
         match self {
             VariableValue::Str(cd_name) => {
                 match target_type {

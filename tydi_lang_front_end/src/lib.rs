@@ -1,4 +1,5 @@
 mod test_tydi_ir;
+mod drc;
 
 extern crate chrono;
 extern crate tydi_lang_parser;
@@ -13,6 +14,7 @@ use chrono::{Datelike, Timelike};
 use tydi_lang_raw_ast::project_arch::Project;
 use tydi_lang_parser::evaluation;
 use tydi_lang_raw_ast::util::PrettyPrint;
+use drc::{DesignRuleErrorWarning, DrcResultType, DesignRuleDetail};
 
 pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec<String>, output_path: Option<String>, worker: Option<usize>) -> Result<Arc<RwLock<Project>>, (Option<Arc<RwLock<Project>>>,String)> {
     //get project name
@@ -121,4 +123,35 @@ pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec
     }
 
     return Ok(project_architecture);
+}
+
+
+
+pub fn tydi_design_rule_check(project: Arc<RwLock<Project>>) -> Vec<drc::DesignRuleErrorWarning> {
+    let mut output = vec![];
+    for (_, package) in project.read().unwrap().packages.clone() {
+        let package_scope = package.read().unwrap().scope.clone();
+        let impls = package_scope.read().unwrap().implements.clone();
+        for (_, single_impl) in impls {
+            let impl_scope = single_impl.read().unwrap().get_scope();
+            let connections = impl_scope.read().unwrap().connections.clone();
+            for (_,single_connection) in connections {
+                let lhs_port = single_connection.read().unwrap().get_lhs_port().get_raw_value();
+                let lhs_port_type = lhs_port.read().unwrap().get_type().get_raw_value();
+                let rhs_port = single_connection.read().unwrap().get_lhs_port().get_raw_value();
+                let rhs_port_type = rhs_port.read().unwrap().get_type().get_raw_value();
+                if single_connection.read().unwrap().get_check_restrict_type_same() {
+                    //restrict type eq
+                    if !std::sync::Arc::ptr_eq(&lhs_port_type, &rhs_port_type) {
+                        output.push(DesignRuleErrorWarning::new ( DrcResultType::Error, DesignRuleDetail::InvalidConnectionPortTypeMismatch, format!("connection name: {}", single_connection.read().unwrap().get_name())));
+                    }
+                }
+                else {
+
+                }
+            }
+        }
+    }
+
+    return output;
 }

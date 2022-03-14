@@ -187,6 +187,35 @@ impl LogicalStream {
             keep: Arc::new(RwLock::new(Variable::new_bool(format!("!{{stream_{}}}_keep", name.clone()), false))),
         }
     }
+
+    pub fn eq(&self, other: &Self, strict: bool) -> bool {
+        if strict {
+            let other_data_type = other.data_type.get_raw_value();
+            if std::sync::Arc::ptr_eq(&self.data_type.get_raw_value(), &other_data_type) { return false; }
+            let other_user_data_type = other.user_type.get_raw_value();
+            if std::sync::Arc::ptr_eq(&self.user_type.get_raw_value(), &other_user_data_type) { return false; }
+        }
+        else {
+            let other_data_type = other.data_type.get_raw_value().read().unwrap().deep_clone();
+            if !self.data_type.get_raw_value().read().unwrap().non_strict_eq(&other_data_type) { return false; }
+            let other_user_data_type = other.user_type.get_raw_value().read().unwrap().deep_clone();
+            if !self.user_type.get_raw_value().read().unwrap().non_strict_eq(&other_user_data_type) { return false; }
+        }
+
+        //dimension
+        let self_dimension = self.dimension.read().unwrap().get_var_value().get_raw_value();
+        let other_dimension = other.dimension.read().unwrap().get_var_value().get_raw_value();
+        if self_dimension != other_dimension { return false; }
+
+        //complexity
+        let self_complexity = self.complexity.read().unwrap().get_var_value().get_raw_value();
+        let other_complexity = other.complexity.read().unwrap().get_var_value().get_raw_value();
+        if self_complexity != other_complexity { return false; }
+
+        //TODO: maybe add more checks in the future?
+
+        return true;
+    }
 }
 
 impl PrettyPrint for LogicalStream {

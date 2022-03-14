@@ -9,6 +9,7 @@ ID_BLOCK_LIST = { !("impl " | "streamlet " | "const " | "int " | "str " | "bool 
 ID_INVALID_CHAR = { !( ("_" ~ ("_")+ ) ) }
 ID = @{ ID_BLOCK_LIST ~ (ID_INVALID_CHAR ~ ( ASCII_ALPHA | "_" )) ~ (ID_INVALID_CHAR ~ ( ASCII_ALPHA | ASCII_DIGIT | "_" ))*  ~ !(ASCII_ALPHA | ASCII_DIGIT | "_") }
 
+ATTR = @{ "@" ~ ID ~ "@" }
 
 INT_RAW_NORAML = @{ ASCII_DIGIT  ~ (ASCII_DIGIT | "_")* ~ !(ASCII_DIGIT | "_")}
 INT_RAW_HEX = @{ "0x" ~ ASCII_HEX_DIGIT  ~ (ASCII_HEX_DIGIT | "_")* ~ !(ASCII_HEX_DIGIT | "_")}
@@ -176,8 +177,8 @@ ImplementationExternalFlag = { "external" }
 ImplementationArgs = _{ "<" ~ Arg ~ ("," ~ Arg)* ~ ">" }
 ImplementationBodyDeclareInstance = { DOCUMENT? ~ "instance" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" ~ "," }
 ImplementationBodyDeclareInstanceArray = { DOCUMENT? ~ "instance" ~ ID ~ "(" ~ Extern_Intern_Id ~ ArgExps? ~ ")" ~ "[" ~ Exp ~ "]" ~ "," }
-ImplementationBodyDeclareNet = { DOCUMENT? ~ LogicalTypeSlice ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
-ImplementationBodyDeclareDelayedNet = { DOCUMENT? ~ LogicalTypeSlice ~ "=" ~ Exp ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ "," }
+ImplementationBodyDeclareNet = { DOCUMENT? ~ LogicalTypeSlice ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ ATTR? ~ "," }
+ImplementationBodyDeclareDelayedNet = { DOCUMENT? ~ LogicalTypeSlice ~ "=" ~ Exp ~ "=>" ~ LogicalTypeSlice ~ NetName? ~ ATTR? ~ "," }
 ImplementationBodyDeclareConstInImpl = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
 ImplementationBodyDeclareProcess = { "process" ~ "{" ~ Simulation_Block ~ "}" ~ "," }
 ImplementationBodyFunction = _{ Function ~ "," }

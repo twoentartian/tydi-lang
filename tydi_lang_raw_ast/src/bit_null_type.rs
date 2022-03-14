@@ -68,6 +68,12 @@ impl LogicalBit {
             bit: Arc::new(RwLock::new(Variable::new_int(format!("!{{bit_int}}_{}", name_.clone()), bit_))),
         }
     }
+
+    pub fn compare_value(&self, other: &Self) -> bool {
+        let self_value = self.bit.read().unwrap().get_var_value().get_raw_value();
+        let other_value = other.bit.read().unwrap().get_var_value().get_raw_value();
+        return self_value == other_value;
+    }
 }
 
 impl From<LogicalBit> for String {

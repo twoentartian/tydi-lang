@@ -63,6 +63,8 @@ pub struct Connection {
     delay: Arc<RwLock<Variable>>,
 
     docu: Option<String>,
+
+    check_restrict_type_same: bool,
 }
 
 impl DeepClone for Connection {
@@ -80,6 +82,8 @@ impl DeepClone for Connection {
             delay: self.delay.deep_clone(),
 
             docu: self.docu.deep_clone(),
+
+            check_restrict_type_same: self.check_restrict_type_same.clone(),
         }
     }
 }
@@ -150,6 +154,7 @@ impl Connection {
     generate_access!(rhs_port_array_type, PortArray, get_rhs_port_array_type, set_rhs_port_array_type);
 
     generate_access!(delay, Arc<RwLock<Variable>>, get_delay, set_delay);
+    generate_access!(check_restrict_type_same, bool, get_check_restrict_type_same, set_check_restrict_type_same);
 
     pub fn new(name_: String, lhs_port_: Inferable<Arc<RwLock<Port>>>, rhs_port_: Inferable<Arc<RwLock<Port>>>, delay_: Variable) -> Self {
         Self {
@@ -162,16 +167,17 @@ impl Connection {
             rhs_port_array_type: PortArray::UnknownPortArray,
             delay: Arc::new(RwLock::new(delay_.clone())),
             docu: None,
+            check_restrict_type_same: true,
         }
     }
 }
 
 impl From<Connection> for String {
     fn from(conn: Connection) -> Self {
-        return format!("{}.{}{} ={}=> {}.{}{} ({})", String::from(conn.lhs_port_owner), String::from(conn.lhs_port.clone()), String::from(conn.lhs_port_array_type),
+        return format!("{}.{}{} ={}=> {}.{}{} ({}) {}", String::from(conn.lhs_port_owner.clone()), String::from(conn.lhs_port.clone()), String::from(conn.lhs_port_array_type.clone()),
                        String::from((*conn.delay.read().unwrap()).clone()),
-                       String::from(conn.rhs_port_owner), String::from(conn.rhs_port.clone()), String::from(conn.rhs_port_array_type),
-                       conn.name.clone());
+                       String::from(conn.rhs_port_owner.clone()), String::from(conn.rhs_port.clone()), String::from(conn.rhs_port_array_type.clone()),
+                       conn.name.clone(), if !conn.get_check_restrict_type_same() { String::from("@NoStrictType") } else { String::from("") });
     }
 }
 

@@ -8,10 +8,9 @@ extern crate threadpool;
 extern crate rand;
 
 use std::fs;
-use std::string::ParseError;
 use std::sync::{Arc, RwLock};
 
-use ParserErrorCode::{AnalysisCodeStructureFail, FileError, ImplementEvaluationFail};
+use ParserErrorCode::{AnalysisCodeStructureFail, ImplementEvaluationFail};
 use pest::{Parser};
 use pest::iterators::{Pairs};
 use tydi_lang_raw_ast::bit_null_type::LogicalBit;
@@ -71,7 +70,6 @@ impl From<ParserErrorCode> for String {
 
 pub fn parse_multi_files_st(project_name: String, file_paths: Vec<String>) -> Result<Arc<RwLock<project_arch::Project>>, Vec<Result<(),ParserErrorCode>>> {
     use std::path::Path;
-    use std::ffi::OsStr;
 
     let mut error_flag = false;
     let output_project = Arc::new(RwLock::new(project_arch::Project::new(project_name.clone())));
@@ -84,6 +82,8 @@ pub fn parse_multi_files_st(project_name: String, file_paths: Vec<String>) -> Re
             continue;
         }
         let (package, _) = result.ok().unwrap();
+
+        #[allow(unused_variables)]
         let file_path_fs= Path::new(&file_path);
 
         ////The checking of package name == file name is disabled
@@ -112,7 +112,6 @@ pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worke
     use threadpool::ThreadPool;
     use std::sync::mpsc;
     use std::path::Path;
-    use std::ffi::OsStr;
 
     let output_project = Arc::new(RwLock::new(project_arch::Project::new(project_name.clone())));
     let worker_u32 = match worker {
@@ -140,6 +139,8 @@ pub fn parse_multi_files_mt(project_name: String, file_paths: Vec<String>, worke
             {
                 ast_tree.write().unwrap().insert(file_path.clone(), ast);
             }
+
+            #[allow(unused_variables)]
             let file_path_fs= Path::new(&file_path);
 
             ////The checking of package name == file name is disabled
@@ -604,6 +605,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
             },
             Rule::ImplementationBodyDeclareNet | Rule::ImplementationBodyDeclareDelayedNet => {
                 let mut connection = Connection::new(String::from(""), not_inferred!(infer_port!(), String::from("")), not_inferred!(infer_port!(), String::from("")), Variable::new_int(String::from(""), 0));
+                connection.set_name(format!("connection_{}-{}", single_stat.clone().as_span().start(), single_stat.clone().as_span().end()));
                 let mut lhs_rhs_counter = 0;
                 for element in single_stat.clone().into_inner().into_iter() {
                     match element.as_rule() {
@@ -642,12 +644,20 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                         Rule::Exp => {
                             connection.set_delay(Arc::new(RwLock::new(Variable::new(String::from(""), DataType::UnknownType, element.as_str().to_string()))));
                         },
+                        Rule::ATTR => {
+                            let attr = element.as_str().to_string();
+                            if attr == String::from("@NoStrictType@") {
+                                connection.set_check_restrict_type_same(false);
+                            }
+                            else {
+                                return Err(AnalysisCodeStructureFail(format!("unknown attribute in connection {}", connection.get_name())));
+                            }
+                        },
                         _ => { unreachable!() }
                     }
                 }
 
                 // add connection
-                connection.set_name(format!("connection_{}-{}", single_stat.clone().as_span().start(), single_stat.clone().as_span().end()));
                 {
                     let result = scope.write().unwrap().with_connection(Arc::new(RwLock::new(connection)));
                     if result.is_err() { return Err(AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }

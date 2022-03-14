@@ -29,6 +29,6 @@ streamlet rgb_bypass {
 
 #implement documentation#
 impl impl_rgb_bypass of rgb_bypass {
-  input => output,
+  input => output @NoStrictType@,
   input2 => output2,
 };

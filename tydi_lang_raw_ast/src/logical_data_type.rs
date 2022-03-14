@@ -125,6 +125,86 @@ impl PartialEq for LogicalDataType {
     }
 }
 
+impl LogicalDataType {
+    pub fn non_strict_eq(&self, other: &Self) -> bool {
+        match self {
+            LogicalDataType::DataNull => {
+                return if *other == LogicalDataType::DataNull { true } else { false }
+            },
+            LogicalDataType::DataBitType(i) => {
+                return match other {
+                    LogicalDataType::DataBitType(i_other) => {
+                        i.compare_value(i_other)
+                    }
+                    _ => false
+                }
+            },
+            LogicalDataType::DataGroupType(_, group) => {
+                match other {
+                    LogicalDataType::DataGroupType(_, other_group) => {
+                        let group_scope = group.read().unwrap().get_scope();
+                        let types = group_scope.read().unwrap().types.clone();
+                        let other_group_scope = other_group.read().unwrap().get_scope();
+                        let other_types = other_group_scope.read().unwrap().types.clone();
+                        for (name, single_type) in types {
+                            let type_in_other = other_types.get(&name);
+                            if type_in_other.is_none() { return false; }
+                            let type_in_other = type_in_other.unwrap();
+                            let type_in_other = type_in_other.read().unwrap().get_type_infer().get_raw_value();
+                            let type_in_other = type_in_other.read().unwrap().deep_clone();
+
+                            let type_self = single_type.read().unwrap().get_type_infer().get_raw_value();
+
+                            if !type_self.read().unwrap().non_strict_eq(&type_in_other) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    _ => return false
+                }
+            },
+            LogicalDataType::DataUnionType(_, union) => {
+                match other {
+                    LogicalDataType::DataUnionType(_, other_union) => {
+                        let union_scope = union.read().unwrap().get_scope();
+                        let types = union_scope.read().unwrap().types.clone();
+                        let other_union_scope = other_union.read().unwrap().get_scope();
+                        let other_types = other_union_scope.read().unwrap().types.clone();
+                        for (name, single_type) in types {
+                            let type_in_other = other_types.get(&name);
+                            if type_in_other.is_none() { return false; }
+                            let type_in_other = type_in_other.unwrap();
+                            let type_in_other = type_in_other.read().unwrap().get_type_infer().get_raw_value();
+                            let type_in_other = type_in_other.read().unwrap().deep_clone();
+
+                            let type_self = single_type.read().unwrap().get_type_infer().get_raw_value();
+
+                            if !type_self.read().unwrap().non_strict_eq(&type_in_other) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    _ => return false
+                }
+            },
+            LogicalDataType::DataStreamType(_, stream) => {
+                match other {
+                    LogicalDataType::DataStreamType(_, other_stream) => {
+                        let other_stream = other_stream.read().unwrap().deep_clone();
+                        if !stream.read().unwrap().eq(&other_stream, false) { return false; }
+                        return true;
+                    }
+                    _ => return false
+                }
+            },
+            _ => unreachable!()
+        }
+        return true;
+    }
+}
+
 impl From<LogicalDataType> for String {
     fn from(logical_data_type: LogicalDataType) -> Self {
         return match logical_data_type {
