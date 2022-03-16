@@ -634,7 +634,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                         Rule::NetName => {
                             for item in element.into_inner().into_iter() {
                                 match item.as_rule() {
-                                    Rule::ID => {
+                                    Rule::Exp => {
                                         connection.set_name(item.as_str().to_string());
                                     },
                                     _ => { unreachable!() }
