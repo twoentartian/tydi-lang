@@ -5,11 +5,9 @@ use pest::iterators::{Pairs, Pair};
 use pest::prec_climber::{PrecClimber};
 use pest::prec_climber::Assoc::{Left, Right};
 use pest::prec_climber as pcl;
-use tydi_lang_raw_ast::inferable::InferState::Inferred;
 use tydi_lang_raw_ast::logical_data_type::LogicalDataType;
 use tydi_lang_raw_ast::project_arch::Project;
 use tydi_lang_raw_ast::scope::{Scope, Variable, DataType, InferState, VariableValue};
-use tydi_lang_raw_ast::variable::ClockDomainValue;
 use crate::ParserErrorCode;
 use crate::evaluation_type;
 
@@ -1541,7 +1539,8 @@ pub fn infer_variable(var: Arc<RwLock<Variable>>, scope: Arc<RwLock<Scope>>, pro
             let mut converted_inferred_value = var.read().unwrap().get_var_value().clone();
             converted_inferred_value.set_infer_state(InferState::Inferred);
             let mut converted_value = converted_inferred_value.get_raw_value();
-            inferred_value.get_var_value().get_raw_value().try_convert_to_in_place(&mut converted_value, &*var_type.read().unwrap());
+            //if following code throws an error, means we cannot convert to this type (not implement or something)
+            inferred_value.get_var_value().get_raw_value().try_convert_to_in_place(&mut converted_value, &*var_type.read().unwrap()).unwrap();
             converted_inferred_value.set_raw_value(converted_value);
 
             let mut var_write = var.write().unwrap();

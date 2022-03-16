@@ -34,6 +34,16 @@ impl From<PortDirection> for String {
     }
 }
 
+impl PortDirection {
+    pub fn toggle_direction(&self) -> Self {
+        return match self {
+            PortDirection::Input => { PortDirection::Output }
+            PortDirection::Output => { PortDirection::Input }
+            PortDirection::Unknown => { unreachable!() }
+        };
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum PortArray {
     UnknownPortArray,

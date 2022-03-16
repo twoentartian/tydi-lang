@@ -68,6 +68,7 @@ impl DeepClone for LogicalDataType {
 }
 
 impl PartialEq for LogicalDataType {
+    // this eq is for strict comparison
     fn eq(&self, other: &Self) -> bool {
         return match self {
             LogicalDataType::DummyLogicalData => true,
@@ -201,7 +202,6 @@ impl LogicalDataType {
             },
             _ => unreachable!()
         }
-        return true;
     }
 }
 

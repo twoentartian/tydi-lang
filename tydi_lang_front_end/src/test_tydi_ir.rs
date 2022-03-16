@@ -1,4 +1,3 @@
-use std::path::Path;
 use tydi_lang_raw_ast::util::PrettyPrint;
 #[allow(unused_imports)]
 use crate::tydi_frontend_compile;
@@ -32,6 +31,16 @@ pub fn test() {
             }
         }
         assert!(false);
+        return;
+    }
+
+    //drc check
+    let project_arch = result.ok().unwrap();
+    let drc_msg = crate::drc::tydi_design_rule_check(project_arch.clone());
+    println!("drc messages: {}", drc_msg.len());
+
+    for msg in drc_msg {
+        println!("{:?}", msg);
     }
 
 }

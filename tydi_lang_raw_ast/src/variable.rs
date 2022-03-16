@@ -116,8 +116,6 @@ impl PartialEq for VariableValue {
             }
             _ => todo!()
         }
-
-        return true;
     }
 }
 

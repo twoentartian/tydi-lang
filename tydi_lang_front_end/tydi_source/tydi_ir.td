@@ -19,16 +19,27 @@ type Group rgb {
   b: Bit(color_depth),
 };
 
+type Group rgb2 {
+  r: Bit(color_depth),
+  g: Bit(color_depth),
+  b: Bit(color_depth),
+};
+
+type stream_rgb = Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true);
+
 #streamlet documentation#
 streamlet rgb_bypass {
-  input: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) in `clockdomain_value,
-  output: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) out `clockdomain_value,
+  input: stream_rgb in `clockdomain_value,
+  output: stream_rgb out `clockdomain_value,
   input2: Stream(rgb) in `clockdomain_value2,
-  output2: Stream(rgb) out `clockdomain_value2,
+  output2: Stream(rgb2) out `clockdomain_value2,
+  input3: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) in,
+  output3: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) out,
 };
 
 #implement documentation#
 impl impl_rgb_bypass of rgb_bypass {
-  input => output @NoStrictType@,
-  input2 => output2,
+  input => output "con1",
+  input2 => output2 "con2" @NoStrictType@,
+  input3 => output3 "con3" @NoStrictType@,
 };
