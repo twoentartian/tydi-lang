@@ -1,4 +1,4 @@
-package tydi_ir; //package name must be the same with the file name
+package main; //package name must be the same with the file name
 
 const int_value: int = 10;
 const bool_value: bool = true;
@@ -26,12 +26,11 @@ type Group rgb2 {
 };
 
 type stream_rgb = Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true);
-type stream_rgb1 = stream_rgb;
 
 #streamlet documentation#
 streamlet rgb_bypass {
   input: stream_rgb in `clockdomain_value,
-  output: stream_rgb1 out `clockdomain_value,
+  output: stream_rgb out `clockdomain_value,
   input2: Stream(rgb) in `clockdomain_value2,
   output2: Stream(rgb2) out `clockdomain_value2,
   input3: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) in,

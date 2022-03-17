@@ -98,15 +98,15 @@ impl PartialEq for LogicalDataType {
                     _ => false,
                 }
             }
-            LogicalDataType::DataGroupType(name, _) => {
+            LogicalDataType::DataGroupType(name, ptr1) => {
                 match other {
-                    LogicalDataType::DataGroupType(other_name, _) => name == other_name,
+                    LogicalDataType::DataGroupType(other_name, ptr2) => name == other_name && std::sync::Arc::ptr_eq(ptr1, ptr2),
                     _ => false,
                 }
             }
-            LogicalDataType::DataUnionType(name, _) => {
+            LogicalDataType::DataUnionType(name, ptr1) => {
                 match other {
-                    LogicalDataType::DataUnionType(other_name, _) => name == other_name,
+                    LogicalDataType::DataUnionType(other_name, ptr2) => name == other_name && std::sync::Arc::ptr_eq(ptr1, ptr2),
                     _ => false,
                 }
             }

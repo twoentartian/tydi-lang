@@ -1,5 +1,5 @@
 mod test_tydi_ir;
-mod drc;
+pub mod drc;
 
 extern crate chrono;
 extern crate tydi_lang_parser;

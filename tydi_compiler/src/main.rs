@@ -22,7 +22,7 @@ fn parse_to_output(src: impl Into<String>, dst: String) -> tydi_common::error::R
     til_vhdl::canonical(&db, dst)
 }
 
-pub fn tydi_compile(project_name: String, src_file_path: Vec<String>, output_path: String, worker: Option<usize>) -> Arc<RwLock<Project>> {
+pub fn tydi_compile(project_name: String, src_file_path: Vec<String>, output_path: String, worker: Option<usize>, generate_drc: bool) -> Arc<RwLock<Project>> {
     let compile_result = tydi_lang_front_end::tydi_frontend_compile(Some(project_name.clone()), src_file_path, Some(output_path.clone()), worker.clone());
     if compile_result.is_err() {
         let (project_arch, err_msg) = compile_result.err().unwrap();
@@ -36,11 +36,23 @@ pub fn tydi_compile(project_name: String, src_file_path: Vec<String>, output_pat
 
         panic!("{}", err_msg);
     }
-
     println!("generating Tydi IR - done");
 
     let project_arch = compile_result.ok().unwrap();
 
+    //drc
+    if generate_drc {
+        let drc_msg = tydi_lang_front_end::drc::tydi_design_rule_check(project_arch.clone());
+        let mut drc_file_content = String::from("");
+        drc_file_content.push_str(&format!("drc messages: {}\n", drc_msg.len()));
+        for msg in drc_msg {
+            drc_file_content.push_str(&format!("{:?}\n", msg));
+        }
+        std::fs::write(format!("{}/{}", output_path.clone(), "drc_report.txt"), drc_file_content).expect("error to write the drc report content");
+    }
+    println!("generating Tydi DRC report - done");
+
+    //vhdl
     let output_folder_path = format!("{}/{}", output_path.clone(), "4_vhdl");
     let output_folder = Path::new(&output_folder_path);
     if !output_folder.exists() { std::fs::create_dir(output_folder).expect("cannot create VHDl output folder"); }
@@ -71,28 +83,32 @@ fn main() {
     let mut project_name: Option<String> = None;
     let mut output_path: Option<String> = None;
     let mut worker: Option<usize> = None;
+    let mut generate_drc_report = false;
 
     //parse args
     let mut arg_index = 1; // ignore the first arg because it's the env root
     while arg_index < args.len() {
         let arg = &args[arg_index];
         if arg == "-n" {
-            arg_index = arg_index + 1;
+            arg_index = arg_index + 1; // get the next input
             let arg = &args[arg_index];
             if project_name == None { project_name = Some(arg.clone()); }
             else { panic!("project name override"); }
         }
         else if arg == "-o" {
-            arg_index = arg_index + 1;
+            arg_index = arg_index + 1; // get the next input
             let arg = &args[arg_index];
             if output_path == None { output_path = Some(arg.clone()); }
             else { panic!("output path override"); }
         }
         else if arg == "-j" {
-            arg_index = arg_index + 1;
+            arg_index = arg_index + 1; // get the next input
             let arg = &args[arg_index];
             if worker == None { worker = Some(arg.parse().unwrap()); }
             else { panic!("output path override"); }
+        }
+        else if arg == "-drc" {
+            generate_drc_report = true;
         }
         else {
             let src_file = Path::new(arg);
@@ -145,5 +161,5 @@ fn main() {
     println!("src files: {:?}", src_file_path.clone());
     println!("worker: {:?}", worker.clone());
 
-    tydi_compile(real_project_name.clone(), src_file_path.clone(), real_output_path.clone(), worker.clone());
+    tydi_compile(real_project_name.clone(), src_file_path.clone(), real_output_path.clone(), worker.clone(), generate_drc_report);
 }
