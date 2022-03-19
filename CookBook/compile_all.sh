@@ -27,3 +27,7 @@ cd ..
 cd 7_External_Implement || exit
 sh ./compile.sh
 cd ..
+
+cd 8_StrictTypeCheck || exit
+sh ./compile.sh
+cd ..
