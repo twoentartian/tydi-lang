@@ -172,6 +172,4 @@ external impl void_i<type_in: type> of void_s<type type_in> {
 
 };
 
-type stream_bit8 = Stream(Bit(8));
-impl void_i_bit8(void_i<type Stream(Bit(8))>);
 
