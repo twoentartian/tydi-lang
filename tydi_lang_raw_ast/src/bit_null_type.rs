@@ -62,7 +62,7 @@ impl LogicalBit {
         }
     }
 
-    pub fn new_with_definite(name_: String, bit_: i32) -> Self {
+    pub fn new_with_definite(name_: String, bit_: i64) -> Self {
         Self {
             name: name_.clone(),
             bit: Arc::new(RwLock::new(Variable::new_int(format!("!{{bit_int}}_{}", name_.clone()), bit_))),
@@ -114,7 +114,7 @@ impl Scope {
         return Ok(());
     }
 
-    pub fn new_logical_bit_with_definite(&mut self, name_: String, bit: i32) -> Result<(), ErrorCode> {
+    pub fn new_logical_bit_with_definite(&mut self, name_: String, bit: i64) -> Result<(), ErrorCode> {
         if self.scope_type == ScopeType::StreamScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define group type in Stream scope"))); }
         if self.scope_type == ScopeType::StreamletScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define group type in Streamlet scope"))); }
         if self.scope_type == ScopeType::ImplementScope { return Err(ErrorCode::ScopeNotAllowed(String::from("not allowed to define group type in Implement scope"))); }
