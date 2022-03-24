@@ -1,4 +1,4 @@
-package main; //package name must be the same with the file name
+package main;
 
 const int_value: int = 10;
 const bool_value: bool = true;

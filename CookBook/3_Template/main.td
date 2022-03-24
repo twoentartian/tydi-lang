@@ -1,4 +1,4 @@
-package main; //package name must be the same with the file name
+package main;
 
 type bit8_stream = Stream(Bit(8), d = 5, t = 2.5);
 

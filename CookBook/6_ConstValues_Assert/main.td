@@ -1,4 +1,4 @@
-package main; //package name must be the same with the file name
+package main;
 
 const x = 4;
 
