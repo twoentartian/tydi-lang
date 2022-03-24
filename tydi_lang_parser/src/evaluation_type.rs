@@ -13,7 +13,7 @@ pub fn infer_logical_type(logical_type: Arc<RwLock<LogicalDataType>>, scope: Arc
     let real_type_infer = (*logical_type.read().unwrap()).clone();
     match real_type_infer {
         LogicalDataType::DummyLogicalData => {
-
+            unreachable!()
         }
         LogicalDataType::UnknownLogicalDataType => { unreachable!() }
         LogicalDataType::ExternalLogicalDataType(package_id, type_name) => {

@@ -1,20 +1,14 @@
-package tydi_ir; //package name must be the same with the file name
+package tpch;
 
-const cd: clockdomain;
-const cd2: clockdomain = "cd_1";
-
-streamlet s {
-  port_in: Stream(Bit(8)) in `cd2,
-  port_out: Stream(Bit(8)) out `cd2,
+streamlet void_s<type_in: type> {
+  stream_in: type_in in,
 };
 
-external impl i of s {
+external impl void_i<type_in: type> of void_s<type type_in> {
 
 };
 
-impl i2 of s {
-  instance inner(i),
+//type bit8_stream = Stream(Bit(8));
+//impl void_i_bit8(void_i<type bit8_stream>);
 
-  inner.port_out => port_out,
-  port_in => inner.port_in,
-};
+impl void_i_bit8(void_i<type Stream(Bit(8))>);

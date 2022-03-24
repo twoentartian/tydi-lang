@@ -1,46 +1,11 @@
-package tydi_ir; //package name must be the same with the file name
+package tpch;
 
-const int_value: int = 10;
-const bool_value: bool = true;
-const float_value: float = 1.0;
-const str_value: str = "helloworld";
-const clockdomain_value: clockdomain = "50MHz-1";
-
-const clockdomain_value2: clockdomain;////default clockdomain
-
-//type indicator is optional
-const int_value2 = 10;
-
-//define type
-const color_depth = 8;
-type Group rgb {
-  r: Bit(color_depth),
-  g: Bit(color_depth),
-  b: Bit(color_depth),
+streamlet void_s<type_in: type> {
+  stream_in: type_in in,
 };
 
-type Group rgb2 {
-  r: Bit(color_depth),
-  g: Bit(color_depth),
-  b: Bit(color_depth),
+external impl void_i<type_in: type> of void_s<type type_in> {
+
 };
 
-type stream_rgb = Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true);
-type stream_rgb1 = stream_rgb;
-
-#streamlet documentation#
-streamlet rgb_bypass {
-  input: stream_rgb in `clockdomain_value,
-  output: stream_rgb1 out `clockdomain_value,
-  input2: Stream(rgb) in `clockdomain_value2,
-  output2: Stream(rgb2) out `clockdomain_value2,
-  input3: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) in,
-  output3: Stream(rgb, u=rgb, c=5, t=float_value, r="forward", x=true) out,
-};
-
-#implement documentation#
-impl impl_rgb_bypass of rgb_bypass {
-  input => output "con1",
-  input2 => output2 "con2" @NoStrictType@,
-  input3 => output3 "con3" @NoStrictType@,
-};
+impl void_i_bit8(void_i<type Stream(Bit(8))>);

@@ -1,13 +1,23 @@
-use std::collections::HashMap;
+extern crate spmc;
+use std::thread;
 
 fn main() {
-    println!("Hello, world!");
-    let mut hash0 = vec![1,2,3];
+    let (mut tx, rx) = spmc::channel();
 
-    println!("{:?}", hash0);
+    let mut handles = Vec::new();
+    for n in 0..5 {
+        let rx = rx.clone();
+        handles.push(thread::spawn(move || {
+            let msg = rx.recv().unwrap();
+            println!("worker {} recvd: {}", n, msg);
+        }));
+    }
 
-    let mut hash1 = hash0.clone();
-    hash1.push(4);
-    println!("{:?}", hash0);
-    println!("{:?}", hash1);
+    for i in 0..50 {
+        tx.send(i * 2).unwrap();
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
 }

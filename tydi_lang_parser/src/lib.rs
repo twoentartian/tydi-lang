@@ -39,6 +39,11 @@ mod util;
 #[grammar = "tydi_lang_syntax.pest"]
 pub struct TydiParser;
 
+#[allow(non_camel_case_types)]
+pub type PEST_EXPORT_Rule = crate::Rule;
+#[allow(non_camel_case_types)]
+pub type PEST_EXPORT_TydiParser = crate::TydiParser;
+
 #[derive(Clone, Debug)]
 pub enum ParserErrorCode {
     Unknown,
@@ -821,7 +826,7 @@ fn parse_argexps(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Vec<Arc
                 for exp in logical_type_exp.into_iter() {
                     match exp.clone().as_rule() {
                         Rule::LogicalType => {
-                            let logical_type_result = get_logical_type(exp.clone().into_inner(), String::from(""),scope.clone());
+                            let logical_type_result = get_logical_type(exp.clone().into_inner(),exp.clone().as_str().to_string(),scope.clone());
                             if logical_type_result.is_err() { return Err(logical_type_result.err().unwrap()); }
                             let logical_type_result = logical_type_result.ok().unwrap();
                             let output_var = Variable::new(String::from(""), DataType::LogicalDataType(Arc::new(RwLock::new(logical_type_result))), exp.clone().as_str().to_string());
@@ -840,7 +845,7 @@ fn parse_argexps(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Vec<Arc
                             package_id = item.as_str().to_string();
                         },
                         Rule::LogicalType => {
-                            let result = get_logical_type(item.into_inner(), String::from(""), scope.clone());
+                            let result = get_logical_type(item.into_inner(), exp.clone().as_str().to_string(), scope.clone());
                             if result.is_err() { return Err(result.err().unwrap()); }
                             logical_type = result.ok().unwrap();
                         },

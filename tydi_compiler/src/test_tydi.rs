@@ -16,5 +16,5 @@ pub fn test() {
         unreachable!()
     }
 
-    crate::tydi_compile(String::from("test_project"), paths, String::from("./output"),None);
+    crate::tydi_compile(String::from("test_project"), paths, String::from("./output"),None, true);
 }

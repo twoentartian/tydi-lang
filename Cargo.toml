@@ -10,8 +10,10 @@ members = [
     "tydi_lang_front_end",
     "derived_macro",
     "tydi_compiler",
+    "tydi_simulator",
 ]
 
 
 
 [dependencies]
+spmc = "0.3.0"

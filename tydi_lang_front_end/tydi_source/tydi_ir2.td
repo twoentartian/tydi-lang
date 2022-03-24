@@ -91,3 +91,11 @@ impl impl_template2<i:int, cd: clockdomain> of streamlet_template<i, type rgb_st
 impl impl_template_instance_1(impl_template<3>);
 
 impl impl_template_instance_2(impl_template2<5, 500kHz>);
+
+
+//impl1
+
+
+
+
+//impl2
