@@ -716,7 +716,7 @@ pub fn infer_connection(connection: Arc<RwLock<Connection>>, implement: Arc<RwLo
 
 pub fn infer_port(port_to_infer: Inferable<Arc<RwLock<Port>>>, port_to_infer_owner: &PortOwner, array_exp: PortArray, implement: Arc<RwLock<Implement>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Inferable<Arc<RwLock<Port>>>, ParserErrorCode> {
     //infer array var
-    let index: Option<i32>;
+    let index: Option<i64>;
     match array_exp {
         PortArray::UnknownPortArray => { unreachable!() }
         PortArray::SinglePort => { index = None }

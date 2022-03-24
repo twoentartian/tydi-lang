@@ -36,12 +36,12 @@ impl DeepClone for ClockDomainValue {
 #[derive(Clone, Debug)]
 pub enum VariableValue {
     Unknown,
-    Int(i32),
+    Int(i64),
     Bool(bool),
     Float(f32),
     Str(String),
     ClockDomain(ClockDomainValue),
-    ArrayInt(Vec<i32>),
+    ArrayInt(Vec<i64>),
     ArrayBool(Vec<bool>),
     ArrayFloat(Vec<f32>),
     ArrayStr(Vec<String>),
@@ -286,7 +286,7 @@ impl Variable {
         }
     }
 
-    pub fn new_int(name_: String, v: i32) -> Self {
+    pub fn new_int(name_: String, v: i64) -> Self {
         Self {
             name: name_.clone(),
             var_type: Arc::new(RwLock::new(DataType::IntType)),
@@ -318,7 +318,7 @@ impl Variable {
         }
     }
 
-    pub fn new_int_array(name_: String, v: Vec<i32>) -> Self {
+    pub fn new_int_array(name_: String, v: Vec<i64>) -> Self {
         Self {
             name: name_.clone(),
             var_type: Arc::new(RwLock::new(DataType::ArrayType(Arc::new(RwLock::new(DataType::IntType))))),

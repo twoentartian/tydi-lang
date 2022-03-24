@@ -142,7 +142,7 @@ fn eval_exp_bitwisenot(exp_bitwisenot: Pairs<Rule>, scope: Arc<RwLock<Scope>>, p
     if base <= 0 { return Err(ExpressionEvaluationFail(format!("the base of BitwiseNot operation must be positive"))); }
     if value < 0 { return Err(ExpressionEvaluationFail(format!("the value of BitwiseNot operation must be positive or zero"))); }
 
-    let output_value = (2 as i32).pow(base as u32) - value;
+    let output_value = (2 as i64).pow(base as u32) - value;
     if output_value < 0 { return Err(ExpressionEvaluationFail(format!("the value of BitwiseNot operation has larger bit width than the base width"))); }
     return Ok(Variable::new_int(String::from(""), output_value));
 }
@@ -154,25 +154,25 @@ fn eval_exp_int(int_exp: Pairs<Rule>, _: Arc<RwLock<Scope>>, _: Arc<RwLock<Proje
             Rule::INT_RAW_NORAML => {
                 let output = i64::from_str_radix(&int_val, 10);
                 if output.is_err() { return Err(ExpressionEvaluationFail(output.err().unwrap().to_string())); }
-                else { return Ok(Variable::new_int(String::from(""), output.ok().unwrap() as i32)); }
+                else { return Ok(Variable::new_int(String::from(""), output.ok().unwrap() as i64)); }
             },
             Rule::INT_RAW_HEX => {
                 let int_val = int_val.replace("0x", "");
                 let output = i64::from_str_radix(&int_val, 16);
                 if output.is_err() { return Err(ExpressionEvaluationFail(output.err().unwrap().to_string())); }
-                else { return Ok(Variable::new_int(String::from(""), output.ok().unwrap() as i32)); }
+                else { return Ok(Variable::new_int(String::from(""), output.ok().unwrap() as i64)); }
             },
             Rule::INT_RAW_BIN => {
                 let int_val = int_val.replace("0b", "");
                 let output = i64::from_str_radix(&int_val, 2);
                 if output.is_err() { return Err(ExpressionEvaluationFail(output.err().unwrap().to_string())); }
-                else { return Ok(Variable::new_int(String::from(""), output.ok().unwrap() as i32)); }
+                else { return Ok(Variable::new_int(String::from(""), output.ok().unwrap() as i64)); }
             },
             Rule::INT_RAW_OCT => {
                 let int_val = int_val.replace("0o", "");
                 let output = i64::from_str_radix(&int_val, 8);
                 if output.is_err() { return Err(ExpressionEvaluationFail(output.err().unwrap().to_string())); }
-                else { return Ok(Variable::new_int(String::from(""), output.ok().unwrap() as i32)); }
+                else { return Ok(Variable::new_int(String::from(""), output.ok().unwrap() as i64)); }
             },
             _ => { unreachable!() },
         }
@@ -595,13 +595,13 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
                         _ => unreachable!()
                     }
                 }
-                let output_value: i32;
+                let output_value: i64;
                 match input_exp.get_var_value().get_raw_value() {
                     VariableValue::Int(v) => {
                         output_value = v;
                     }
                     VariableValue::Float(v) => {
-                        output_value = v.round() as i32;
+                        output_value = v.round() as i64;
                     }
                     _ => { return Err(ExpressionEvaluationFail(format!("Round only acceptes float and int"))); }
                 }
@@ -619,13 +619,13 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
                         _ => unreachable!()
                     }
                 }
-                let output_value: i32;
+                let output_value: i64;
                 match input_exp.get_var_value().get_raw_value() {
                     VariableValue::Int(v) => {
                         output_value = v;
                     }
                     VariableValue::Float(v) => {
-                        output_value = v.floor() as i32;
+                        output_value = v.floor() as i64;
                     }
                     _ => { return Err(ExpressionEvaluationFail(format!("Round only acceptes float and int"))); }
                 }
@@ -643,13 +643,13 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
                         _ => unreachable!()
                     }
                 }
-                let output_value: i32;
+                let output_value: i64;
                 match input_exp.get_var_value().get_raw_value() {
                     VariableValue::Int(v) => {
                         output_value = v;
                     }
                     VariableValue::Float(v) => {
-                        output_value = v.ceil() as i32;
+                        output_value = v.ceil() as i64;
                     }
                     _ => { return Err(ExpressionEvaluationFail(format!("Round only acceptes float and int"))); }
                 }
@@ -803,7 +803,7 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
                         _ => unreachable!()
                     }
                 }
-                let mut range_values: Vec<i32> = vec![];
+                let mut range_values: Vec<i64> = vec![];
                 for index in 0 .. exp_vars.len() {
                     match exp_vars[index].get_var_value().get_raw_value() {
                         VariableValue::Int(v) => {
@@ -812,7 +812,7 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
                         _ => { return Err(ExpressionEvaluationFail(format!("ArrayRange expression can only use int values as start value")));}
                     }
                 }
-                let mut output_exp: Vec<i32> = vec![];
+                let mut output_exp: Vec<i64> = vec![];
                 let mut current_v = range_values[0];
                 while current_v < range_values[2] {
                     output_exp.push(current_v);
@@ -847,7 +847,7 @@ pub fn eval_term(term: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc<RwLo
 
                 match element_type {
                     DataType::IntType => {
-                        let mut output: Vec<i32> = vec![];
+                        let mut output: Vec<i64> = vec![];
                         for exp in exps {
                             match exp.get_var_value().get_raw_value() {
                                 VariableValue::Int(v) => {
@@ -1028,7 +1028,7 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
                     if lhs_type == DataType::IntType && rhs_type == DataType::IntType {
                         let lhs_value = lhs.get_var_value().get_raw_value();
                         let rhs_value = rhs.get_var_value().get_raw_value();
-                        let output:i32;
+                        let output:i64;
                         match lhs_value {
                             VariableValue::Int(i0) => {
                                 match rhs_value {
@@ -1195,7 +1195,7 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
                     if lhs_type == DataType::IntType && rhs_type == DataType::IntType {
                         let lhs_value = lhs.get_var_value().get_raw_value();
                         let rhs_value = rhs.get_var_value().get_raw_value();
-                        let output:i32;
+                        let output:i64;
                         match lhs_value {
                             VariableValue::Int(i0) => {
                                 match rhs_value {
@@ -1319,8 +1319,8 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
                     if lhs_type == DataType::IntType && rhs_type == DataType::IntType {
                         let lhs_value = lhs.get_var_value().get_raw_value();
                         let rhs_value = rhs.get_var_value().get_raw_value();
-                        let lhs_int: i32;
-                        let rhs_int: i32;
+                        let lhs_int: i64;
+                        let rhs_int: i64;
                         match lhs_value {
                             VariableValue::Int(i0) => { lhs_int = i0; }
                             _ => unreachable!()
@@ -1366,8 +1366,8 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
                     if lhs_type == DataType::IntType && rhs_type == DataType::IntType {
                         let lhs_value = lhs.get_var_value().get_raw_value();
                         let rhs_value = rhs.get_var_value().get_raw_value();
-                        let lhs_int: i32;
-                        let rhs_int: i32;
+                        let lhs_int: i64;
+                        let rhs_int: i64;
                         match lhs_value {
                             VariableValue::Int(i0) => { lhs_int = i0; }
                             _ => unreachable!()
@@ -1415,8 +1415,8 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
                     if lhs_type == DataType::IntType && rhs_type == DataType::IntType {
                         let lhs_value = lhs.get_var_value().get_raw_value();
                         let rhs_value = rhs.get_var_value().get_raw_value();
-                        let lhs_int: i32;
-                        let rhs_int: i32;
+                        let lhs_int: i64;
+                        let rhs_int: i64;
                         match lhs_value {
                             VariableValue::Int(i0) => { lhs_int = i0; }
                             _ => unreachable!()
@@ -1436,8 +1436,8 @@ pub fn eval_exp(expression: Pairs<Rule>, scope: Arc<RwLock<Scope>>, project: Arc
                     if lhs_type == DataType::IntType && rhs_type == DataType::IntType {
                         let lhs_value = lhs.get_var_value().get_raw_value();
                         let rhs_value = rhs.get_var_value().get_raw_value();
-                        let lhs_int: i32;
-                        let rhs_int: i32;
+                        let lhs_int: i64;
+                        let rhs_int: i64;
                         match lhs_value {
                             VariableValue::Int(i0) => { lhs_int = i0; }
                             _ => unreachable!()
