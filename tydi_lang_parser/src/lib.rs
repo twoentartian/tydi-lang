@@ -491,11 +491,11 @@ fn parse_logical_type_slice(slice: Pairs<Rule>, _: Arc<RwLock<Scope>>) -> Result
     unreachable!();
 }
 
-fn parse_else_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
+fn parse_else_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>, implement: &Implement) -> Result<(), ParserErrorCode> {
     for item in block.into_iter() {
         match item.clone().as_rule() {
             Rule::ImplementationBody => {
-                let process = parse_implement_body(item.into_inner(), scope.clone())?;
+                let process = parse_implement_body(item.into_inner(), scope.clone(), implement)?;
                 if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in else block"))); }
             }
             _ => { unreachable!() }
@@ -504,14 +504,14 @@ fn parse_else_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(),
     return Ok(());
 }
 
-fn parse_elif_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>, elif_block: & mut ElifScope) -> Result<(), ParserErrorCode> {
+fn parse_elif_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>, elif_block: & mut ElifScope, implement: &Implement) -> Result<(), ParserErrorCode> {
     for item in block.into_iter() {
         match item.clone().as_rule() {
             Rule::Exp => {
                 elif_block.set_elif_exp(Arc::new(RwLock::new(Variable::new(String::from(""), DataType::BoolType, item.as_str().to_string()))));
             }
             Rule::ImplementationBody => {
-                let process = parse_implement_body(item.into_inner(), scope.clone())?;
+                let process = parse_implement_body(item.into_inner(), scope.clone(), implement)?;
                 if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in elif block"))); }
             }
             _ => { unreachable!() }
@@ -520,15 +520,19 @@ fn parse_elif_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>, elif_block: &
     return Ok(());
 }
 
-fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result</*process:*/Option<String>, ParserErrorCode> {
+fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>, implement: &Implement) -> Result</*process:*/Option<String>, ParserErrorCode> {
     let mut output_process: Option<String> = None;
     for single_stat in statement.into_iter() {
         match single_stat.clone().as_rule() {
             Rule::ImplementationBodyDeclareInstance => {
+                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(format!("implement({}) cannot define instance because it's external.", implement.get_name()))); }
+
                 let result = parse_implement_body_declare_instance(single_stat.clone().into_inner(), scope.clone());
                 if result.is_err() { return Err(result.err().unwrap()); }
             },
             Rule::ImplementationBodyDeclareInstanceArray => {
+                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(format!("implement({}) cannot define instance array because it's external.", implement.get_name()))); }
+
                 let result = parse_implement_body_declare_instance(single_stat.clone().into_inner(), scope.clone());
                 if result.is_err() { return Err(result.err().unwrap()); }
             },
@@ -537,6 +541,8 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                 if result.is_err() { return Err(result.err().unwrap()); }
             },
             Rule::ImplementationBodyIfBlock => {
+                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(format!("implement({}) cannot define if block because it's external.", implement.get_name()))); }
+
                 let name = format!("if_{}_{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
                 let mut if_block: IfScope = IfScope::new(name.clone(), Arc::new(RwLock::new(Variable::new_bool(String::from(""), true))));
                 for item in single_stat.clone().into_inner().into_iter() {
@@ -547,13 +553,13 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                             }
                         },
                         Rule::ImplementationBody => {
-                            let process = parse_implement_body(item.into_inner(), if_block.get_scope().clone())?;
+                            let process = parse_implement_body(item.into_inner(), if_block.get_scope().clone(), implement)?;
                             if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in if block"))); }
                         },
                         Rule::ElifBlock => {
                             let name = format!("elif_{}_{}", item.clone().as_span().start(), item.clone().as_span().end());
                             let mut elif_block = ElifScope::new(name);
-                            let result = parse_elif_block(item.into_inner(), elif_block.get_scope(), &mut elif_block);
+                            let result = parse_elif_block(item.into_inner(), elif_block.get_scope(), &mut elif_block, implement);
                             if result.is_err() { return Err(result.err().unwrap()); }
                             let mut previous_elifs = if_block.get_elif();
                             previous_elifs.push(elif_block);
@@ -562,7 +568,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                         Rule::ElseBlock => {
                             let name = format!("else_{}_{}", item.clone().as_span().start(), item.clone().as_span().end());
                             let else_block = ElseScope::new(name);
-                            let result = parse_else_block(item.into_inner(), else_block.get_scope().clone());
+                            let result = parse_else_block(item.into_inner(), else_block.get_scope().clone(), implement);
                             if result.is_err() { return Err(result.err().unwrap()); }
                             if_block.set_else(Some(else_block));
                         },
@@ -576,6 +582,8 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                 }
             },
             Rule::ImplementationBodyForBlock => {
+                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(format!("implement({}) cannot define for block because it's external.", implement.get_name()))); }
+
                 let name = format!("for_{}_{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
                 let temp_var = Arc::new(RwLock::new(Variable::new_bool(String::from(""), true)));
                 let mut for_block: ForScope = ForScope::new(name.clone(), temp_var.clone(), temp_var.clone());
@@ -593,7 +601,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                             for_block.set_array_exp(Arc::new(RwLock::new(Variable::new(String::from(""), DataType::UnknownType, item.as_str().to_string()))));
                         }
                         Rule::ImplementationBody => {
-                            let process = parse_implement_body(item.into_inner(), for_block.get_scope().clone())?;
+                            let process = parse_implement_body(item.into_inner(), for_block.get_scope().clone(), implement)?;
                             if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in for block"))); }
                         }
                         _ => { unreachable!() }
@@ -609,6 +617,8 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Re
                 output_process = Some(single_stat.as_str().to_string());
             },
             Rule::ImplementationBodyDeclareNet | Rule::ImplementationBodyDeclareDelayedNet => {
+                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(format!("implement({}) cannot define connections/nets because it's external.", implement.get_name()))); }
+
                 let mut connection = Connection::new(String::from(""), not_inferred!(infer_port!(), String::from("")), not_inferred!(infer_port!(), String::from("")), Variable::new_int(String::from(""), 0));
                 connection.set_name(format!("connection_{}-{}", single_stat.clone().as_span().start(), single_stat.clone().as_span().end()));
                 let mut lhs_rhs_counter = 0;
@@ -726,7 +736,7 @@ fn parse_implement_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
                 }
             },
             Rule::ImplementationBody => {
-                let process = parse_implement_body(element.into_inner(), implement.get_scope())?;
+                let process = parse_implement_body(element.into_inner(), implement.get_scope(), &implement)?;
                 implement.set_simulation_process(process);
             },
             Rule::DOCUMENT => {
@@ -826,7 +836,7 @@ fn parse_argexps(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Vec<Arc
                 for exp in logical_type_exp.into_iter() {
                     match exp.clone().as_rule() {
                         Rule::LogicalType => {
-                            let logical_type_result = get_logical_type(exp.clone().into_inner(),exp.clone().as_str().to_string(),scope.clone());
+                            let logical_type_result = get_logical_type(exp.clone().into_inner(),format!("type_{}", util::get_rand_string(Some(20))),scope.clone());
                             if logical_type_result.is_err() { return Err(logical_type_result.err().unwrap()); }
                             let logical_type_result = logical_type_result.ok().unwrap();
                             let output_var = Variable::new(String::from(""), DataType::LogicalDataType(Arc::new(RwLock::new(logical_type_result))), exp.clone().as_str().to_string());
@@ -845,7 +855,7 @@ fn parse_argexps(exps: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<Vec<Arc
                             package_id = item.as_str().to_string();
                         },
                         Rule::LogicalType => {
-                            let result = get_logical_type(item.into_inner(), exp.clone().as_str().to_string(), scope.clone());
+                            let result = get_logical_type(item.into_inner(), format!("type_{}", util::get_rand_string(Some(20))), scope.clone());
                             if result.is_err() { return Err(result.err().unwrap()); }
                             logical_type = result.ok().unwrap();
                         },
