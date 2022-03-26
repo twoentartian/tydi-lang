@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 use ParserErrorCode;
 use tydi_lang_raw_ast::scope::{Scope, ScopeType, Variable, VariableValue};
+use rand::{distributions::Alphanumeric, Rng};
 
 pub fn generate_template_instance_name(template_name: String, template_exps: &Vec<Arc<RwLock<Variable>>>) -> String
 {
@@ -56,4 +57,18 @@ pub fn goto_basic_scope(scope: Arc<RwLock<Scope>>) -> Result<Arc<RwLock<Scope>>,
         }
     }
     return Err(ParserErrorCode::ParserError(format!("cannot find the basic scope")));
+}
+
+pub fn get_rand_string(length: Option<usize>) -> String {
+    let real_length = match length {
+        None => { 20 }
+        Some(v) => { v }
+    };
+
+    let s: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(real_length)
+        .map(char::from)
+        .collect();
+    return s;
 }
