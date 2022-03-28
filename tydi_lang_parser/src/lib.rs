@@ -53,7 +53,9 @@ pub enum ParserErrorCode {
     ExpressionEvaluationFail(String),
     TypeEvaluationFail(String),
     StreamletEvaluationFail(String),
-    ImplementEvaluationFail(String),
+    ImplementEvaluationFail(String, String),
+    InstanceEvaluationFail(String),
+    PortOwnerEvaluationFail(String),
     PackageNotImported(String),
 }
 
@@ -67,7 +69,9 @@ impl From<ParserErrorCode> for String {
             ParserErrorCode::ExpressionEvaluationFail(s) => { format!("ExpressionEvaluationFail:{}", s) }
             ParserErrorCode::TypeEvaluationFail(s) => { format!("TypeEvaluationFail:{}", s) }
             ParserErrorCode::StreamletEvaluationFail(s) => { format!("StreamletEvaluationFail:{}", s) }
-            ParserErrorCode::ImplementEvaluationFail(s) => { format!("ImplementEvaluationFail:{}", s) }
+            ParserErrorCode::ImplementEvaluationFail(n, s) => { format!("ImplementEvaluationFail at ({}):{}", n, s) }
+            ParserErrorCode::InstanceEvaluationFail(s) => { format!("InstanceEvaluationFail:{}", s) }
+            ParserErrorCode::PortOwnerEvaluationFail(s) => { format!("PortOwnerEvaluationFail:{}", s) }
             ParserErrorCode::PackageNotImported(s) => { format!("PackageNotImported:{}", s) }
         }
     }
@@ -496,7 +500,7 @@ fn parse_else_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>, implement: &I
         match item.clone().as_rule() {
             Rule::ImplementationBody => {
                 let process = parse_implement_body(item.into_inner(), scope.clone(), implement)?;
-                if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in else block"))); }
+                if process.is_some() { return Err(ImplementEvaluationFail(implement.get_name(), format!("cannot define simulation process in else block"))); }
             }
             _ => { unreachable!() }
         }
@@ -512,7 +516,7 @@ fn parse_elif_block(block: Pairs<Rule>, scope: Arc<RwLock<Scope>>, elif_block: &
             }
             Rule::ImplementationBody => {
                 let process = parse_implement_body(item.into_inner(), scope.clone(), implement)?;
-                if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in elif block"))); }
+                if process.is_some() { return Err(ImplementEvaluationFail(implement.get_name(),format!("cannot define simulation process in elif block"))); }
             }
             _ => { unreachable!() }
         }
@@ -525,13 +529,13 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>, imple
     for single_stat in statement.into_iter() {
         match single_stat.clone().as_rule() {
             Rule::ImplementationBodyDeclareInstance => {
-                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(format!("implement({}) cannot define instance because it's external.", implement.get_name()))); }
+                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(implement.get_name(), format!("implement({}) cannot define instance because it's external.", implement.get_name()))); }
 
                 let result = parse_implement_body_declare_instance(single_stat.clone().into_inner(), scope.clone());
                 if result.is_err() { return Err(result.err().unwrap()); }
             },
             Rule::ImplementationBodyDeclareInstanceArray => {
-                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(format!("implement({}) cannot define instance array because it's external.", implement.get_name()))); }
+                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(implement.get_name(), format!("implement({}) cannot define instance array because it's external.", implement.get_name()))); }
 
                 let result = parse_implement_body_declare_instance(single_stat.clone().into_inner(), scope.clone());
                 if result.is_err() { return Err(result.err().unwrap()); }
@@ -541,7 +545,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>, imple
                 if result.is_err() { return Err(result.err().unwrap()); }
             },
             Rule::ImplementationBodyIfBlock => {
-                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(format!("implement({}) cannot define if block because it's external.", implement.get_name()))); }
+                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(implement.get_name(), format!("implement({}) cannot define if block because it's external.", implement.get_name()))); }
 
                 let name = format!("if_{}_{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
                 let mut if_block: IfScope = IfScope::new(name.clone(), Arc::new(RwLock::new(Variable::new_bool(String::from(""), true))));
@@ -554,7 +558,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>, imple
                         },
                         Rule::ImplementationBody => {
                             let process = parse_implement_body(item.into_inner(), if_block.get_scope().clone(), implement)?;
-                            if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in if block"))); }
+                            if process.is_some() { return Err(ImplementEvaluationFail(implement.get_name(), format!("cannot define simulation process in if block"))); }
                         },
                         Rule::ElifBlock => {
                             let name = format!("elif_{}_{}", item.clone().as_span().start(), item.clone().as_span().end());
@@ -582,7 +586,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>, imple
                 }
             },
             Rule::ImplementationBodyForBlock => {
-                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(format!("implement({}) cannot define for block because it's external.", implement.get_name()))); }
+                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(implement.get_name(), format!("implement({}) cannot define for block because it's external.", implement.get_name()))); }
 
                 let name = format!("for_{}_{}", single_stat.clone().as_span().start(),single_stat.clone().as_span().end());
                 let temp_var = Arc::new(RwLock::new(Variable::new_bool(String::from(""), true)));
@@ -602,7 +606,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>, imple
                         }
                         Rule::ImplementationBody => {
                             let process = parse_implement_body(item.into_inner(), for_block.get_scope().clone(), implement)?;
-                            if process.is_some() { return Err(ImplementEvaluationFail(format!("cannot define simulation process in for block"))); }
+                            if process.is_some() { return Err(ImplementEvaluationFail(implement.get_name(), format!("cannot define simulation process in for block"))); }
                         }
                         _ => { unreachable!() }
                     }
@@ -617,7 +621,7 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>, imple
                 output_process = Some(single_stat.as_str().to_string());
             },
             Rule::ImplementationBodyDeclareNet | Rule::ImplementationBodyDeclareDelayedNet => {
-                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(format!("implement({}) cannot define connections/nets because it's external.", implement.get_name()))); }
+                if implement.get_external_implement_flag() { return Err(ImplementEvaluationFail(implement.get_name(), format!("implement({}) cannot define connections/nets because it's external.", implement.get_name()))); }
 
                 let mut connection = Connection::new(String::from(""), not_inferred!(infer_port!(), String::from("")), not_inferred!(infer_port!(), String::from("")), Variable::new_int(String::from(""), 0));
                 connection.set_name(format!("connection_{}-{}", single_stat.clone().as_span().start(), single_stat.clone().as_span().end()));
@@ -680,6 +684,9 @@ fn parse_implement_body(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>, imple
             },
             Rule::Function => {
                 parse_function(single_stat.into_inner(), scope.clone())?;
+            },
+            Rule::ImplementationBodyDeclareType => {
+                parse_type_assign(single_stat.into_inner(), scope.clone())?;
             },
             _ => { unreachable!() },
         }
@@ -1141,9 +1148,13 @@ fn parse_streamlet_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) ->
             Rule::StreamLetBodyDeclareConstInStreamlet => {
                 parse_const_assign(element.into_inner(), streamlet.get_scope())?;
             },
+            Rule::StreamletDeclareType => {
+                parse_type_assign(element.into_inner(), streamlet.get_scope())?;
+            },
             Rule::Function => {
                 parse_function(element.into_inner(), streamlet.get_scope())?;
-            }
+            },
+
             _ => { unreachable!() },
         }
     }
@@ -1492,6 +1503,61 @@ fn get_logical_type(exp: Pairs<Rule>, id: String, scope: Arc<RwLock<Scope>>) -> 
                 }
                 output = LogicalDataType::DataUserDefinedVarType(exp);
             },
+            Rule::LogicalTypeInStreamlet => {
+                let mut first_id = String::from("");
+                let mut second_id = String::from("");
+                let mut is_first_id = true;
+                let mut arg_exps= vec![];
+                for e in element.into_inner() {
+                    match e.as_rule() {
+                        Rule::ID => {
+                            if is_first_id {
+                                is_first_id = false;
+                                first_id = e.as_str().to_string();
+                            }
+                            else {
+                                second_id = e.as_str().to_string();
+                            }
+                        },
+                        Rule::ArgExps => {
+                            let result = parse_argexps(e.into_inner(), scope.clone());
+                            if result.is_err() { return Err(result.err().unwrap()); }
+                            let result = result.ok().unwrap();
+                            arg_exps = result;
+                        },
+                        _ => { unreachable!() },
+                    }
+                }
+                output = LogicalDataType::DataUDVInStreamlet(first_id, arg_exps,second_id);
+            },
+            Rule::LogicalTypeInImplement => {
+                let mut first_id = String::from("");
+                let mut second_id = String::from("");
+                let mut is_first_id = true;
+                let mut arg_exps= vec![];
+                for e in element.into_inner() {
+                    match e.as_rule() {
+                        Rule::ID => {
+                            if is_first_id {
+                                is_first_id = false;
+                                first_id = e.as_str().to_string();
+                            }
+                            else {
+                                second_id = e.as_str().to_string();
+                            }
+                        },
+                        Rule::ArgExps => {
+                            let result = parse_argexps(e.into_inner(), scope.clone());
+                            if result.is_err() { return Err(result.err().unwrap()); }
+                            let result = result.ok().unwrap();
+                            arg_exps = result;
+                        },
+                        _ => { unreachable!() },
+                    }
+                }
+                output = LogicalDataType::DataUDVInImplement(first_id, arg_exps, second_id);
+            },
+
             _ => { unreachable!() },
         }
     }

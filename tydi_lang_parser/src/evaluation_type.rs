@@ -1,5 +1,7 @@
 use std::sync::{Arc, RwLock};
 use evaluation::verify_assert;
+use evaluation_implement::infer_implement;
+use evaluation_streamlet::infer_streamlet;
 use ParserErrorCode::TypeEvaluationFail;
 use tydi_lang_raw_ast::data_type::DataType;
 
@@ -11,7 +13,7 @@ use crate::evaluation_var::infer_variable;
 
 pub fn infer_logical_type(logical_type: Arc<RwLock<LogicalDataType>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<(),ParserErrorCode> {
     let real_type_infer = (*logical_type.read().unwrap()).clone();
-    match real_type_infer {
+    match real_type_infer.clone() {
         LogicalDataType::DummyLogicalData => {
             unreachable!()
         }
@@ -243,6 +245,36 @@ pub fn infer_logical_type(logical_type: Arc<RwLock<LogicalDataType>>, scope: Arc
                 //assign to the original type arc
                 *logical_type.write().unwrap() = (*result_logical_type.read().unwrap()).clone();
             }
+        }
+        LogicalDataType::DataUDVInStreamlet(streamlet_name, arg_exps, type_name) => {
+            let streamlet = scope.read().unwrap().resolve_streamlet_from_scope(streamlet_name.clone());
+            if streamlet.is_err() { return Err(TypeEvaluationFail(format!("{}: streamlet {} not found", String::from(real_type_infer.clone()), streamlet_name.clone() ))); }
+            let streamlet = streamlet.ok().unwrap();
+            let streamlet = infer_streamlet(streamlet.clone(), arg_exps, scope.clone(), project.clone())?;
+
+            let streamlet_scope = streamlet.read().unwrap().get_scope();
+            let resolve_result = streamlet_scope.read().unwrap().resolve_type_from_scope(type_name.clone());
+            if resolve_result.is_err() { return Err(TypeEvaluationFail(format!("{}: type {} not found", String::from(real_type_infer.clone()), type_name.clone() ))); }
+            let resolve_result = resolve_result.ok().unwrap();
+            let result_logical_type = resolve_result.read().unwrap().get_type_infer().get_raw_value();
+            let result = infer_logical_type(result_logical_type.clone(), scope.clone(), project.clone());
+            if result.is_err() { return Err(result.err().unwrap()); }
+            *logical_type.write().unwrap() = (*result_logical_type.read().unwrap()).clone();
+        }
+        LogicalDataType::DataUDVInImplement(implement_name, arg_exps, type_name) => {
+            let implement = scope.read().unwrap().resolve_implement_from_scope(implement_name.clone());
+            if implement.is_err() { return Err(TypeEvaluationFail(format!("{}: implement {} not found", String::from(real_type_infer.clone()), implement_name.clone() ))); }
+            let implement = implement.ok().unwrap();
+            let implement = infer_implement(implement.clone(), arg_exps.clone(), scope.clone(), project.clone())?;
+
+            let implement_scope = implement.read().unwrap().get_scope();
+            let resolve_result = implement_scope.read().unwrap().resolve_type_from_scope(type_name.clone());
+            if resolve_result.is_err() { return Err(TypeEvaluationFail(format!("{}: type {} not found", String::from(real_type_infer.clone()), type_name.clone() ))); }
+            let resolve_result = resolve_result.ok().unwrap();
+            let result_logical_type = resolve_result.read().unwrap().get_type_infer().get_raw_value();
+            let result = infer_logical_type(result_logical_type.clone(), scope.clone(), project.clone());
+            if result.is_err() { return Err(result.err().unwrap()); }
+            *logical_type.write().unwrap() = (*result_logical_type.read().unwrap()).clone();
         }
     }
 

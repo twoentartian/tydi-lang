@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use tydi_lang_raw_ast::util::PrettyPrint;
 #[allow(unused_imports)]
 use crate::tydi_frontend_compile;

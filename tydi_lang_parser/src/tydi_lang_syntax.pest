@@ -120,6 +120,13 @@ LogicalUnionType = {
     SubItem+ ~
 "}"
 }
+LogicalTypeInStreamlet = {
+"streamlet" ~ ID ~ ArgExps?  ~ "." ~ ID
+}
+LogicalTypeInImplement = {
+"impl" ~ ID ~ ArgExps? ~ "." ~ ID
+}
+
 LogicalStreamType = { "Stream" ~ "(" ~ LogicalType ~ StreamProperty* ~ ")" }
 StreamPropertyDimension = { "," ~ "d" ~ "=" ~ Exp }
 StreamPropertyUserType = { "," ~ "u" ~ "=" ~ LogicalType }
@@ -131,7 +138,7 @@ StreamPropertyKeep = { "," ~ "x" ~ "=" ~ Exp }
 StreamProperty = _{ (StreamPropertyDimension | StreamPropertyUserType | StreamPropertyThroughput | StreamPropertySynchronicity |
                     StreamPropertyComplexity | StreamPropertyDirection | StreamPropertyKeep) }
 LogicalUserDefinedType = { ID }
-LogicalType = { ( LogicalExternalType | LogicalNullType | LogicalBitType | LogicalStreamType | LogicalGroupType | LogicalUnionType | LogicalUserDefinedType) }
+LogicalType = { ( LogicalTypeInStreamlet | LogicalTypeInImplement | LogicalExternalType | LogicalNullType | LogicalBitType | LogicalStreamType | LogicalGroupType | LogicalUnionType | LogicalUserDefinedType) }
 
 SubItemItem = { ID ~ ":" ~ LogicalType ~ "," }
 SubItemDeclareConst = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
@@ -153,7 +160,9 @@ StreamLetBodyStreamLetPort = { DOCUMENT? ~ ID ~ ":" ~ LogicalType ~ Direction ~ 
 StreamLetBodyStreamLetPortArray = { DOCUMENT? ~ ID ~ ":" ~ LogicalType ~ "[" ~ Exp ~ "]" ~ Direction ~ ("`" ~ Exp)? ~ "," }
 StreamLetBodyDeclareConstInStreamlet = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
 StreamLetBodyFunction = _{ Function ~ "," }
-StreamLetBody = _{ (StreamLetBodyStreamLetPort | StreamLetBodyStreamLetPortArray | StreamLetBodyDeclareConstInStreamlet | StreamLetBodyFunction)}
+StreamletDeclareType = { DOCUMENT? ~ "type" ~ ID ~ "=" ~ LogicalType ~ "," }
+StreamLetBody = _{ (StreamletDeclareType | StreamLetBodyStreamLetPort | StreamLetBodyStreamLetPortArray | StreamLetBodyDeclareConstInStreamlet | StreamLetBodyFunction)}
+
 DirectionDirIn = { "in" }
 DirectionDirOut = { "out" }
 Direction = { (DirectionDirIn | DirectionDirOut) }
@@ -182,6 +191,7 @@ ImplementationBodyDeclareDelayedNet = { DOCUMENT? ~ LogicalTypeSlice ~ "=" ~ Exp
 ImplementationBodyDeclareConstInImpl = { "const" ~ ID ~ TypeIndicator ~ "=" ~ Exp ~ "," }
 ImplementationBodyDeclareProcess = { "process" ~ "{" ~ Simulation_Block ~ "}" ~ "," }
 ImplementationBodyFunction = _{ Function ~ "," }
+ImplementationBodyDeclareType = { DOCUMENT? ~ "type" ~ ID ~ "=" ~ LogicalType ~ "," }
 ImplementationBodyIfBlock = {
 "if" ~ "(" ~ Exp ~ ")" ~ "{" ~
   ImplementationBody* ~
@@ -204,7 +214,7 @@ ImplementationBodyForBlock = {
   ImplementationBody* ~
 "}"
 }
-ImplementationBody = { (ImplementationBodyDeclareInstance | ImplementationBodyDeclareInstanceArray |ImplementationBodyDeclareConstInImpl |
+ImplementationBody = { (ImplementationBodyDeclareType | ImplementationBodyDeclareInstance | ImplementationBodyDeclareInstanceArray |ImplementationBodyDeclareConstInImpl |
                         ImplementationBodyIfBlock | ImplementationBodyForBlock | ImplementationBodyDeclareProcess |
                         ImplementationBodyDeclareNet | ImplementationBodyDeclareDelayedNet | ImplementationBodyFunction)}
 

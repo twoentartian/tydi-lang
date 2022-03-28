@@ -168,7 +168,7 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
             }
 
             //create corresponding linking var
-            if streamlet_template_exps.len() != template_args.len() { return Err(StreamletEvaluationFail(format!("template expressions mismatch"))); }
+            if streamlet_template_exps.len() != template_args.len() { return Err(StreamletEvaluationFail(format!("template expressions mismatch, length mismatch"))); }
             for i in 0 .. streamlet_template_exps.len() {
                 let template_exp = &streamlet_template_exps[i];
                 let streamlet_arg = &template_args[i];

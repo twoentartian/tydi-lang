@@ -1,11 +1,24 @@
 package tpch;
 
-streamlet void_s<type_in: type> {
-  stream_in: type_in in,
+streamlet test {
+  type bit1 = Stream(Bit(1)),
+  port: bit1 in,
 };
 
-external impl void_i<type_in: type> of void_s<type type_in> {
-
+streamlet test2<t:type> {
+  type bit2 = t,
+  port: bit2 in,
 };
 
-impl void_i_bit8(void_i<type Stream(Bit(8))>);
+impl test_impl of test {
+  type bit3 = streamlet test.bit1,
+};
+
+type t1 = Stream(Bit(1));
+impl test2_impl of test2<type t1> {
+  type bit4 = streamlet test2<type t1>.bit2,
+};
+
+streamlet streamlet1 {
+  port: impl test2_impl.bit4 in,
+};

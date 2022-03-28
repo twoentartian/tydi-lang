@@ -1,7 +1,8 @@
 use std::sync::{RwLock, Arc};
 use tydi_lang_raw_ast::generate_get;
+use tydi_lang_raw_ast::implement::ImplementType;
 use tydi_lang_raw_ast::project_arch::Project;
-use tydi_lang_raw_ast::scope::{ClockDomainValue, Connection, PortDirection, PortOwner, VariableValue};
+use tydi_lang_raw_ast::scope::{Connection, PortDirection, PortOwner, VariableValue, Implement};
 
 #[derive(Clone, Debug)]
 pub enum DrcResultType {
@@ -124,18 +125,43 @@ pub fn tydi_design_rule_check_connection(connection: Arc<RwLock<Connection>>) ->
     return output;
 }
 
+pub fn tydi_design_rule_check_implement(implement: Arc<RwLock<Implement>>) -> Vec<DesignRuleErrorWarning> {
+    let mut output = vec![];
+
+    match implement.read().unwrap().get_type() {
+        ImplementType::NormalImplement => {}
+        ImplementType::TemplateImplement(_) => { return vec![];/*we don't check template implement*/ }
+        _ => unreachable!()
+    }
+
+    //check connections
+    let impl_scope = implement.read().unwrap().get_scope();
+    let connections = impl_scope.read().unwrap().connections.clone();
+    for (_,single_connection) in connections {
+        let mut msgs = tydi_design_rule_check_connection(single_connection.clone());
+        output.append(&mut msgs);
+    }
+
+    //check inner instances
+    let instances = impl_scope.read().unwrap().instances.clone();
+    for (_,single_instance) in instances {
+        let instance_impl = single_instance.read().unwrap().get_implement_type().get_raw_value();
+        let mut msgs = tydi_design_rule_check_implement(instance_impl);
+        output.append(&mut msgs);
+    }
+
+    return output;
+}
+
+
 pub fn tydi_design_rule_check(project: Arc<RwLock<Project>>) -> Vec<DesignRuleErrorWarning> {
     let mut output = vec![];
     for (_, package) in project.read().unwrap().packages.clone() {
         let package_scope = package.read().unwrap().scope.clone();
         let impls = package_scope.read().unwrap().implements.clone();
         for (_, single_impl) in impls {
-            let impl_scope = single_impl.read().unwrap().get_scope();
-            let connections = impl_scope.read().unwrap().connections.clone();
-            for (_,single_connection) in connections {
-                let mut msgs = tydi_design_rule_check_connection(single_connection.clone());
-                output.append(&mut msgs);
-            }
+            let mut msgs = tydi_design_rule_check_implement(single_impl);
+            output.append(&mut msgs);
         }
     }
 

@@ -11,6 +11,7 @@ use crate::type_alias::TypeAlias;
 use crate::inferable::{NewInferable, Inferable};
 use crate::{inferred, infer_logical_data_type};
 use crate::error::ErrorCode;
+use crate::variable::Variable;
 
 #[derive(Clone, Debug)]
 pub enum LogicalDataType {
@@ -24,6 +25,8 @@ pub enum LogicalDataType {
     DataUnionType(String, Arc<RwLock<LogicalUnion>>),
     DataStreamType(String, Arc<RwLock<LogicalStream>>),
     DataUserDefinedVarType(String),
+    DataUDVInStreamlet(String, Vec<Arc<RwLock<Variable>>>, String),
+    DataUDVInImplement(String, Vec<Arc<RwLock<Variable>>>, String),
 }
 
 impl ToTydiIL for LogicalDataType {
@@ -122,6 +125,20 @@ impl PartialEq for LogicalDataType {
                     _ => false,
                 }
             }
+            LogicalDataType::DataUDVInStreamlet(streamlet_name,_ , type_name) => {
+                match other {
+                    //warning: we don't compare the template arg expressions of the streamlet
+                    LogicalDataType::DataUDVInStreamlet(other_streamlet_name,_ , other_type_name) => streamlet_name == other_streamlet_name && type_name == other_type_name,
+                    _ => false,
+                }
+            }
+            LogicalDataType::DataUDVInImplement(streamlet_name,_ , type_name) => {
+                match other {
+                    //warning: we don't compare the template arg expressions of the implement
+                    LogicalDataType::DataUDVInImplement(other_streamlet_name,_ , other_type_name) => streamlet_name == other_streamlet_name && type_name == other_type_name,
+                    _ => false,
+                }
+            }
         }
     }
 }
@@ -217,6 +234,8 @@ impl From<LogicalDataType> for String {
             LogicalDataType::DataUnionType(name, _) => { format!("DataUnion({})", name) }
             LogicalDataType::DataStreamType(name, _) => { format!("Stream({})", name.clone()) }
             LogicalDataType::DataUserDefinedVarType(name) => { format!("VarType({})", name.clone()) }
+            LogicalDataType::DataUDVInStreamlet(streamlet_name,_ , name) => { format!("VarType(streamlet[{}].{})", streamlet_name.clone(), name.clone()) }
+            LogicalDataType::DataUDVInImplement(impl_name,_ , name) => { format!("VarType(impl[{}].{})", impl_name.clone(), name.clone()) }
         }
     }
 }
@@ -238,7 +257,9 @@ impl PrettyPrint for LogicalDataType {
             LogicalDataType::DataStreamType(_, stream) => {
                 stream.read().unwrap().pretty_print(depth, verbose)
             }
-            LogicalDataType::DataUserDefinedVarType(name) => { name.clone() }
+            LogicalDataType::DataUserDefinedVarType(_) => { String::from(self.clone()) }
+            LogicalDataType::DataUDVInStreamlet(_,_,_) => { String::from(self.clone()) }
+            LogicalDataType::DataUDVInImplement(_,_,_) => { String::from(self.clone()) }
         }
     }
 }
