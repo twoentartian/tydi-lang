@@ -1226,9 +1226,14 @@ fn parse_const_assign(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Resu
 fn parse_const_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Result<(), ParserErrorCode> {
     let mut id = String::from("");
     let mut type_exp = String::from("");
+    let mut line_loc = 0;
+    let mut col_loc = 0;
     for element in statement.clone().into_iter() {
         match element.as_rule() {
-            Rule::ID => { id = element.as_str().to_string() },
+            Rule::ID => {
+                (line_loc, col_loc) = element.as_span().start_pos().line_col();
+                id = element.as_str().to_string();
+            },
             Rule::TypeIndicatorBasicType => { type_exp = element.as_str().to_string() },
             Rule::TypeIndicatorBasicArrayType => { type_exp = element.as_str().to_string() },
             _ => { unreachable!() },
@@ -1242,7 +1247,7 @@ fn parse_const_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Res
             return Err(AnalysisCodeStructureFail(format!("missing type indicator in the declaring const statement")));
         }
 
-        let clock_domain_name = format!("clockdomain_{}", statement.span().start().line);
+        let clock_domain_name = format!("clockdomain_{}_{}", line_loc, col_loc);
         let cd_var = Variable::new_with_value(id.clone(), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::ClockDomain(clock_domain_name)));
         let result = scope.write().unwrap().with_variable(Arc::new(RwLock::new(cd_var)));
         if result.is_err() { return Err(AnalysisCodeStructureFail(format!("{}", String::from(result.err().unwrap())))); }

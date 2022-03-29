@@ -1,13 +1,15 @@
 package tpch;
 
+const cd: clockdomain = "123";
+
 streamlet test {
   type bit1 = Stream(Bit(1)),
-  port: bit1 in,
+  port: bit1 in `cd,
 };
 
 streamlet test2<t:type> {
   type bit2 = t,
-  port: bit2 in,
+  port: bit2 in `cd,
 };
 
 impl test_impl of test {
@@ -20,5 +22,5 @@ impl test2_impl of test2<type t1> {
 };
 
 streamlet streamlet1 {
-  port: impl test2_impl.bit4 in,
+  port: impl test2_impl.bit4 in `cd,
 };
