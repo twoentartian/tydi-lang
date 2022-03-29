@@ -1242,10 +1242,7 @@ fn parse_const_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Res
             return Err(AnalysisCodeStructureFail(format!("missing type indicator in the declaring const statement")));
         }
 
-        use rand::{thread_rng, Rng};
-        use rand::distributions::Alphanumeric;
-        let rand_string: String = thread_rng().sample_iter(&Alphanumeric).take(30).map(char::from).collect();
-        let clock_domain_name = format!("clockdomain_{}", rand_string);
+        let clock_domain_name = format!("clockdomain_{}", statement.span().start().line);
         let cd_var = Variable::new_with_value(id.clone(), DataType::ClockDomainType, VariableValue::ClockDomain(ClockDomainValue::ClockDomain(clock_domain_name)));
         let result = scope.write().unwrap().with_variable(Arc::new(RwLock::new(cd_var)));
         if result.is_err() { return Err(AnalysisCodeStructureFail(format!("{}", String::from(result.err().unwrap())))); }
