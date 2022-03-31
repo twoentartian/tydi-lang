@@ -1,0 +1,41 @@
+{
+  "simulation_step": "100ps",
+  "simulation_stop": "100ns",
+  "top_level_implement": "main_i",
+  "top_level_implement_package": "tpch",
+  "top_level_implement_input_signals": [
+    {
+      "name": "port_a",
+      "signals": [
+        {
+          "signal": "Pulse",
+          "time": "0ns",
+          "value": "0b00000000"
+        },
+        {
+          "signal": "Pulse",
+          "time": "1ns",
+          "value": "0b00001010"
+        },
+        {
+          "signal": "Periodic",
+          "phase": "5ns",
+          "period": "10ns",
+          "value": "0b00000000"
+        }
+      ]
+    }
+  ],
+  "clockdomain_mapping": [
+    {
+      "name": "default",
+      "expression": "1ns",
+      "phase": "500ps"
+    },
+    {
+      "name": "clockdomain_name_1",
+      "expression": "10ns",
+      "phase": "0ns"
+    }
+  ]
+}

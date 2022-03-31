@@ -10,3 +10,5 @@ tydi_lang_raw_ast = { path = "../tydi_lang_raw_ast" }
 tydi_lang_parser = { path = "../tydi_lang_parser" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1.0.79"
+regex = "1.5.5"
+lazy_static = "1.4.0"
