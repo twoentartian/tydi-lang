@@ -134,14 +134,12 @@ use crate::{evaluation_streamlet, evaluation_var};
 // }
 
 pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exps: Vec<Arc<RwLock<Variable>>>, scope: Arc<RwLock<Scope>>, project: Arc<RwLock<Project>>) -> Result<Arc<RwLock<Implement>>, ParserErrorCode> {
+
     let implement_scope = implement.read().unwrap().get_scope();
 
     let implement_type = implement.read().unwrap().get_type();
     match implement_type {
         ImplementType::NormalImplement => {
-            //check implement_template_exps
-            if implement_template_exps.len() != 0 { return Err(ImplementEvaluationFail(implement.read().unwrap().get_name(), format!("normal implement cannot have template expressions"))); }
-
             let mut sleep = false;
             loop {
                 if sleep { std::thread::sleep(std::time::Duration::from_micros(10)); }
@@ -161,6 +159,12 @@ pub fn infer_implement(implement: Arc<RwLock<Implement>>, implement_template_exp
                         return Ok(implement.clone());
                     }
                 }
+            }
+
+            //check implement_template_exps
+            if implement_template_exps.len() != 0 {
+                implement.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                return Err(ImplementEvaluationFail(implement.read().unwrap().get_name(), format!("normal implement cannot have template expressions")));
             }
 
             //infer derived streamlet
@@ -419,23 +423,39 @@ pub fn infer_instance(instance: Arc<RwLock<Instance>>, scope: Arc<RwLock<Scope>>
     match package {
         None => {
             //local streamlet
-            let find_implement_result = scope.read().unwrap().resolve_implement_from_scope(derived_implement_name.clone());
-            if find_implement_result.is_err() { return Err(InstanceEvaluationFail(String::from(find_implement_result.err().unwrap()))); }
-            resolve_implement_result = find_implement_result.ok().unwrap();
-            evaluation_scope = scope.clone();
+            if instance.read().unwrap().get_implement_type().get_infer_state() == InferState::Inferred {
+                resolve_implement_result = instance.read().unwrap().get_implement_type().get_raw_value();
+                evaluation_scope = scope.clone();
+            }
+            else {
+                let find_implement_result = scope.read().unwrap().resolve_implement_from_scope(derived_implement_name.clone());
+                if find_implement_result.is_err() {
+                    return Err(InstanceEvaluationFail(String::from(find_implement_result.err().unwrap())));
+                }
+                resolve_implement_result = find_implement_result.ok().unwrap();
+                evaluation_scope = scope.clone();
+            }
         }
         Some(package_name) => {
             //external streamlet
-            crate::util::check_import_package(package_name.clone(), scope.clone())?;
-            let project_read = project.read().unwrap();
-            let external_package = project_read.packages.get(&package_name);
-            if external_package.is_none() { return Err(InstanceEvaluationFail(format!("package {} not found", package_name.clone()))); }
-            let external_package = external_package.unwrap();
-            let external_scope = external_package.read().unwrap().get_scope();
-            let find_streamlet_result = external_scope.read().unwrap().resolve_implement_in_current_scope(derived_implement_name.clone());
-            if find_streamlet_result.is_err() { return Err(InstanceEvaluationFail(String::from(find_streamlet_result.err().unwrap()))); }
-            resolve_implement_result = find_streamlet_result.ok().unwrap();
-            evaluation_scope = external_scope.clone();
+            if instance.read().unwrap().get_implement_type().get_infer_state() == InferState::Inferred {
+                resolve_implement_result = instance.read().unwrap().get_implement_type().get_raw_value();
+                evaluation_scope = scope.clone();
+            }
+            else {
+                crate::util::check_import_package(package_name.clone(), scope.clone())?;
+                let project_read = project.read().unwrap();
+                let external_package = project_read.packages.get(&package_name);
+                if external_package.is_none() { return Err(InstanceEvaluationFail(format!("package {} not found", package_name.clone()))); }
+                let external_package = external_package.unwrap();
+                let external_scope = external_package.read().unwrap().get_scope();
+                let find_streamlet_result = external_scope.read().unwrap().resolve_implement_in_current_scope(derived_implement_name.clone());
+                if find_streamlet_result.is_err() {
+                    return Err(InstanceEvaluationFail(String::from(find_streamlet_result.err().unwrap())));
+                }
+                resolve_implement_result = find_streamlet_result.ok().unwrap();
+                evaluation_scope = external_scope.clone();
+            }
         }
     }
 
@@ -768,7 +788,9 @@ pub fn infer_port(port_to_infer: Inferable<Arc<RwLock<Port>>>, port_to_infer_own
                             format!("{}@{}", port.get_raw_exp(), i.to_string())
                         }
                     });
-                    if resolve_port_result.is_err() { return Err(ImplementEvaluationFail(implement.read().unwrap().get_name(), format!("{}, or it's an array and index out of range", String::from(resolve_port_result.err().unwrap())))); }
+                    if resolve_port_result.is_err() {
+                        return Err(ImplementEvaluationFail(implement.read().unwrap().get_name(), format!("{}, or it's an array and index out of range", String::from(resolve_port_result.err().unwrap()))));
+                    }
                     let resolve_port_result = resolve_port_result.ok().unwrap();
                     port.set_raw_value(resolve_port_result.clone());
                     port.set_infer_state(InferState::Inferred);

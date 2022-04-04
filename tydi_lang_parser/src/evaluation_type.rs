@@ -1,4 +1,5 @@
 use std::sync::{Arc, RwLock};
+use built_in_ids;
 use evaluation::verify_assert;
 use evaluation_implement::infer_implement;
 use evaluation_streamlet::infer_streamlet;
@@ -21,7 +22,7 @@ pub fn infer_logical_type(logical_type: Arc<RwLock<LogicalDataType>>, scope: Arc
         LogicalDataType::ExternalLogicalDataType(package_id, type_name) => {
             //check import
             {
-                let package_var_result = scope.read().unwrap().resolve_variable_from_scope(format!("$package${}", package_id.clone()));
+                let package_var_result = scope.read().unwrap().resolve_variable_from_scope(format!("{}{}", *built_in_ids::PACKAGE_PREFIX, package_id.clone()));
                 if package_var_result.is_err() { return Err(TypeEvaluationFail(format!("package {} not imported", package_id.clone()))); }
             }
 

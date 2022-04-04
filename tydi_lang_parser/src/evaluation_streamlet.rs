@@ -18,8 +18,6 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
     match streamlet_copy.get_type() {
         StreamletType::UnknownType => { unreachable!() }
         StreamletType::NormalStreamlet => {
-            if streamlet_template_exps.len() != 0 { return Err(StreamletEvaluationFail(format!("normal streamlet cannot have template expressions"))); }
-
             let mut sleep = false;
             loop {
                 if sleep { std::thread::sleep(std::time::Duration::from_micros(10)); }
@@ -39,6 +37,11 @@ pub fn infer_streamlet(streamlet: Arc<RwLock<Streamlet>>, streamlet_template_exp
                         return Ok(streamlet.clone());
                     }
                 }
+            }
+
+            if streamlet_template_exps.len() != 0 {
+                streamlet.write().unwrap().set_evaluate_flag(EvaluatedState::NotEvaluate);
+                return Err(StreamletEvaluationFail(format!("normal streamlet cannot have template expressions")));
             }
 
             let streamlet_scope = streamlet.read().unwrap().get_scope();

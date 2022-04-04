@@ -222,6 +222,8 @@ fn parse_start(start_elements: Pairs<Rule>, output_package: &mut project_arch::P
         match start_element.as_rule() {
             Rule::ID => {
                 output_package.set_name(start_element.as_str().to_string());
+                let result = output_package.scope.write().unwrap().new_variable(format!("{}{}", *built_in_ids::PACKAGE_PREFIX, start_element.as_str().to_string()), DataType::PackageType, String::from(""));
+                if result.is_err() { return Err(ParserErrorCode::AnalysisCodeStructureFail(String::from(result.err().unwrap()))); }
             },
             Rule::StartElementAImport => {
                 let inner_import_elements = start_element.into_inner();

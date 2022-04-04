@@ -374,85 +374,79 @@ streamlet data_filter_s {
 };
 
 impl data_filter_i of data_filter_s {
-  instance duplicator_shipdate(duplicator_i<type date_stream, 2>),
-  l_shipdate_in => duplicator_shipdate.input,
-
   instance baseline_date(const_date_generator_i<1,12,1998>),
   instance compare_date(comparator_i<type date_stream>),
-  duplicator_shipdate.output[0] => compare_date.input0,
+  l_shipdate_in => compare_date.input0,
   baseline_date.date_output => compare_date.input1,
-
-  instance duplicator(duplicator_i<type stream_filter_select_stream, 14>),
-  compare_date.output => duplicator.input @NoStrictType@,
 
   instance l_partkey_bypass(stream_filter_i<type key_stream>),
   l_partkey_in => l_partkey_bypass.input,
-  duplicator.output[0] => l_partkey_bypass.select,
+  compare_date.output => l_partkey_bypass.select,
   l_partkey_bypass.output => l_partkey_out,
 
   instance l_suppkey_bypass(stream_filter_i<type key_stream>),
   l_suppkey_in => l_suppkey_bypass.input,
-  duplicator.output[1] => l_suppkey_bypass.select,
+  compare_date.output => l_suppkey_bypass.select,
   l_suppkey_bypass.output => l_suppkey_out,
 
   instance l_quantity_bypass(stream_filter_i<type SQL_decimal_15_2_stream>),
   l_quantity_in => l_quantity_bypass.input,
-  duplicator.output[2] => l_quantity_bypass.select,
+  compare_date.output => l_quantity_bypass.select,
   l_quantity_bypass.output => l_quantity_out,
 
   instance l_extendedprice_bypass(stream_filter_i<type SQL_decimal_15_2_stream>),
   l_extendedprice_in => l_extendedprice_bypass.input,
-  duplicator.output[3] => l_extendedprice_bypass.select,
+  compare_date.output => l_extendedprice_bypass.select,
   l_extendedprice_bypass.output => l_extendedprice_out,
 
   instance l_discount_bypass(stream_filter_i<type SQL_decimal_15_2_stream>),
   l_discount_in => l_discount_bypass.input,
-  duplicator.output[4] => l_discount_bypass.select,
+  compare_date.output => l_discount_bypass.select,
   l_discount_bypass.output => l_discount_out,
 
   instance l_tax_bypass(stream_filter_i<type SQL_decimal_15_2_stream>),
   l_tax_in => l_tax_bypass.input,
-  duplicator.output[5] => l_tax_bypass.select,
+  compare_date.output => l_tax_bypass.select,
   l_tax_bypass.output => l_tax_out,
 
   instance l_returnflag_bypass(stream_filter_i<type SQL_char1_stream>),
   l_returnflag_in => l_returnflag_bypass.input,
-  duplicator.output[6] => l_returnflag_bypass.select,
+  compare_date.output => l_returnflag_bypass.select,
   l_returnflag_bypass.output => l_returnflag_out,
 
   instance l_linestatus_bypass(stream_filter_i<type SQL_char1_stream>),
   l_linestatus_in => l_linestatus_bypass.input,
-  duplicator.output[7] => l_linestatus_bypass.select,
+  compare_date.output => l_linestatus_bypass.select,
   l_linestatus_bypass.output => l_linestatus_out,
 
   instance l_shipdate_bypass(stream_filter_i<type date_stream>),
-  duplicator_shipdate.output[1] => l_shipdate_bypass.input,
-  duplicator.output[8] => l_shipdate_bypass.select,
+  l_shipdate_in => l_shipdate_bypass.input,
+  compare_date.output => l_shipdate_bypass.select,
   l_shipdate_bypass.output => l_shipdate_out,
 
   instance l_commitdate_bypass(stream_filter_i<type date_stream>),
   l_commitdate_in => l_commitdate_bypass.input,
-  duplicator.output[9] => l_commitdate_bypass.select,
+  compare_date.output => l_commitdate_bypass.select,
   l_commitdate_bypass.output => l_commitdate_out,
 
   instance l_receiptdate_bypass(stream_filter_i<type date_stream>),
   l_receiptdate_in => l_receiptdate_bypass.input,
-  duplicator.output[10] => l_receiptdate_bypass.select,
+  compare_date.output => l_receiptdate_bypass.select,
   l_receiptdate_bypass.output => l_receiptdate_out,
 
   instance l_shipinstruct_bypass(stream_filter_i<type SQL_char25_stream>),
   l_shipinstruct_in => l_shipinstruct_bypass.input,
-  duplicator.output[11] => l_shipinstruct_bypass.select,
+  compare_date.output => l_shipinstruct_bypass.select,
   l_shipinstruct_bypass.output => l_shipinstruct_out,
 
   instance l_shipmode_bypass(stream_filter_i<type SQL_char10_stream>),
   l_shipmode_in => l_shipmode_bypass.input,
-  duplicator.output[12] => l_shipmode_bypass.select,
+  compare_date.output => l_shipmode_bypass.select,
   l_shipmode_bypass.output => l_shipmode_out,
 
   instance l_comment_bypass(stream_filter_i<type varchar_stream>),
   l_comment_in => l_comment_bypass.input,
-  duplicator.output[13] => l_comment_bypass.select,
+  compare_date.output => l_comment_bypass.select,
   l_comment_bypass.output => l_comment_out,
 };
 
@@ -470,19 +464,15 @@ impl sum_qty_i of sum_qty_s {
   type count_type = streamlet accumulator_s<type SQL_decimal_15_2_stream>.count_type,
   instance accu0(accumulator_i<type SQL_decimal_15_2_stream>),
   instance accu1(accumulator_i<type SQL_decimal_15_2_stream>),
-  instance count_void(void_i<type count_type>) [1],
 
   l_quantity => accu0.input,
   accu0.output => sum_qty,
-  accu0.count => count_void[0].input,
 
   l_extendedprice => accu1.input,
 
-  instance sum_base_price_dup(duplicator_i<type SQL_decimal_15_2_stream, 2>),
   instance avg_price_divider(divider_i<type SQL_decimal_15_2_stream>),
-  accu1.output => sum_base_price_dup.input,
-  sum_base_price_dup.output[0] => sum_base_price,
-  sum_base_price_dup.output[1] => avg_price_divider.dividend,
+  accu1.output => sum_base_price,
+  accu1.output => avg_price_divider.dividend,
 
   instance converter(converter_i<type count_type, type SQL_decimal_15_2_stream, 1>),
   accu1.count => converter.input[0],
@@ -519,11 +509,9 @@ impl sum_disc_price_i of sum_disc_price_s {
   l_discount => neg.input,
   neg.output => adder.input1,
   instance multiplier(multiplier_i<type SQL_decimal_15_2_stream>),
-  instance sum_disc_price_dup(duplicator_i<type SQL_decimal_15_2_stream, 2>),
   adder.output => multiplier.input0,
   l_extendedprice => multiplier.input1,
-  multiplier.output => sum_disc_price_dup.input,
-  sum_disc_price_dup.output[0] => sum_disc_price, //sum_disc_price
+  multiplier.output => sum_disc_price, //sum_disc_price
 
   //calculate sum_charge
   instance multiplier2(multiplier_i<type SQL_decimal_15_2_stream>),
@@ -532,7 +520,7 @@ impl sum_disc_price_i of sum_disc_price_s {
   l_tax => adder2.input0,
   const_decimal_15_value2.output => adder2.input1,
   adder2.output => multiplier2.input0,
-  sum_disc_price_dup.output[1] => multiplier2.input1,
+  multiplier.output => multiplier2.input1,
   multiplier2.output => sum_charge,  //sum_charge
 
   //error handling
@@ -543,8 +531,6 @@ impl sum_disc_price_i of sum_disc_price_s {
   adder2.overflow => and.input[2] @NoStrictType@,
   multiplier2.overflow => and.input[3] @NoStrictType@,
   and.output => error @NoStrictType@,
-
-
 };
 
 // col: avg_qty, avg_disc, count_order
@@ -574,11 +560,10 @@ impl avg_qty_i of avg_qty_s {
   l_discount => accu1.input,
   accu1.output => divider1.dividend,
   type count_type = streamlet accumulator_s<type SQL_decimal_15_2_stream>.count_type,
-  instance duplicator(duplicator_i<type count_type, 2>),
-  accu1.count=> duplicator.input,
-  duplicator.output[0] => converter.input[0],
+
+  accu1.count => converter.input[0],
   converter.output[0] => divider1.divisor,
-  duplicator.output[1] => count_order @NoStrictType@,
+  accu1.count => count_order @NoStrictType@,
   divider1.quotient => avg_disc,
 
   //error
@@ -635,72 +620,26 @@ impl main_i of main_s {
   data_filter.l_returnflag_out => l_returnflag,
   data_filter.l_linestatus_out => l_linestatus,
 
-  //void l_partkey
-  instance void_l_partkey(void_i<type key_stream>),
-  data_filter.l_partkey_out => void_l_partkey.input,
-
-  //void l_suppkey
-  instance void_l_suppkey(void_i<type key_stream>),
-  data_filter.l_suppkey_out => void_l_suppkey.input,
-
-  //duplicate l_quantity
-  instance l_quantity_dup(duplicator_i<type SQL_decimal_15_2_stream,2>),
-  data_filter.l_quantity_out => l_quantity_dup.input,
-
-  //duplicate l_extendedprice
-  instance l_extendedprice_dup(duplicator_i<type SQL_decimal_15_2_stream,2>),
-  data_filter.l_extendedprice_out => l_extendedprice_dup.input,
-
-  //duplicate l_discount
-  instance l_discount_dup(duplicator_i<type SQL_decimal_15_2_stream,2>),
-  data_filter.l_discount_out => l_discount_dup.input,
-
-  //void l_shipdate
-  instance void_l_shipdate(void_i<type date_stream>),
-  data_filter.l_shipdate_out => void_l_shipdate.input,
-
-  //void l_commitdate
-  instance void_l_commitdate(void_i<type date_stream>),
-  data_filter.l_commitdate_out => void_l_commitdate.input,
-
-  //void l_receiptdate
-  instance void_l_receiptdate(void_i<type date_stream>),
-  data_filter.l_receiptdate_out => void_l_receiptdate.input,
-
-  //void l_shipinstruct
-  instance void_l_shipinstruct(void_i<type SQL_char25_stream>),
-  data_filter.l_shipinstruct_out => void_l_shipinstruct.input,
-
-  //void l_shipmode
-  instance void_l_shipmode(void_i<type SQL_char10_stream>),
-  data_filter.l_shipmode_out => void_l_shipmode.input,
-
-  //void l_comment
-  instance void_l_comment(void_i<type varchar_stream>),
-  data_filter.l_comment_out => void_l_comment.input,
-
-
-
   //part0
   instance part0(sum_qty_i),
-  l_quantity_dup.output[0] => part0.l_quantity,
-  l_extendedprice_dup.output[0] => part0.l_extendedprice,
+  data_filter.l_quantity_out => part0.l_quantity,
+  data_filter.l_extendedprice_out => part0.l_extendedprice,
   part0.sum_qty => sum_qty,
   part0.sum_base_price => sum_base_price,
   part0.avg_price => avg_price,
 
   //part1
   instance part1(sum_disc_price_i),
-  l_extendedprice_dup.output[1] => part1.l_extendedprice,
-  l_discount_dup.output[0] => part1.l_discount,
+  data_filter.l_extendedprice_out => part1.l_extendedprice,
+  data_filter.l_discount_out => part1.l_discount,
   data_filter.l_tax_out => part1.l_tax,
   part1.sum_disc_price => sum_disc_price,
   part1.sum_charge => sum_charge,
 
   //part2
   instance part2(avg_qty_i),
-  l_quantity_dup.output[1] => part2.l_quantity,
-  l_discount_dup.output[1] => part2.l_discount,
+  data_filter.l_quantity_out => part2.l_quantity,
+  data_filter.l_discount_out => part2.l_discount,
   part2.avg_qty => avg_qty,
   part2.avg_disc => avg_disc,
   part2.count_order => count_order @NoStrictType@,
@@ -713,4 +652,3 @@ impl main_i of main_s {
   part2.error => and.input[2] @NoStrictType@,
   and.output => err @NoStrictType@,
 };
-

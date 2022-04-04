@@ -1,5 +1,7 @@
 mod test_tydi_ir;
 pub mod drc;
+pub mod sugaring_connection;
+pub mod std_lib_config;
 
 extern crate chrono;
 extern crate tydi_lang_parser;
@@ -74,11 +76,6 @@ pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec
             let mut file = fs::File::create(&output_file_path).unwrap();
             file.write_all(ast.as_bytes()).unwrap();
         }
-
-        let parser_output_file_path = format!("{}/1_parser_output.txt", real_output_path.clone());
-        let mut file = fs::File::create(&parser_output_file_path).unwrap();
-        let content = project_architecture.read().unwrap().pretty_print(0,false);
-        file.write_all(content.as_bytes()).unwrap();
     }
     {
         let parser_output_file_path = format!("{}/1_parser_output.txt", real_output_path.clone());
@@ -99,6 +96,27 @@ pub fn tydi_frontend_compile(project_name: Option<String>, tydi_source_path: Vec
 
     {
         let evaluation_output_file_path = format!("{}/2_evaluation_output.txt", real_output_path.clone());
+        let mut file = fs::File::create(&evaluation_output_file_path).unwrap();
+        let content = project_architecture.read().unwrap().pretty_print(0,false);
+        file.write_all(content.as_bytes()).unwrap();
+    }
+
+    //sugaring
+    let sugaring_result = sugaring_connection::sugaring_connection(project_architecture.clone());
+    if sugaring_result.is_err() { return Err((Some(project_architecture), String::from(sugaring_result.err().unwrap()))); }
+
+    //re-evaluation project
+    let result = evaluation::evaluation_project_mt(project_architecture.clone(), true, true, worker);
+    if result.is_err() {
+        let mut err_msg = String::from("");
+        for error_code in result.err().unwrap() {
+            err_msg.push_str(&format!("{}\n", String::from(error_code)));
+        }
+        return Err((Some(project_architecture), err_msg));
+    }
+
+    {
+        let evaluation_output_file_path = format!("{}/2_evaluation_output_after_sugaring.txt", real_output_path.clone());
         let mut file = fs::File::create(&evaluation_output_file_path).unwrap();
         let content = project_architecture.read().unwrap().pretty_print(0,false);
         file.write_all(content.as_bytes()).unwrap();
