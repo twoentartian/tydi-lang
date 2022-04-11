@@ -454,8 +454,8 @@ impl where_claus_i of where_claus_s {
 };
 
 streamlet data_filter_s {
-  l_orderkey_in: SQL_decimal_15_2_stream in,
-  l_orderkey_out: SQL_decimal_15_2_stream out,
+  l_orderkey_in: key_stream in,
+  l_orderkey_out: key_stream out,
   l_extendedprice_in: SQL_decimal_15_2_stream in,
   l_extendedprice_out: SQL_decimal_15_2_stream out,
   l_discount_in: SQL_decimal_15_2_stream in,
@@ -484,27 +484,27 @@ impl data_filter_i of data_filter_s {
   o_orderdate => selection.o_orderdate,
   l_shipdate => selection.l_shipdate,
 
-  instance l_orderkey_filter(stream_filter_i<type SQL_decimal_15_2_stream>),
+  instance l_orderkey_filter(stream_filter_1bit_i<type key_stream>),
   l_orderkey_in => l_orderkey_filter.input,
   selection.select => l_orderkey_filter.select,
   l_orderkey_filter.output => l_orderkey_out,
 
-  instance l_extendedprice_filter(stream_filter_i<type SQL_decimal_15_2_stream>),
+  instance l_extendedprice_filter(stream_filter_1bit_i<type SQL_decimal_15_2_stream>),
   l_extendedprice_in => l_extendedprice_filter.input,
   selection.select => l_extendedprice_filter.select,
   l_extendedprice_filter.output => l_extendedprice_out,
 
-  instance l_discount_filter(stream_filter_i<type SQL_decimal_15_2_stream>),
+  instance l_discount_filter(stream_filter_1bit_i<type SQL_decimal_15_2_stream>),
   l_discount_in => l_discount_filter.input,
   selection.select => l_discount_filter.select,
   l_discount_filter.output => l_discount_out,
 
-  instance o_orderdate_filter(stream_filter_i<type date_stream>),
+  instance o_orderdate_filter(stream_filter_1bit_i<type date_stream>),
   o_orderdate_in => o_orderdate_filter.input,
   selection.select => o_orderdate_filter.select,
   o_orderdate_filter.output => o_orderdate_out,
 
-  instance o_shippriority_filter(stream_filter_i<type date_stream>),
+  instance o_shippriority_filter(stream_filter_1bit_i<type int_stream>),
   o_shippriority_in => o_shippriority_filter.input,
   selection.select => o_shippriority_filter.select,
   o_shippriority_filter.output => o_shippriority_out,
@@ -516,7 +516,7 @@ streamlet main_s {
   l_orderkey: key_stream in,
   l_linenumber: key_stream in,
 
-  l_orderkey_out: key_stream in,
+  l_orderkey_out: key_stream out,
   revenue: SQL_decimal_15_2_stream out,
   o_orderdate: date_stream out,
   o_shippriority: int_stream out,
@@ -536,18 +536,43 @@ impl main_i of main_s {
   l_linenumber => data_src_lineitem.l_linenumber,
 
   instance data_filter(data_filter_i),
-  data_src_lineitem.l_orderkey => data_filter.l_orderkey_in,
+  l_orderkey => data_filter.l_orderkey_in,
   data_src_lineitem.l_extendedprice => data_filter.l_extendedprice_in,
   data_src_lineitem.l_discount => data_filter.l_discount_in,
   data_src_orders.o_orderdate => data_filter.o_orderdate_in,
   data_src_orders.o_shippriority => data_filter.o_shippriority_in,
   data_src_customer.c_mktsegment => data_filter.c_mktsegment,
-  data_src_customer.c_custkey => data_filter.c_custkey,
+  c_custkey => data_filter.c_custkey,
   data_src_orders.o_custkey => data_filter.o_custkey,
-  data_src_lineitem.l_orderkey => data_filter.l_orderkey,
-  data_src_orders.o_orderkey => data_filter.o_orderkey,
+  l_orderkey => data_filter.l_orderkey,
+  o_orderkey => data_filter.o_orderkey,
   data_src_orders.o_orderdate => data_filter.o_orderdate,
   data_src_lineitem.l_shipdate => data_filter.l_shipdate,
 
 
+  //select part
+  data_filter.l_orderkey_out => l_orderkey_out,
+  data_filter.o_orderdate_out => o_orderdate,
+  data_filter.o_shippriority_out => o_shippriority,
+
+  instance const_value_gen(const_value_generator_i<type SQL_decimal_15_2_stream, 1>),
+  instance to_neg(to_neg_i<type SQL_decimal_15_2_stream>),
+  data_filter.l_discount_out => to_neg.input,
+  instance adder(adder_i<type SQL_decimal_15_2_stream>),
+  to_neg.output => adder.input1,
+  const_value_gen.output => adder.input0,
+  instance multiplier(multiplier_i<type SQL_decimal_15_2_stream>),
+  adder.output => multiplier.input0,
+  data_filter.l_extendedprice_out => multiplier.input1,
+  instance accu(accumulator_i<type SQL_decimal_15_2_stream>),
+  multiplier.output => accu.input,
+  accu.output => revenue,
+
+  //error
+  type err_stream = Stream(Bit(1)),
+  instance err_and(and_i<type err_stream, 3>),
+  multiplier.overflow => err_and.input[0] @NoStrictType@,
+  accu.overflow => err_and.input[1] @NoStrictType@,
+  adder.overflow => err_and.input[2] @NoStrictType@,
+  err_and.output => err,
 };

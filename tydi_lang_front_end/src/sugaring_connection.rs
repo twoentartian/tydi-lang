@@ -13,17 +13,20 @@ use crate::std_lib_config;
 pub enum SugaringError {
     StdImplementNotFound(String),
     StdLibConfigError(String),
-
+    ProjectError(String),
 }
 
 impl From<SugaringError> for String {
     fn from(err: SugaringError) -> Self {
         return match err {
             SugaringError::StdImplementNotFound(msg) => {
-                format!("StdImplementNotFound: {}", msg)
+                format!("SugaringError-StdImplementNotFound: {}", msg)
             }
             SugaringError::StdLibConfigError(msg) => {
-                format!("StdLibConfigError: {}", msg)
+                format!("SugaringError-StdLibConfigError: {}", msg)
+            }
+            SugaringError::ProjectError(msg) => {
+                format!("SugaringError-ProjectError: {}", msg)
             }
         }
     }
@@ -122,11 +125,16 @@ pub fn sugaring_connection(project: Arc<RwLock<Project>>) -> Result<(), Sugaring
                 let src_port_name = match connection.read().unwrap().get_lhs_port_owner() {
                     PortOwner::UnknownPortOwner => { unreachable!() }
                     PortOwner::SelfOwner => { format!("{}", src_port_name) }
-                    PortOwner::ExternalOwner(owner_name, _, _) => { format!("{}::{}", owner_name, src_port_name) }
+                    PortOwner::ExternalOwner(owner_name, _, index) => {
+                        match index {
+                            None => { format!("{}::{}", owner_name, src_port_name)  }
+                            Some(index_var) => { format!("{}@{}::{}", owner_name, String::from(index_var.read().unwrap().get_var_value().get_raw_value()),src_port_name) }
+                        }
+                    }
                 };
                 let port_mapping_result = src_port_mapping.get(&src_port_name);
                 match port_mapping_result {
-                    None => { unreachable!() }
+                    None => { return Err(SugaringError::ProjectError(format!("port {} is not an output port", src_port_name))); }
                     Some(_) => {}
                 }
 

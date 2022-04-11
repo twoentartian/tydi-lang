@@ -63,7 +63,7 @@ impl CircuitGraph {
         let src_implement_name = src_implement.read().unwrap().get_name();
         let sink_implement_name = sink_implement.read().unwrap().get_name();
         //connection_to_insert.set_name(format!("{}.{} -> {}.{} ({})", src_implement_name, src_port.read().unwrap().get_name(), sink_implement_name, sink_port.read().unwrap().get_name(), ast_connection.read().unwrap().get_name()));
-        connection_to_insert.set_name(format!("{}", ast_connection.read().unwrap().get_name()));
+        connection_to_insert.set_name(format!("{}__{}__{}", ast_connection.read().unwrap().get_name(), src_implement_name, sink_implement_name));
 
         let connection_to_insert_name = connection_to_insert.get_name();
         let inserted_connection = Arc::new(RwLock::new(connection_to_insert));

@@ -409,105 +409,132 @@ impl const_date_generator_i<day: int, month: int, year:int> of const_date_genera
 
 type select_stream = Stream(Bit(1));
 streamlet where_claus_s {
-  c_mktsegment: SQL_char10_stream in,
   c_custkey: key_stream in,
   o_custkey: key_stream in,
   l_orderkey: key_stream in,
   o_orderkey: key_stream in,
+  l_suppkey: key_stream in,
+  s_suppkey: key_stream in,
+  c_nationkey: key_stream in,
+  s_nationkey: key_stream in,
+  n_nationkey: key_stream in,
+  n_regionkey: key_stream in,
+  r_regionkey: key_stream in,
+  r_name: SQL_char25_stream in,
   o_orderdate: date_stream in,
-  l_shipdate: date_stream in,
 
   select: select_stream out,
 };
 
+streamlet const_char25_generator_s<value: str> {
+  output: SQL_char25_stream out,
+};
+
+external impl const_char25_generator_i<value: str> of const_char25_generator_s<value> {
+
+};
+
 impl where_claus_i of where_claus_s {
-  instance and_0(and_i<type select_stream, 5>),
+  instance and_0(and_i<type select_stream, 9>),
   and_0.output => select,
 
-  instance c_mktsegment_standard_gen(const_value_generator_i<type SQL_char10_stream, 10>),
-  instance c_mktsegment_compare(comparator_is_equal_i<type SQL_char10_stream>),
-  c_mktsegment_standard_gen.output => c_mktsegment_compare.input0,
-  c_mktsegment => c_mktsegment_compare.input1,
-  c_mktsegment_compare.output => and_0.input[0] @NoStrictType@,
+  instance compare(comparator_is_equal_i<type key_stream>) [6],
+  c_custkey => compare[0].input0,
+  o_custkey => compare[0].input1,
+  compare[0].output => and_0.input[0] @NoStrictType@,
 
-  instance compare0(comparator_is_equal_i<type key_stream>),
-  c_custkey => compare0.input0,
-  o_custkey => compare0.input1,
-  compare0.output => and_0.input[1] @NoStrictType@,
+  l_orderkey => compare[1].input0,
+  o_orderkey => compare[1].input1,
+  compare[1].output => and_0.input[1] @NoStrictType@,
 
-  instance compare1(comparator_is_equal_i<type key_stream>),
-  l_orderkey => compare1.input0,
-  o_orderkey => compare1.input1,
-  compare1.output => and_0.input[2] @NoStrictType@,
+  c_nationkey => compare[2].input0,
+  s_nationkey => compare[2].input1,
+  compare[2].output => and_0.input[2] @NoStrictType@,
 
-  instance o_orderdate_standard_gen(const_date_generator_i<1,1,1997>),
-  instance compare2(comparator_is_smaller_i<type date_stream>),
+  c_nationkey => compare[3].input0,
+  n_nationkey => compare[3].input1,
+  compare[3].output => and_0.input[3] @NoStrictType@,
+
+  s_nationkey => compare[4].input0,
+  s_nationkey => compare[4].input1,
+  compare[4].output => and_0.input[4] @NoStrictType@,
+
+  n_regionkey => compare[5].input0,
+  r_regionkey => compare[5].input1,
+  compare[5].output => and_0.input[5] @NoStrictType@,
+
+  instance o_orderdate_standard_gen1(const_date_generator_i<1,1,1997>),
+  instance compare2(comparator_is_larger_equal_i<type date_stream>),
   o_orderdate => compare2.input0,
-  o_orderdate_standard_gen.date_output => compare2.input1,
-  compare2.output => and_0.input[3] @NoStrictType@,
+  o_orderdate_standard_gen1.date_output => compare2.input1,
+  compare2.output => and_0.input[6] @NoStrictType@,
 
-  instance l_shipdate_standard_gen(const_date_generator_i<1,1,1998>),
-  instance compare3(comparator_is_larger_i<type date_stream>),
-  l_shipdate => compare3.input0,
-  l_shipdate_standard_gen.date_output => compare3.input1,
-  compare3.output => and_0.input[4] @NoStrictType@,
+  instance o_orderdate_standard_gen2(const_date_generator_i<1,1,1997>),
+  instance compare3(comparator_is_smaller_i<type date_stream>),
+  o_orderdate => compare3.input0,
+  o_orderdate_standard_gen2.date_output => compare3.input1,
+  compare3.output => and_0.input[7] @NoStrictType@,
+
+  instance r_name_standard_gen(const_char25_generator_i<"Asia">),
+  instance compare4(comparator_is_equal_i<type SQL_char25_stream>),
+  r_name => compare4.input0,
+  r_name_standard_gen.output => compare4.input1,
+  compare4.output => and_0.input[8] @NoStrictType@,
 };
 
 streamlet data_filter_s {
-  l_orderkey_in: SQL_decimal_15_2_stream in,
-  l_orderkey_out: SQL_decimal_15_2_stream out,
+  n_name_in: SQL_char25_stream in,
+  n_name_out: SQL_char25_stream out,
   l_extendedprice_in: SQL_decimal_15_2_stream in,
   l_extendedprice_out: SQL_decimal_15_2_stream out,
   l_discount_in: SQL_decimal_15_2_stream in,
   l_discount_out: SQL_decimal_15_2_stream out,
-  o_orderdate_in: date_stream in,
-  o_orderdate_out: date_stream out,
-  o_shippriority_in: int_stream in,
-  o_shippriority_out: int_stream out,
 
-  c_mktsegment: SQL_char10_stream in,
   c_custkey: key_stream in,
   o_custkey: key_stream in,
   l_orderkey: key_stream in,
   o_orderkey: key_stream in,
+  l_suppkey: key_stream in,
+  s_suppkey: key_stream in,
+  c_nationkey: key_stream in,
+  s_nationkey: key_stream in,
+  n_nationkey: key_stream in,
+  n_regionkey: key_stream in,
+  r_regionkey: key_stream in,
+  r_name: SQL_char25_stream in,
   o_orderdate: date_stream in,
-  l_shipdate: date_stream in,
 };
 
 impl data_filter_i of data_filter_s {
   instance selection(where_claus_i),
-  c_mktsegment => selection.c_mktsegment,
   c_custkey => selection.c_custkey,
   o_custkey => selection.o_custkey,
   l_orderkey => selection.l_orderkey,
   o_orderkey => selection.o_orderkey,
+  l_suppkey => selection.l_suppkey,
+  s_suppkey => selection.s_suppkey,
+  c_nationkey => selection.c_nationkey,
+  s_nationkey => selection.s_nationkey,
+  n_nationkey => selection.n_nationkey,
+  n_regionkey => selection.n_regionkey,
+  r_regionkey => selection.r_regionkey,
+  r_name => selection.r_name,
   o_orderdate => selection.o_orderdate,
-  l_shipdate => selection.l_shipdate,
 
-  instance l_orderkey_filter(stream_filter_i<type SQL_decimal_15_2_stream>),
-  l_orderkey_in => l_orderkey_filter.input,
-  selection.select => l_orderkey_filter.select,
-  l_orderkey_filter.output => l_orderkey_out,
+  instance n_name_filter(stream_filter_1bit_i<type SQL_char25_stream>),
+  n_name_in => n_name_filter.input,
+  selection.select => n_name_filter.select,
+  n_name_filter.output => n_name_out,
 
-  instance l_extendedprice_filter(stream_filter_i<type SQL_decimal_15_2_stream>),
+  instance l_extendedprice_filter(stream_filter_1bit_i<type SQL_decimal_15_2_stream>),
   l_extendedprice_in => l_extendedprice_filter.input,
   selection.select => l_extendedprice_filter.select,
   l_extendedprice_filter.output => l_extendedprice_out,
 
-  instance l_discount_filter(stream_filter_i<type SQL_decimal_15_2_stream>),
+  instance l_discount_filter(stream_filter_1bit_i<type SQL_decimal_15_2_stream>),
   l_discount_in => l_discount_filter.input,
   selection.select => l_discount_filter.select,
   l_discount_filter.output => l_discount_out,
-
-  instance o_orderdate_filter(stream_filter_i<type date_stream>),
-  o_orderdate_in => o_orderdate_filter.input,
-  selection.select => o_orderdate_filter.select,
-  o_orderdate_filter.output => o_orderdate_out,
-
-  instance o_shippriority_filter(stream_filter_i<type date_stream>),
-  o_shippriority_in => o_shippriority_filter.input,
-  selection.select => o_shippriority_filter.select,
-  o_shippriority_filter.output => o_shippriority_out,
 };
 
 streamlet main_s {
@@ -515,12 +542,12 @@ streamlet main_s {
   o_orderkey: key_stream in,
   l_orderkey: key_stream in,
   l_linenumber: key_stream in,
+  s_suppkey: key_stream in,
+  n_nationkey: key_stream in,
+  r_regionkey: key_stream in,
 
-  l_orderkey_out: key_stream in,
+  n_name: SQL_char25_stream out,
   revenue: SQL_decimal_15_2_stream out,
-  o_orderdate: date_stream out,
-  o_shippriority: int_stream out,
-
   err: Stream(Bit(1)) out,
 };
 
@@ -535,19 +562,54 @@ impl main_i of main_s {
   l_orderkey => data_src_lineitem.l_orderkey,
   l_linenumber => data_src_lineitem.l_linenumber,
 
+  instance data_src_supplier(supplier_i),
+  s_suppkey => data_src_supplier.s_suppkey,
+
+  instance data_src_nation(nation_i),
+  n_nationkey => data_src_nation.n_nationkey,
+
+  instance data_src_region(region_i),
+  r_regionkey => data_src_region.r_regionkey,
+
   instance data_filter(data_filter_i),
-  data_src_lineitem.l_orderkey => data_filter.l_orderkey_in,
+  c_custkey => data_filter.c_custkey,
+  data_src_orders.o_custkey => data_filter.o_custkey,
+  l_orderkey => data_filter.l_orderkey,
+  o_orderkey => data_filter.o_orderkey,
+  data_src_lineitem.l_suppkey => data_filter.l_suppkey,
+  s_suppkey => data_filter.s_suppkey,
+  data_src_customer.c_nationkey => data_filter.c_nationkey,
+  data_src_supplier.s_nationkey => data_filter.s_nationkey,
+  n_nationkey => data_filter.n_nationkey,
+  data_src_nation.n_regionkey => data_filter.n_regionkey,
+  r_regionkey => data_filter.r_regionkey,
+  data_src_region.r_name => data_filter.r_name,
+  data_src_orders.o_orderdate => data_filter.o_orderdate,
+
+  data_src_nation.n_name => data_filter.n_name_in,
   data_src_lineitem.l_extendedprice => data_filter.l_extendedprice_in,
   data_src_lineitem.l_discount => data_filter.l_discount_in,
-  data_src_orders.o_orderdate => data_filter.o_orderdate_in,
-  data_src_orders.o_shippriority => data_filter.o_shippriority_in,
-  data_src_customer.c_mktsegment => data_filter.c_mktsegment,
-  data_src_customer.c_custkey => data_filter.c_custkey,
-  data_src_orders.o_custkey => data_filter.o_custkey,
-  data_src_lineitem.l_orderkey => data_filter.l_orderkey,
-  data_src_orders.o_orderkey => data_filter.o_orderkey,
-  data_src_orders.o_orderdate => data_filter.o_orderdate,
-  data_src_lineitem.l_shipdate => data_filter.l_shipdate,
 
+  //select part
+  data_filter.n_name_out => n_name,
+  instance const_value_gen(const_value_generator_i<type SQL_decimal_15_2_stream, 1>),
+  instance to_neg(to_neg_i<type SQL_decimal_15_2_stream>),
+  data_filter.l_discount_out => to_neg.input,
+  instance adder(adder_i<type SQL_decimal_15_2_stream>),
+  to_neg.output => adder.input1,
+  const_value_gen.output => adder.input0,
+  instance multiplier(multiplier_i<type SQL_decimal_15_2_stream>),
+  adder.output => multiplier.input0,
+  data_filter.l_extendedprice_out => multiplier.input1,
+  instance accu(accumulator_i<type SQL_decimal_15_2_stream>),
+  multiplier.output => accu.input,
+  accu.output => revenue,
 
+  //error
+  type err_stream = Stream(Bit(1)),
+  instance err_and(and_i<type err_stream, 3>),
+  multiplier.overflow => err_and.input[0] @NoStrictType@,
+  accu.overflow => err_and.input[1] @NoStrictType@,
+  adder.overflow => err_and.input[2] @NoStrictType@,
+  err_and.output => err,
 };
