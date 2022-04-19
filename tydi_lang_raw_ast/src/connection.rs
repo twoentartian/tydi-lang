@@ -229,6 +229,7 @@ impl Scope {
 
         //find in parent scope
         for (_, scope_real) in &(target_scope_r.scope_relationships) {
+            if !allowed_relationships.contains(&scope_real.get_relationship()) { continue }
             let result = Scope::_resolve_connection_in_scope(scope_real.get_target_scope().clone(), &name_, &allowed_relationships);
             match result {
                 Ok(inst) => {return Ok(inst)}
@@ -252,6 +253,7 @@ impl Scope {
 
         //find in parent scope
         for (_, scope_real) in &(self.scope_relationships) {
+            if !allowed_relationships_hash.contains(&scope_real.get_relationship()) { continue }
             let result = Scope::_resolve_connection_in_scope(scope_real.get_target_scope().clone(), &name_, & allowed_relationships_hash);
             match result {
                 Ok(var) => {return Ok(var)}
@@ -264,8 +266,7 @@ impl Scope {
 
     pub fn resolve_connection_from_scope(& self, name_: String) -> Result<Arc<RwLock<Connection>>, ErrorCode> {
         use crate::scope::ScopeRelationType::*;
-        let allowed_relationships = vec![GroupScopeRela, UnionScopeRela,
-                                         StreamScopeRela, StreamletScopeRela, ImplementScopeRela];
+        let allowed_relationships = vec![];
         return self.resolve_connection_with_relation(name_, allowed_relationships);
     }
 }

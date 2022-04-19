@@ -280,6 +280,7 @@ impl Scope {
 
         //find in parent scope
         for (_, scope_real) in &(target_scope_r.scope_relationships) {
+            if !allowed_relationships.contains(&scope_real.get_relationship()) { continue }
             let result = Scope::_resolve_type_in_scope(scope_real.get_target_scope().clone(), &name_, &allowed_relationships);
             match result {
                 Ok(type_) => {return Ok(type_)}
@@ -303,6 +304,7 @@ impl Scope {
 
         //find in parent scope
         for (_, scope_real) in &(self.scope_relationships) {
+            if !allowed_relationships_hash.contains(&scope_real.get_relationship()) { continue }
             let result = Scope::_resolve_type_in_scope(scope_real.get_target_scope().clone(), &name_, & allowed_relationships_hash);
             match result {
                 Ok(type_) => {return Ok(type_)}
