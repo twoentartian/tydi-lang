@@ -1233,7 +1233,9 @@ fn parse_const_declare(statement: Pairs<Rule>, scope: Arc<RwLock<Scope>>) -> Res
     for element in statement.clone().into_iter() {
         match element.as_rule() {
             Rule::ID => {
-                (line_loc, col_loc) = element.as_span().start_pos().line_col();
+                let (line_loc_t, col_loc_t) = element.as_span().start_pos().line_col();
+                line_loc = line_loc_t;
+                col_loc = col_loc_t;
                 id = element.as_str().to_string();
             },
             Rule::TypeIndicatorBasicType => { type_exp = element.as_str().to_string() },
