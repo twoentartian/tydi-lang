@@ -1,0 +1,2 @@
+drc messages: 1
+DesignRuleErrorWarning { message: "connection name: connection_17042-17064, strict eq test fails but non-strict eq test pass, considering adding \"@NoStrictType@\" at end of connection ?", err_warn_type: Warning, detail: InvalidConnectionPortTypeMismatch_StrictChecking }

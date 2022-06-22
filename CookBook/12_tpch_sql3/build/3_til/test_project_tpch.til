@@ -1,0 +1,998 @@
+namespace test_project::tpch {
+  type day_stream = Stream (
+    data: Bits(5),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type IGgeneratedIGType8484_8498 = Stream (
+    data: Bits(1),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type Date = Group(year: Bits(17),month: Bits(4),day: Bits(5));
+  type IGgeneratedIGType7581_7595 = Stream (
+    data: Bits(1),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type SQL_char15_stream = Stream (
+    data: Bits(120),
+    throughput: 1,
+    dimensionality: 1,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type int_stream = Stream (
+    data: Bits(32),
+    throughput: 1,
+    dimensionality: 1,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type select_stream = Stream (
+    data: Bits(1),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type IGgeneratedIGType14910_14924 = Stream (
+    data: Bits(1),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type err_stream = Stream (
+    data: Bits(1),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type SQL_char10_stream = Stream (
+    data: Bits(80),
+    throughput: 1,
+    dimensionality: 1,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type SQL_char25_stream = Stream (
+    data: Bits(200),
+    throughput: 1,
+    dimensionality: 1,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type year_stream = Stream (
+    data: Bits(17),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type date_stream = Stream (
+    data: Date,
+    throughput: 1,
+    dimensionality: 1,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type IGgeneratedIGType8019_8033 = Stream (
+    data: Bits(1),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type varchar_stream = Stream (
+    data: Bits(8),
+    throughput: 1,
+    dimensionality: 2,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type month_stream = Stream (
+    data: Bits(4),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type SQL_decimal_15_2 = Group(decimal: Bits(50));
+  type SQL_char1_stream = Stream (
+    data: Bits(8),
+    throughput: 1,
+    dimensionality: 1,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type stream_filter_select_stream_1bit = Stream (
+    data: Bits(1),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type IGgeneratedIGType9592_9606 = Stream (
+    data: Bits(1),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type IGgeneratedIGType8748_8762 = Stream (
+    data: Bits(1),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type overflow_type = Stream (
+    data: Bits(1),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type count_type = Stream (
+    data: Bits(32),
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type SQL_decimal_15_2_stream = Stream (
+    data: SQL_decimal_15_2,
+    throughput: 1,
+    dimensionality: 1,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+
+  streamlet duplicator_sATStreamIWint_streamIMAT3 = (
+    outputAT0: out int_stream,
+    outputAT1: out int_stream,
+    input: in int_stream,
+    outputAT2: out int_stream,
+  );
+  streamlet stream_filter_1bit_sATStreamIWSQL_decimal_15_2_streamIM = (
+    input: in SQL_decimal_15_2_stream,
+    output: out SQL_decimal_15_2_stream,
+    select: in stream_filter_select_stream_1bit,
+  );
+  streamlet void_sATStreamIWcount_typeIM = (
+    input: in count_type,
+  );
+  streamlet supplier_s = (
+    s_suppkey: in int_stream,
+    s_address: out varchar_stream,
+    s_nationkey: out int_stream,
+    s_acctbal: out SQL_decimal_15_2_stream,
+    s_name: out SQL_char25_stream,
+    s_phone: out SQL_char15_stream,
+    s_comment: out varchar_stream,
+  );
+  streamlet comparator_is_larger_sATStreamIWdate_streamIM = (
+    output: out IGgeneratedIGType8484_8498,
+    input0: in date_stream,
+    input1: in date_stream,
+  );
+  streamlet lineitem_s = (
+    l_returnflag: out SQL_char1_stream,
+    l_suppkey: out int_stream,
+    l_shipdate: out date_stream,
+    l_tax: out SQL_decimal_15_2_stream,
+    l_comment: out varchar_stream,
+    l_linestatus: out SQL_char1_stream,
+    l_quantity: out SQL_decimal_15_2_stream,
+    l_extendedprice: out SQL_decimal_15_2_stream,
+    l_commitdate: out date_stream,
+    l_orderkey: in int_stream,
+    l_linenumber: in int_stream,
+    l_receiptdate: out date_stream,
+    l_shipinstruct: out SQL_char25_stream,
+    l_discount: out SQL_decimal_15_2_stream,
+    l_partkey: out int_stream,
+    l_shipmode: out SQL_char10_stream,
+  );
+  streamlet void_sATStreamIWSQL_char15_streamIM = (
+    input: in SQL_char15_stream,
+  );
+  streamlet const_value_generator_sATStreamIWSQL_decimal_15_2_streamIMAT1 = (
+    output: out SQL_decimal_15_2_stream,
+  );
+  streamlet const_value_generator_sATStreamIWyear_streamIMAT1998 = (
+    output: out year_stream,
+  );
+  streamlet void_sATStreamIWvarchar_streamIM = (
+    input: in varchar_stream,
+  );
+  streamlet stream_filter_1bit_sATStreamIWdate_streamIM = (
+    select: in stream_filter_select_stream_1bit,
+    input: in date_stream,
+    output: out date_stream,
+  );
+  streamlet void_sATStreamIWSQL_char1_streamIM = (
+    input: in SQL_char1_stream,
+  );
+  streamlet comparator_is_smaller_sATStreamIWdate_streamIM = (
+    input1: in date_stream,
+    input0: in date_stream,
+    output: out IGgeneratedIGType8748_8762,
+  );
+  streamlet and_sATStreamIWselect_streamIMAT5 = (
+    inputAT2: in select_stream,
+    inputAT0: in select_stream,
+    output: out select_stream,
+    inputAT3: in select_stream,
+    inputAT4: in select_stream,
+    inputAT1: in select_stream,
+  );
+  streamlet comparator_is_equal_sATStreamIWint_streamIM = (
+    input1: in int_stream,
+    input0: in int_stream,
+    output: out IGgeneratedIGType9592_9606,
+  );
+  streamlet const_date_generator_s = (
+    date_output: out date_stream,
+  );
+  streamlet accumulator_sATStreamIWSQL_decimal_15_2_streamIM = (
+    count: out count_type,
+    output: out SQL_decimal_15_2_stream,
+    overflow: out overflow_type,
+    input: in SQL_decimal_15_2_stream,
+  );
+  streamlet const_value_generator_sATStreamIWSQL_char10_streamIMAT10 = (
+    output: out SQL_char10_stream,
+  );
+  streamlet const_value_generator_sATStreamIWyear_streamIMAT1997 = (
+    output: out year_stream,
+  );
+  streamlet const_value_generator_sATStreamIWmonth_streamIMAT1 = (
+    output: out month_stream,
+  );
+  streamlet duplicator_sATStreamIWselect_streamIMAT5 = (
+    outputAT1: out select_stream,
+    input: in select_stream,
+    outputAT3: out select_stream,
+    outputAT4: out select_stream,
+    outputAT2: out select_stream,
+    outputAT0: out select_stream,
+  );
+  streamlet void_sATStreamIWint_streamIM = (
+    input: in int_stream,
+  );
+  streamlet where_claus_s = (
+    o_custkey: in int_stream,
+    select: out select_stream,
+    c_custkey: in int_stream,
+    l_shipdate: in date_stream,
+    l_orderkey: in int_stream,
+    o_orderdate: in date_stream,
+    o_orderkey: in int_stream,
+    c_mktsegment: in SQL_char10_stream,
+  );
+  streamlet customer_s = (
+    c_nationkey: out int_stream,
+    c_comment: out varchar_stream,
+    c_mktsegment: out SQL_char10_stream,
+    c_address: out varchar_stream,
+    c_phone: out SQL_char15_stream,
+    c_name: out varchar_stream,
+    c_acctbal: out SQL_decimal_15_2_stream,
+    c_custkey: in int_stream,
+  );
+  streamlet partsupp_s = (
+    ps_supplycost: out SQL_decimal_15_2_stream,
+    ps_suppkey: in int_stream,
+    ps_partkey: in int_stream,
+    ps_availqty: out int_stream,
+    ps_comment: out varchar_stream,
+  );
+  streamlet main_s = (
+    o_shippriority: out int_stream,
+    l_linenumber: in int_stream,
+    revenue: out SQL_decimal_15_2_stream,
+    err: out IGgeneratedIGType14910_14924,
+    o_orderkey: in int_stream,
+    l_orderkey: in int_stream,
+    c_custkey: in int_stream,
+    o_orderdate: out date_stream,
+    l_orderkey_out: out int_stream,
+  );
+  streamlet comparator_is_equal_sATStreamIWSQL_char10_streamIM = (
+    output: out IGgeneratedIGType9592_9606,
+    input1: in SQL_char10_stream,
+    input0: in SQL_char10_stream,
+  );
+  streamlet void_sATStreamIWSQL_char10_streamIM = (
+    input: in SQL_char10_stream,
+  );
+  streamlet void_sATStreamIWSQL_decimal_15_2_streamIM = (
+    input: in SQL_decimal_15_2_stream,
+  );
+  streamlet void_sATStreamIWSQL_char25_streamIM = (
+    input: in SQL_char25_stream,
+  );
+  streamlet adder_sATStreamIWSQL_decimal_15_2_streamIM = (
+    input1: in SQL_decimal_15_2_stream,
+    overflow: out IGgeneratedIGType7581_7595,
+    output: out SQL_decimal_15_2_stream,
+    input0: in SQL_decimal_15_2_stream,
+  );
+  streamlet and_sATStreamIWerr_streamIMAT3 = (
+    inputAT1: in err_stream,
+    inputAT2: in err_stream,
+    inputAT0: in err_stream,
+    output: out err_stream,
+  );
+  streamlet duplicator_sATStreamIWint_streamIMAT2 = (
+    outputAT1: out int_stream,
+    input: in int_stream,
+    outputAT0: out int_stream,
+  );
+  streamlet to_neg_sATStreamIWSQL_decimal_15_2_streamIM = (
+    output: out SQL_decimal_15_2_stream,
+    input: in SQL_decimal_15_2_stream,
+  );
+  streamlet orders_s = (
+    o_custkey: out int_stream,
+    o_orderdate: out date_stream,
+    o_totalprice: out SQL_decimal_15_2_stream,
+    o_shippriority: out int_stream,
+    o_comment: out varchar_stream,
+    o_clerk: out SQL_char15_stream,
+    o_orderkey: in int_stream,
+    o_orderstatus: out SQL_char1_stream,
+    o_orderpriority: out SQL_char15_stream,
+  );
+  streamlet part_s = (
+    p_partkey: in int_stream,
+    p_name: out varchar_stream,
+    p_comment: out varchar_stream,
+    p_mfgr: out SQL_char25_stream,
+    p_type: out varchar_stream,
+    p_container: out SQL_char10_stream,
+    p_brand: out SQL_char10_stream,
+    p_retailprice: out SQL_decimal_15_2_stream,
+    p_size: out int_stream,
+  );
+  streamlet sql_date_constructor_s = (
+    date_output: out date_stream,
+    year_input: in year_stream,
+    month_input: in month_stream,
+    day_input: in day_stream,
+  );
+  streamlet multiplier_sATStreamIWSQL_decimal_15_2_streamIM = (
+    input1: in SQL_decimal_15_2_stream,
+    input0: in SQL_decimal_15_2_stream,
+    output: out SQL_decimal_15_2_stream,
+    overflow: out IGgeneratedIGType8019_8033,
+  );
+  streamlet nation_s = (
+    n_name: out SQL_char25_stream,
+    n_nationkey: in int_stream,
+    n_regionkey: out int_stream,
+    n_comment: out varchar_stream,
+  );
+  streamlet data_filter_s = (
+    l_orderkey_in: in int_stream,
+    o_orderdate_in: in date_stream,
+    o_orderdate_out: out date_stream,
+    l_extendedprice_out: out SQL_decimal_15_2_stream,
+    l_orderkey: in int_stream,
+    o_orderkey: in int_stream,
+    o_custkey: in int_stream,
+    c_custkey: in int_stream,
+    l_extendedprice_in: in SQL_decimal_15_2_stream,
+    l_discount_out: out SQL_decimal_15_2_stream,
+    l_shipdate: in date_stream,
+    l_orderkey_out: out int_stream,
+    o_shippriority_out: out int_stream,
+    o_shippriority_in: in int_stream,
+    c_mktsegment: in SQL_char10_stream,
+    l_discount_in: in SQL_decimal_15_2_stream,
+    o_orderdate: in date_stream,
+  );
+  streamlet stream_filter_1bit_sATStreamIWint_streamIM = (
+    input: in int_stream,
+    select: in stream_filter_select_stream_1bit,
+    output: out int_stream,
+  );
+  streamlet const_value_generator_sATStreamIWday_streamIMAT1 = (
+    output: out day_stream,
+  );
+  streamlet void_sATStreamIWdate_streamIM = (
+    input: in date_stream,
+  );
+  streamlet duplicator_sATStreamIWdate_streamIMAT2 = (
+    outputAT1: out date_stream,
+    outputAT0: out date_stream,
+    input: in date_stream,
+  );
+  streamlet region_s = (
+    r_comment: out varchar_stream,
+    r_regionkey: in int_stream,
+    r_name: out SQL_char25_stream,
+  );
+
+  
+  streamlet void_iATStreamIWSQL_char25_streamIM = (
+        input: in SQL_char25_stream,
+  );
+
+  
+  streamlet comparator_is_equal_iATStreamIWSQL_char10_streamIM = (
+        output: out IGgeneratedIGType9592_9606,
+        input1: in SQL_char10_stream,
+        input0: in SQL_char10_stream,
+  );
+
+  
+  streamlet const_value_generator_iATStreamIWSQL_decimal_15_2_streamIMAT1 = (
+        output: out SQL_decimal_15_2_stream,
+  );
+
+  
+  streamlet region_i = (
+        r_comment: out varchar_stream,
+        r_regionkey: in int_stream,
+        r_name: out SQL_char25_stream,
+  );
+
+  
+  streamlet void_iATStreamIWvarchar_streamIM = (
+        input: in varchar_stream,
+  );
+
+  
+  streamlet comparator_is_smaller_iATStreamIWdate_streamIM = (
+        input1: in date_stream,
+        input0: in date_stream,
+        output: out IGgeneratedIGType8748_8762,
+  );
+
+  
+  streamlet nation_i = (
+        n_name: out SQL_char25_stream,
+        n_nationkey: in int_stream,
+        n_regionkey: out int_stream,
+        n_comment: out varchar_stream,
+  );
+
+  
+  streamlet stream_filter_1bit_iATStreamIWint_streamIM = (
+        input: in int_stream,
+        select: in stream_filter_select_stream_1bit,
+        output: out int_stream,
+  );
+
+  
+  streamlet customer_i = (
+        c_nationkey: out int_stream,
+        c_comment: out varchar_stream,
+        c_mktsegment: out SQL_char10_stream,
+        c_address: out varchar_stream,
+        c_phone: out SQL_char15_stream,
+        c_name: out varchar_stream,
+        c_acctbal: out SQL_decimal_15_2_stream,
+        c_custkey: in int_stream,
+  );
+
+  
+  streamlet void_iATStreamIWint_streamIM = (
+        input: in int_stream,
+  );
+
+  
+  streamlet orders_i = (
+        o_custkey: out int_stream,
+        o_orderdate: out date_stream,
+        o_totalprice: out SQL_decimal_15_2_stream,
+        o_shippriority: out int_stream,
+        o_comment: out varchar_stream,
+        o_clerk: out SQL_char15_stream,
+        o_orderkey: in int_stream,
+        o_orderstatus: out SQL_char1_stream,
+        o_orderpriority: out SQL_char15_stream,
+  );
+
+  
+  streamlet duplicator_iATStreamIWdate_streamIMAT2 = (
+        outputAT1: out date_stream,
+        outputAT0: out date_stream,
+        input: in date_stream,
+  );
+
+  
+  streamlet comparator_is_equal_iATStreamIWint_streamIM = (
+        input1: in int_stream,
+        input0: in int_stream,
+        output: out IGgeneratedIGType9592_9606,
+  );
+
+  
+  streamlet duplicator_iATStreamIWint_streamIMAT3 = (
+        outputAT0: out int_stream,
+        outputAT1: out int_stream,
+        input: in int_stream,
+        outputAT2: out int_stream,
+  );
+
+  
+  streamlet sql_date_constructor_i = (
+        date_output: out date_stream,
+        year_input: in year_stream,
+        month_input: in month_stream,
+        day_input: in day_stream,
+  );
+
+  
+  streamlet duplicator_iATStreamIWselect_streamIMAT5 = (
+        outputAT1: out select_stream,
+        input: in select_stream,
+        outputAT3: out select_stream,
+        outputAT4: out select_stream,
+        outputAT2: out select_stream,
+        outputAT0: out select_stream,
+  );
+
+  
+  streamlet to_neg_iATStreamIWSQL_decimal_15_2_streamIM = (
+        output: out SQL_decimal_15_2_stream,
+        input: in SQL_decimal_15_2_stream,
+  );
+
+  
+  streamlet lineitem_i = (
+        l_returnflag: out SQL_char1_stream,
+        l_suppkey: out int_stream,
+        l_shipdate: out date_stream,
+        l_tax: out SQL_decimal_15_2_stream,
+        l_comment: out varchar_stream,
+        l_linestatus: out SQL_char1_stream,
+        l_quantity: out SQL_decimal_15_2_stream,
+        l_extendedprice: out SQL_decimal_15_2_stream,
+        l_commitdate: out date_stream,
+        l_orderkey: in int_stream,
+        l_linenumber: in int_stream,
+        l_receiptdate: out date_stream,
+        l_shipinstruct: out SQL_char25_stream,
+        l_discount: out SQL_decimal_15_2_stream,
+        l_partkey: out int_stream,
+        l_shipmode: out SQL_char10_stream,
+  );
+
+  
+  streamlet void_iATStreamIWSQL_char1_streamIM = (
+        input: in SQL_char1_stream,
+  );
+
+  
+  streamlet const_value_generator_iATStreamIWyear_streamIMAT1997 = (
+        output: out year_stream,
+  );
+
+  
+  streamlet and_iATStreamIWselect_streamIMAT5 = (
+        inputAT2: in select_stream,
+        inputAT0: in select_stream,
+        output: out select_stream,
+        inputAT3: in select_stream,
+        inputAT4: in select_stream,
+        inputAT1: in select_stream,
+  );
+
+  
+  streamlet part_i = (
+        p_partkey: in int_stream,
+        p_name: out varchar_stream,
+        p_comment: out varchar_stream,
+        p_mfgr: out SQL_char25_stream,
+        p_type: out varchar_stream,
+        p_container: out SQL_char10_stream,
+        p_brand: out SQL_char10_stream,
+        p_retailprice: out SQL_decimal_15_2_stream,
+        p_size: out int_stream,
+  );
+
+  
+  streamlet void_iATStreamIWSQL_char10_streamIM = (
+        input: in SQL_char10_stream,
+  );
+
+  
+  streamlet const_value_generator_iATStreamIWday_streamIMAT1 = (
+        output: out day_stream,
+  );
+
+  
+  streamlet const_value_generator_iATStreamIWSQL_char10_streamIMAT10 = (
+        output: out SQL_char10_stream,
+  );
+
+  
+  streamlet void_iATStreamIWSQL_decimal_15_2_streamIM = (
+        input: in SQL_decimal_15_2_stream,
+  );
+
+  
+  streamlet duplicator_iATStreamIWint_streamIMAT2 = (
+        outputAT1: out int_stream,
+        input: in int_stream,
+        outputAT0: out int_stream,
+  );
+
+  
+  streamlet comparator_is_larger_iATStreamIWdate_streamIM = (
+        output: out IGgeneratedIGType8484_8498,
+        input0: in date_stream,
+        input1: in date_stream,
+  );
+
+  
+  streamlet stream_filter_1bit_iATStreamIWSQL_decimal_15_2_streamIM = (
+        input: in SQL_decimal_15_2_stream,
+        output: out SQL_decimal_15_2_stream,
+        select: in stream_filter_select_stream_1bit,
+  );
+
+  
+  streamlet supplier_i = (
+        s_suppkey: in int_stream,
+        s_address: out varchar_stream,
+        s_nationkey: out int_stream,
+        s_acctbal: out SQL_decimal_15_2_stream,
+        s_name: out SQL_char25_stream,
+        s_phone: out SQL_char15_stream,
+        s_comment: out varchar_stream,
+  );
+
+  
+  streamlet adder_iATStreamIWSQL_decimal_15_2_streamIM = (
+        input1: in SQL_decimal_15_2_stream,
+        overflow: out IGgeneratedIGType7581_7595,
+        output: out SQL_decimal_15_2_stream,
+        input0: in SQL_decimal_15_2_stream,
+  );
+
+  
+  streamlet and_iATStreamIWerr_streamIMAT3 = (
+        inputAT1: in err_stream,
+        inputAT2: in err_stream,
+        inputAT0: in err_stream,
+        output: out err_stream,
+  );
+
+  
+  streamlet void_iATStreamIWcount_typeIM = (
+        input: in count_type,
+  );
+
+  
+  streamlet void_iATStreamIWdate_streamIM = (
+        input: in date_stream,
+  );
+
+  
+  streamlet const_value_generator_iATStreamIWyear_streamIMAT1998 = (
+        output: out year_stream,
+  );
+
+  
+  streamlet accumulator_iATStreamIWSQL_decimal_15_2_streamIM = (
+        count: out count_type,
+        output: out SQL_decimal_15_2_stream,
+        overflow: out overflow_type,
+        input: in SQL_decimal_15_2_stream,
+  );
+
+  
+  streamlet multiplier_iATStreamIWSQL_decimal_15_2_streamIM = (
+        input1: in SQL_decimal_15_2_stream,
+        input0: in SQL_decimal_15_2_stream,
+        output: out SQL_decimal_15_2_stream,
+        overflow: out IGgeneratedIGType8019_8033,
+  );
+
+  
+  streamlet partsupp_i = (
+        ps_supplycost: out SQL_decimal_15_2_stream,
+        ps_suppkey: in int_stream,
+        ps_partkey: in int_stream,
+        ps_availqty: out int_stream,
+        ps_comment: out varchar_stream,
+  );
+
+  
+  streamlet void_iATStreamIWSQL_char15_streamIM = (
+        input: in SQL_char15_stream,
+  );
+
+  
+  streamlet const_value_generator_iATStreamIWmonth_streamIMAT1 = (
+        output: out month_stream,
+  );
+
+  
+  streamlet stream_filter_1bit_iATStreamIWdate_streamIM = (
+        select: in stream_filter_select_stream_1bit,
+        input: in date_stream,
+        output: out date_stream,
+  );
+
+  
+  streamlet const_date_generator_iAT1AT1AT1997 = const_date_generator_s {
+    impl:
+    {
+      year_gen = const_value_generator_iATStreamIWyear_streamIMAT1997;
+      compositor = sql_date_constructor_i;
+      month_gen = const_value_generator_iATStreamIWmonth_streamIMAT1;
+      day_gen = const_value_generator_iATStreamIWday_streamIMAT1;
+      month_gen.output -- compositor.month_input;
+      day_gen.output -- compositor.day_input;
+      compositor.date_output -- date_output;
+      year_gen.output -- compositor.year_input;
+    },
+  };
+
+  
+  streamlet const_date_generator_iAT1AT1AT1998 = const_date_generator_s {
+    impl:
+    {
+      year_gen = const_value_generator_iATStreamIWyear_streamIMAT1998;
+      compositor = sql_date_constructor_i;
+      day_gen = const_value_generator_iATStreamIWday_streamIMAT1;
+      month_gen = const_value_generator_iATStreamIWmonth_streamIMAT1;
+      year_gen.output -- compositor.year_input;
+      day_gen.output -- compositor.day_input;
+      compositor.date_output -- date_output;
+      month_gen.output -- compositor.month_input;
+    },
+  };
+
+  
+  streamlet where_claus_i = where_claus_s {
+    impl:
+    {
+      compare3 = comparator_is_larger_iATStreamIWdate_streamIM;
+      l_shipdate_standard_gen = const_date_generator_iAT1AT1AT1998;
+      compare1 = comparator_is_equal_iATStreamIWint_streamIM;
+      compare0 = comparator_is_equal_iATStreamIWint_streamIM;
+      c_mktsegment_compare = comparator_is_equal_iATStreamIWSQL_char10_streamIM;
+      and_0 = and_iATStreamIWselect_streamIMAT5;
+      compare2 = comparator_is_smaller_iATStreamIWdate_streamIM;
+      c_mktsegment_standard_gen = const_value_generator_iATStreamIWSQL_char10_streamIMAT10;
+      o_orderdate_standard_gen = const_date_generator_iAT1AT1AT1997;
+      l_shipdate -- compare3.input0;
+      c_mktsegment_standard_gen.output -- c_mktsegment_compare.input0;
+      compare1.output -- and_0.inputAT2;
+      l_orderkey -- compare1.input0;
+      and_0.output -- select;
+      o_custkey -- compare0.input1;
+      compare3.output -- and_0.inputAT4;
+      o_orderdate -- compare2.input0;
+      c_mktsegment -- c_mktsegment_compare.input1;
+      o_orderdate_standard_gen.date_output -- compare2.input1;
+      l_shipdate_standard_gen.date_output -- compare3.input1;
+      c_mktsegment_compare.output -- and_0.inputAT0;
+      c_custkey -- compare0.input0;
+      compare0.output -- and_0.inputAT1;
+      compare2.output -- and_0.inputAT3;
+      o_orderkey -- compare1.input1;
+    },
+  };
+
+  
+  streamlet data_filter_i = data_filter_s {
+    impl:
+    {
+      l_extendedprice_filter = stream_filter_1bit_iATStreamIWSQL_decimal_15_2_streamIM;
+      selection = where_claus_i;
+      l_orderkey_filter = stream_filter_1bit_iATStreamIWint_streamIM;
+      o_orderdate_filter = stream_filter_1bit_iATStreamIWdate_streamIM;
+      o_shippriority_filter = stream_filter_1bit_iATStreamIWint_streamIM;
+      duplicate_selection_select = duplicator_iATStreamIWselect_streamIMAT5;
+      l_discount_filter = stream_filter_1bit_iATStreamIWSQL_decimal_15_2_streamIM;
+      selection.select -- duplicate_selection_select.input;
+      duplicate_selection_select.outputAT0 -- o_shippriority_filter.select;
+      o_shippriority_in -- o_shippriority_filter.input;
+      l_extendedprice_filter.output -- l_extendedprice_out;
+      o_orderkey -- selection.o_orderkey;
+      l_shipdate -- selection.l_shipdate;
+      l_extendedprice_in -- l_extendedprice_filter.input;
+      duplicate_selection_select.outputAT2 -- l_extendedprice_filter.select;
+      c_mktsegment -- selection.c_mktsegment;
+      l_orderkey -- selection.l_orderkey;
+      duplicate_selection_select.outputAT3 -- o_orderdate_filter.select;
+      l_orderkey_filter.output -- l_orderkey_out;
+      l_orderkey_in -- l_orderkey_filter.input;
+      l_discount_filter.output -- l_discount_out;
+      o_orderdate_in -- o_orderdate_filter.input;
+      duplicate_selection_select.outputAT4 -- l_discount_filter.select;
+      o_orderdate_filter.output -- o_orderdate_out;
+      o_shippriority_filter.output -- o_shippriority_out;
+      o_orderdate -- selection.o_orderdate;
+      duplicate_selection_select.outputAT1 -- l_orderkey_filter.select;
+      l_discount_in -- l_discount_filter.input;
+      c_custkey -- selection.c_custkey;
+      o_custkey -- selection.o_custkey;
+    },
+  };
+
+  
+  streamlet main_i = main_s {
+    impl:
+    {
+      duplicate_o_orderkey = duplicator_iATStreamIWint_streamIMAT2;
+      void_data_src_lineitem_l_quantity = void_iATStreamIWSQL_decimal_15_2_streamIM;
+      void_data_src_lineitem_l_commitdate = void_iATStreamIWdate_streamIM;
+      multiplier = multiplier_iATStreamIWSQL_decimal_15_2_streamIM;
+      void_data_src_customer_c_address = void_iATStreamIWvarchar_streamIM;
+      void_accu_count = void_iATStreamIWcount_typeIM;
+      void_data_src_orders_o_clerk = void_iATStreamIWSQL_char15_streamIM;
+      to_neg = to_neg_iATStreamIWSQL_decimal_15_2_streamIM;
+      adder = adder_iATStreamIWSQL_decimal_15_2_streamIM;
+      void_data_src_customer_c_acctbal = void_iATStreamIWSQL_decimal_15_2_streamIM;
+      void_data_src_lineitem_l_partkey = void_iATStreamIWint_streamIM;
+      void_data_src_orders_o_comment = void_iATStreamIWvarchar_streamIM;
+      accu = accumulator_iATStreamIWSQL_decimal_15_2_streamIM;
+      data_src_customer = customer_i;
+      void_data_src_orders_o_totalprice = void_iATStreamIWSQL_decimal_15_2_streamIM;
+      void_data_src_orders_o_orderpriority = void_iATStreamIWSQL_char15_streamIM;
+      data_filter = data_filter_i;
+      duplicate_data_src_orders_o_orderdate = duplicator_iATStreamIWdate_streamIMAT2;
+      void_data_src_customer_c_name = void_iATStreamIWvarchar_streamIM;
+      void_data_src_lineitem_l_receiptdate = void_iATStreamIWdate_streamIM;
+      void_data_src_lineitem_l_tax = void_iATStreamIWSQL_decimal_15_2_streamIM;
+      void_data_src_lineitem_l_comment = void_iATStreamIWvarchar_streamIM;
+      void_data_src_orders_o_orderstatus = void_iATStreamIWSQL_char1_streamIM;
+      void_data_src_lineitem_l_linestatus = void_iATStreamIWSQL_char1_streamIM;
+      void_data_src_customer_c_nationkey = void_iATStreamIWint_streamIM;
+      void_data_src_lineitem_l_shipmode = void_iATStreamIWSQL_char10_streamIM;
+      void_data_src_customer_c_comment = void_iATStreamIWvarchar_streamIM;
+      void_data_src_customer_c_phone = void_iATStreamIWSQL_char15_streamIM;
+      const_value_gen = const_value_generator_iATStreamIWSQL_decimal_15_2_streamIMAT1;
+      err_and = and_iATStreamIWerr_streamIMAT3;
+      void_data_src_lineitem_l_suppkey = void_iATStreamIWint_streamIM;
+      duplicate_l_orderkey = duplicator_iATStreamIWint_streamIMAT3;
+      duplicate_c_custkey = duplicator_iATStreamIWint_streamIMAT2;
+      data_src_lineitem = lineitem_i;
+      void_data_src_lineitem_l_returnflag = void_iATStreamIWSQL_char1_streamIM;
+      data_src_orders = orders_i;
+      void_data_src_lineitem_l_shipinstruct = void_iATStreamIWSQL_char25_streamIM;
+      data_src_orders.o_shippriority -- data_filter.o_shippriority_in;
+      data_src_lineitem.l_linestatus -- void_data_src_lineitem_l_linestatus.input;
+      multiplier.overflow -- err_and.inputAT0;
+      data_src_orders.o_comment -- void_data_src_orders_o_comment.input;
+      duplicate_data_src_orders_o_orderdate.outputAT0 -- data_filter.o_orderdate_in;
+      to_neg.output -- adder.input1;
+      l_linenumber -- data_src_lineitem.l_linenumber;
+      data_filter.o_orderdate_out -- o_orderdate;
+      data_src_customer.c_address -- void_data_src_customer_c_address.input;
+      data_src_lineitem.l_partkey -- void_data_src_lineitem_l_partkey.input;
+      o_orderkey -- duplicate_o_orderkey.input;
+      data_src_lineitem.l_commitdate -- void_data_src_lineitem_l_commitdate.input;
+      data_src_orders.o_clerk -- void_data_src_orders_o_clerk.input;
+      data_src_lineitem.l_tax -- void_data_src_lineitem_l_tax.input;
+      data_src_customer.c_name -- void_data_src_customer_c_name.input;
+      data_src_customer.c_mktsegment -- data_filter.c_mktsegment;
+      duplicate_o_orderkey.outputAT1 -- data_filter.o_orderkey;
+      data_src_lineitem.l_quantity -- void_data_src_lineitem_l_quantity.input;
+      data_filter.l_extendedprice_out -- multiplier.input1;
+      duplicate_o_orderkey.outputAT0 -- data_src_orders.o_orderkey;
+      data_src_lineitem.l_shipinstruct -- void_data_src_lineitem_l_shipinstruct.input;
+      accu.count -- void_accu_count.input;
+      data_src_orders.o_custkey -- data_filter.o_custkey;
+      data_filter.l_discount_out -- to_neg.input;
+      duplicate_c_custkey.outputAT1 -- data_src_customer.c_custkey;
+      data_src_orders.o_totalprice -- void_data_src_orders_o_totalprice.input;
+      data_src_orders.o_orderstatus -- void_data_src_orders_o_orderstatus.input;
+      duplicate_l_orderkey.outputAT0 -- data_filter.l_orderkey;
+      data_src_lineitem.l_discount -- data_filter.l_discount_in;
+      data_src_customer.c_comment -- void_data_src_customer_c_comment.input;
+      duplicate_c_custkey.outputAT0 -- data_filter.c_custkey;
+      const_value_gen.output -- adder.input0;
+      accu.output -- revenue;
+      err_and.output -- err;
+      data_src_lineitem.l_receiptdate -- void_data_src_lineitem_l_receiptdate.input;
+      c_custkey -- duplicate_c_custkey.input;
+      data_src_lineitem.l_comment -- void_data_src_lineitem_l_comment.input;
+      duplicate_data_src_orders_o_orderdate.outputAT1 -- data_filter.o_orderdate;
+      data_src_lineitem.l_shipmode -- void_data_src_lineitem_l_shipmode.input;
+      accu.overflow -- err_and.inputAT1;
+      duplicate_l_orderkey.outputAT1 -- data_src_lineitem.l_orderkey;
+      data_filter.o_shippriority_out -- o_shippriority;
+      data_src_lineitem.l_suppkey -- void_data_src_lineitem_l_suppkey.input;
+      data_src_customer.c_nationkey -- void_data_src_customer_c_nationkey.input;
+      data_src_orders.o_orderpriority -- void_data_src_orders_o_orderpriority.input;
+      data_src_lineitem.l_extendedprice -- data_filter.l_extendedprice_in;
+      adder.overflow -- err_and.inputAT2;
+      data_src_lineitem.l_shipdate -- data_filter.l_shipdate;
+      data_filter.l_orderkey_out -- l_orderkey_out;
+      data_src_orders.o_orderdate -- duplicate_data_src_orders_o_orderdate.input;
+      l_orderkey -- duplicate_l_orderkey.input;
+      multiplier.output -- accu.input;
+      data_src_lineitem.l_returnflag -- void_data_src_lineitem_l_returnflag.input;
+      duplicate_l_orderkey.outputAT2 -- data_filter.l_orderkey_in;
+      adder.output -- multiplier.input0;
+      data_src_customer.c_phone -- void_data_src_customer_c_phone.input;
+      data_src_customer.c_acctbal -- void_data_src_customer_c_acctbal.input;
+    },
+  };
+
+
+}
