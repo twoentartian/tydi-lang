@@ -9,6 +9,6 @@ edition = "2018"
 tydi_lang_front_end = { path = "../tydi_lang_front_end" }
 tydi_lang_raw_ast = { path = "../tydi_lang_raw_ast" }
 chrono = "0.4.19"
-til-vhdl = { git = "https://github.com/matthijsr/til-vhdl.git" }
-tydi-common = { git = "https://github.com/matthijsr/til-vhdl.git" }
-til-parser = { git = "https://github.com/matthijsr/til-vhdl.git" }
+til-vhdl = { git = "https://github.com/matthijsr/til-vhdl.git", rev = "8a38f1d084473578e686c6bf4774086f499b6726" }
+tydi-common = { git = "https://github.com/matthijsr/til-vhdl.git", rev = "8a38f1d084473578e686c6bf4774086f499b6726" }
+til-parser = { git = "https://github.com/matthijsr/til-vhdl.git", rev = "8a38f1d084473578e686c6bf4774086f499b6726" }

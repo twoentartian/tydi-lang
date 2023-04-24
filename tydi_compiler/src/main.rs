@@ -17,8 +17,8 @@ fn source(path: impl AsRef<Path>) -> String {
 }
 
 fn parse_to_output(src: impl Into<String>, dst: String) -> tydi_common::error::Result<()> {
+    // let db = til_parser::query::into_query_storage_default_with_output(src, dst)?;
     let db = til_parser::query::into_query_storage(src)?;
-
     til_vhdl::canonical(&db, dst)
 }
 
