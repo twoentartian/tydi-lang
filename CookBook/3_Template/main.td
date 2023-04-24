@@ -39,3 +39,27 @@ const cd0: clockdomain = "100MHz";
 const cd1: clockdomain;
 impl data_demux_rgb_5(impl_data_demux<5, type rgb_stream, cd0>);
 impl data_demux_rgb_100(impl_data_demux<20, type rgb_stream, cd1>);
+
+
+
+
+
+
+//void component, always acknowledge the handshake
+streamlet void_s<type_in: type> {
+  input: type_in in,
+};
+
+external impl void_i<type_in: type> of void_s<type type_in> {
+
+};
+
+//data duplicator
+streamlet duplicator_s<data_type: type, output_channel: int> {
+  input: data_type in,
+  output: data_type [output_channel] out,
+};
+
+external impl duplicator_i<data_type: type, output_channel: int> of duplicator_s<type data_type, output_channel> {
+
+};

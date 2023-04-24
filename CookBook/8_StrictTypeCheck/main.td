@@ -43,3 +43,29 @@ impl impl_rgb_bypass of rgb_bypass {
   input2 => output2 "con2" @NoStrictType@,
   input3 => output3 "con3" @NoStrictType@,
 };
+
+
+
+
+
+
+
+
+//void component, always acknowledge the handshake
+streamlet void_s<type_in: type> {
+  input: type_in in,
+};
+
+external impl void_i<type_in: type> of void_s<type type_in> {
+
+};
+
+//data duplicator
+streamlet duplicator_s<data_type: type, output_channel: int> {
+  input: data_type in,
+  output: data_type [output_channel] out,
+};
+
+external impl duplicator_i<data_type: type, output_channel: int> of duplicator_s<type data_type, output_channel> {
+
+};
