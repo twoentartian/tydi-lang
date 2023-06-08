@@ -2,3 +2,4 @@
 /.idea
 
 /.fleet
+Cargo.lock
