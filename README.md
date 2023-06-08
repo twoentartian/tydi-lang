@@ -8,4 +8,4 @@ Tydi-lang is designed to be a FPGA accelerator language, integrating [Tydi-spec]
 
 ## What does the Tydi-lang complier do?
 
-![tydi-lang_front_end](https://github.com/twoentartian/tydi-lang/raw/main/img/tydi-lang_front_end.drawio.pdf)
+![tydi-lang_front_end](./img/tydi_frontend.drawio.pdf)
