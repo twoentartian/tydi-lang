@@ -1,0 +1,3308 @@
+Project(test_project){
+  Package(tpch){
+    Scope(package_tpch){
+      Variables{
+        $package$tpch:PackageType(NotInferred(""))
+        month_max:int(12)
+        year_max:int(99999)
+        day_max:int(31)
+        max_decimal_15:int(999999999999999)
+        bit_width_decimal_15:int(50)
+      }
+      Types{
+        SQL_char:Bit(8)
+        SQL_char25:Bit(200)
+        SQL_char25_stream:Stream(SQL_char25_stream){
+          DataType=Bit(200)
+          dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        select_stream:Stream(select_stream){
+          DataType=Bit(1)
+          dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        int_stream:Stream(int_stream){
+          DataType=Bit(32)
+          dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        Date:DataGroup(Date){
+          Scope(group_Date){
+            Types{
+              year:Bit(17)
+              day:Bit(5)
+              month:Bit(4)
+            }
+            ScopeRelations{
+              --GroupScope-->package_tpch
+            }
+          }
+        }
+        year_stream:Stream(year_stream){
+          DataType=VarType(year_t)
+          dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        year_t:Bit(17)
+        month_t:Bit(4)
+        month_stream:Stream(month_stream){
+          DataType=VarType(month_t)
+          dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        day_stream:Stream(day_stream){
+          DataType=VarType(day_t)
+          dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        stream_filter_select_stream_1bit:Stream(stream_filter_select_stream_1bit){
+          DataType=Bit(1)
+          dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        SQL_int:Bit(32)
+        varchar_stream:Stream(varchar_stream){
+          DataType=Bit(8)
+          dimension=2, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        date_stream:Stream(date_stream){
+          DataType=DataGroup(Date)
+          dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        SQL_char1_stream:Stream(SQL_char1_stream){
+          DataType=Bit(8)
+          dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        day_t:Bit(5)
+        SQL_char10_stream:Stream(SQL_char10_stream){
+          DataType=Bit(80)
+          dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        SQL_char10:Bit(80)
+        SQL_char15:Bit(120)
+        SQL_char15_stream:Stream(SQL_char15_stream){
+          DataType=Bit(120)
+          dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        SQL_decimal_15_2_stream:Stream(SQL_decimal_15_2_stream){
+          DataType=DataGroup(SQL_decimal_15_2)
+          dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        stream_filter_select_stream:Stream(stream_filter_select_stream){
+          DataType=Bit(NotInferred("2"))
+          dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        SQL_decimal_15_2:DataGroup(SQL_decimal_15_2){
+          Scope(group_SQL_decimal_15_2){
+            Variables{
+              frac:UnknownType(NotInferred("2"))
+            }
+            Types{
+              decimal:Bit(50)
+            }
+            ScopeRelations{
+              --GroupScope-->package_tpch
+            }
+          }
+        }
+        key_stream:Stream(int_stream){
+          DataType=Bit(32)
+          dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        SQL_decimal_15:Bit(50)
+      }
+      Streamlets{
+        Streamlet(const_char10_generator_s@MED BAG)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@MED BAG){
+            Variables{
+              value:string(MED BAG)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(and_s@Stream(err_stream)@3)<NormalStreamlet>{
+          Scope(streamlet_and_s@Stream(err_stream)@3){
+            Variables{
+              input_channel:int(3)
+            }
+            Types{
+              data_type:Stream(err_stream){
+                DataType=Bit(1)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input@2:Port(Stream(err_stream),in) `DefaultClockDomain
+              input@1:Port(Stream(err_stream),in) `DefaultClockDomain
+              input@0:Port(Stream(err_stream),in) `DefaultClockDomain
+              output:Port(Stream(err_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(multiplier_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_multiplier_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input1:Port(VarType(data_type),in) `DefaultClockDomain
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+              input0:Port(VarType(data_type),in) `DefaultClockDomain
+              overflow:Port(Stream($generated$Type8252_8266),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@MED BAG)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@MED BAG){
+            Variables{
+              value:string(MED BAG)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s@Stream(int_stream)@10)<NormalStreamlet>{
+          Scope(streamlet_const_value_generator_s@Stream(int_stream)@10){
+            Variables{
+              value:int(10)
+            }
+            Types{
+              type_out:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(int_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(adder_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_adder_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input0:Port(VarType(data_type),in) `DefaultClockDomain
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+              overflow:Port(Stream($generated$Type7814_7828),out) `DefaultClockDomain
+              input1:Port(VarType(data_type),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char25_generator_s@DELIVER IN PERSON)<NormalStreamlet>{
+          Scope(streamlet_const_char25_generator_s@DELIVER IN PERSON){
+            Variables{
+              value:string(DELIVER IN PERSON)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char25_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_is_smaller_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_comparator_is_smaller_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input0:Port(VarType(type_in),in) `DefaultClockDomain
+              input1:Port(VarType(type_in),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type8981_8995),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char25_generator_s)<@string>{
+          Scope(streamlet_const_char25_generator_s){
+            Variables{
+              value:string(NotInferred("$arg$value"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(VarType(SQL_char25_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(partsupp_s)<NormalStreamlet>{
+          Scope(streamlet_partsupp_s){
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              ps_supplycost:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              ps_comment:Port(Stream(varchar_stream),out) `DefaultClockDomain
+              ps_suppkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              ps_partkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              ps_availqty:Port(Stream(int_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@band1)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@band1){
+            Variables{
+              value:string(band1)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@band2)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@band2){
+            Variables{
+              value:string(band2)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_is_smaller_equal_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_comparator_is_smaller_equal_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type9551_9565),out) `DefaultClockDomain
+              input0:Port(VarType(type_in),in) `DefaultClockDomain
+              input1:Port(VarType(type_in),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(accumulator_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_accumulator_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            Types{
+              count_type:Stream(count_type){
+                DataType=Bit(NotInferred("32"))
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+              overflow_type:Stream(overflow_type){
+                DataType=Bit(NotInferred("1"))
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              count:Port(VarType(count_type),out) `DefaultClockDomain
+              input:Port(VarType(data_type),in) `DefaultClockDomain
+              overflow:Port(VarType(overflow_type),out) `DefaultClockDomain
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(and_s)<@LogicalDataType(DummyLogicalData)@int>{
+          Scope(streamlet_and_s){
+            Variables{
+              input_channel:int(NotInferred("$arg$input_channel"))
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+              input:PortArray[NotInferred("input_channel")](VarType(data_type),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s@Stream(int_stream)@1)<NormalStreamlet>{
+          Scope(streamlet_const_value_generator_s@Stream(int_stream)@1){
+            Variables{
+              value:int(1)
+            }
+            Types{
+              type_out:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(int_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_is_equal_s@Stream(SQL_char25_stream))<NormalStreamlet>{
+          Scope(streamlet_comparator_is_equal_s@Stream(SQL_char25_stream)){
+            Types{
+              type_in:Stream(SQL_char25_stream){
+                DataType=Bit(200)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain
+              input1:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain
+              input0:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(to_neg_s@Stream(SQL_decimal_15_2_stream))<NormalStreamlet>{
+          Scope(streamlet_to_neg_s@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              data_type:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              input:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@SM CASE)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@SM CASE){
+            Variables{
+              value:string(SM CASE)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(lineitem_s)<NormalStreamlet>{
+          Scope(streamlet_lineitem_s){
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              l_shipinstruct:Port(Stream(SQL_char25_stream),out) `DefaultClockDomain
+              l_partkey:Port(Stream(int_stream),out) `DefaultClockDomain
+              l_receiptdate:Port(Stream(date_stream),out) `DefaultClockDomain
+              l_extendedprice:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_suppkey:Port(Stream(int_stream),out) `DefaultClockDomain
+              l_orderkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              l_shipdate:Port(Stream(date_stream),out) `DefaultClockDomain
+              l_discount:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_quantity:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_shipmode:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+              l_linenumber:Port(Stream(int_stream),in) `DefaultClockDomain
+              l_tax:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_returnflag:Port(Stream(SQL_char1_stream),out) `DefaultClockDomain
+              l_linestatus:Port(Stream(SQL_char1_stream),out) `DefaultClockDomain
+              l_commitdate:Port(Stream(date_stream),out) `DefaultClockDomain
+              l_comment:Port(Stream(varchar_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@LG CASE)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@LG CASE){
+            Variables{
+              value:string(LG CASE)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(and_s@Stream(select_stream)@9)<NormalStreamlet>{
+          Scope(streamlet_and_s@Stream(select_stream)@9){
+            Variables{
+              input_channel:int(9)
+            }
+            Types{
+              data_type:Stream(select_stream){
+                DataType=Bit(1)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input@0:Port(Stream(select_stream),in) `DefaultClockDomain
+              input@4:Port(Stream(select_stream),in) `DefaultClockDomain
+              input@3:Port(Stream(select_stream),in) `DefaultClockDomain
+              input@5:Port(Stream(select_stream),in) `DefaultClockDomain
+              input@6:Port(Stream(select_stream),in) `DefaultClockDomain
+              input@7:Port(Stream(select_stream),in) `DefaultClockDomain
+              input@1:Port(Stream(select_stream),in) `DefaultClockDomain
+              input@2:Port(Stream(select_stream),in) `DefaultClockDomain
+              output:Port(Stream(select_stream),out) `DefaultClockDomain
+              input@8:Port(Stream(select_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@15)<NormalStreamlet>{
+          Scope(streamlet_const_value_generator_s@Stream(SQL_decimal_15_2_stream)@15){
+            Variables{
+              value:int(15)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_is_larger_equal_s@Stream(int_stream))<NormalStreamlet>{
+          Scope(streamlet_comparator_is_larger_equal_s@Stream(int_stream)){
+            Types{
+              type_in:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type9260_9274),out) `DefaultClockDomain
+              input1:Port(Stream(int_stream),in) `DefaultClockDomain
+              input0:Port(Stream(int_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@LG PKG)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@LG PKG){
+            Variables{
+              value:string(LG PKG)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@SM CASE)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@SM CASE){
+            Variables{
+              value:string(SM CASE)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@4)<NormalStreamlet>{
+          Scope(streamlet_const_value_generator_s@Stream(SQL_decimal_15_2_stream)@4){
+            Variables{
+              value:int(4)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(multiplier_s@Stream(SQL_decimal_15_2_stream))<NormalStreamlet>{
+          Scope(streamlet_multiplier_s@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              data_type:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input0:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              input1:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              overflow:Port(Stream($generated$Type8252_8266),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@SM PKG)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@SM PKG){
+            Variables{
+              value:string(SM PKG)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(stream_filter_1bit_s@Stream(SQL_decimal_15_2_stream))<NormalStreamlet>{
+          Scope(streamlet_stream_filter_1bit_s@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              data_type:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              select:Port(Stream(stream_filter_select_stream_1bit),in) `DefaultClockDomain
+              output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(or_s@Stream(select_stream)@3)<NormalStreamlet>{
+          Scope(streamlet_or_s@Stream(select_stream)@3){
+            Variables{
+              input_channel:int(3)
+            }
+            Types{
+              data_type:Stream(select_stream){
+                DataType=Bit(1)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input@1:Port(Stream(select_stream),in) `DefaultClockDomain
+              input@2:Port(Stream(select_stream),in) `DefaultClockDomain
+              input@0:Port(Stream(select_stream),in) `DefaultClockDomain
+              output:Port(Stream(select_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s@Stream(int_stream)@15)<NormalStreamlet>{
+          Scope(streamlet_const_value_generator_s@Stream(int_stream)@15){
+            Variables{
+              value:int(15)
+            }
+            Types{
+              type_out:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(int_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@AIR REG)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@AIR REG){
+            Variables{
+              value:string(AIR REG)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(part_s)<NormalStreamlet>{
+          Scope(streamlet_part_s){
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              p_size:Port(Stream(int_stream),out) `DefaultClockDomain
+              p_container:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+              p_mfgr:Port(Stream(SQL_char25_stream),out) `DefaultClockDomain
+              p_brand:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+              p_partkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              p_type:Port(Stream(varchar_stream),out) `DefaultClockDomain
+              p_retailprice:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              p_comment:Port(Stream(varchar_stream),out) `DefaultClockDomain
+              p_name:Port(Stream(varchar_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(to_neg_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_to_neg_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:Port(VarType(data_type),in) `DefaultClockDomain
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@MED PACK)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@MED PACK){
+            Variables{
+              value:string(MED PACK)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@1)<NormalStreamlet>{
+          Scope(streamlet_const_value_generator_s@Stream(SQL_decimal_15_2_stream)@1){
+            Variables{
+              value:int(1)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@16)<NormalStreamlet>{
+          Scope(streamlet_const_value_generator_s@Stream(SQL_decimal_15_2_stream)@16){
+            Variables{
+              value:int(16)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(stream_filter_1bit_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_stream_filter_1bit_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+              select:Port(VarType(stream_filter_select_stream_1bit),in) `DefaultClockDomain
+              input:Port(VarType(data_type),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@LG CASE)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@LG CASE){
+            Variables{
+              value:string(LG CASE)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(or_s@Stream(select_stream)@4)<NormalStreamlet>{
+          Scope(streamlet_or_s@Stream(select_stream)@4){
+            Variables{
+              input_channel:int(4)
+            }
+            Types{
+              data_type:Stream(select_stream){
+                DataType=Bit(1)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input@1:Port(Stream(select_stream),in) `DefaultClockDomain
+              input@3:Port(Stream(select_stream),in) `DefaultClockDomain
+              output:Port(Stream(select_stream),out) `DefaultClockDomain
+              input@2:Port(Stream(select_stream),in) `DefaultClockDomain
+              input@0:Port(Stream(select_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(or_s@Stream(select_stream)@2)<NormalStreamlet>{
+          Scope(streamlet_or_s@Stream(select_stream)@2){
+            Variables{
+              input_channel:int(2)
+            }
+            Types{
+              data_type:Stream(select_stream){
+                DataType=Bit(1)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input@1:Port(Stream(select_stream),in) `DefaultClockDomain
+              output:Port(Stream(select_stream),out) `DefaultClockDomain
+              input@0:Port(Stream(select_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_is_larger_equal_s@Stream(SQL_decimal_15_2_stream))<NormalStreamlet>{
+          Scope(streamlet_comparator_is_larger_equal_s@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              type_in:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input1:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type9260_9274),out) `DefaultClockDomain
+              input0:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@MED PACK)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@MED PACK){
+            Variables{
+              value:string(MED PACK)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@MED BOX)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@MED BOX){
+            Variables{
+              value:string(MED BOX)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(nation_s)<NormalStreamlet>{
+          Scope(streamlet_nation_s){
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              n_name:Port(Stream(SQL_char25_stream),out) `DefaultClockDomain
+              n_nationkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              n_comment:Port(Stream(varchar_stream),out) `DefaultClockDomain
+              n_regionkey:Port(Stream(int_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_is_larger_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_comparator_is_larger_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input1:Port(VarType(type_in),in) `DefaultClockDomain
+              input0:Port(VarType(type_in),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type8717_8731),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@SM PACK)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@SM PACK){
+            Variables{
+              value:string(SM PACK)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@band0)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@band0){
+            Variables{
+              value:string(band0)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(stream_filter_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_stream_filter_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+              select:Port(VarType(stream_filter_select_stream),in) `DefaultClockDomain
+              input:Port(VarType(data_type),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@AIR REG)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@AIR REG){
+            Variables{
+              value:string(AIR REG)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@band0)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@band0){
+            Variables{
+              value:string(band0)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(or_s)<@LogicalDataType(DummyLogicalData)@int>{
+          Scope(streamlet_or_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+              input_channel:int(NotInferred("$arg$input_channel"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+              input:PortArray[NotInferred("input_channel")](VarType(data_type),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(where_claus_s)<NormalStreamlet>{
+          Scope(streamlet_where_claus_s){
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              p_brand:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              l_shipmode:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              p_partkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              select:Port(Stream(select_stream),out) `DefaultClockDomain
+              l_partkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              l_shipinstruct:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain
+              p_size:Port(Stream(int_stream),in) `DefaultClockDomain
+              l_quantity:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@AIR)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@AIR){
+            Variables{
+              value:string(AIR)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_is_smaller_equal_s@Stream(SQL_decimal_15_2_stream))<NormalStreamlet>{
+          Scope(streamlet_comparator_is_smaller_equal_s@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              type_in:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input0:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type9551_9565),out) `DefaultClockDomain
+              input1:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@band2)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@band2){
+            Variables{
+              value:string(band2)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@band1)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@band1){
+            Variables{
+              value:string(band1)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_is_equal_s@Stream(int_stream))<NormalStreamlet>{
+          Scope(streamlet_comparator_is_equal_s@Stream(int_stream)){
+            Types{
+              type_in:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input1:Port(Stream(int_stream),in) `DefaultClockDomain
+              input0:Port(Stream(int_stream),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(orders_s)<NormalStreamlet>{
+          Scope(streamlet_orders_s){
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              o_orderkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              o_orderdate:Port(Stream(date_stream),out) `DefaultClockDomain
+              o_orderpriority:Port(Stream(SQL_char15_stream),out) `DefaultClockDomain
+              o_shippriority:Port(Stream(int_stream),out) `DefaultClockDomain
+              o_comment:Port(Stream(varchar_stream),out) `DefaultClockDomain
+              o_custkey:Port(Stream(int_stream),out) `DefaultClockDomain
+              o_totalprice:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              o_orderstatus:Port(Stream(SQL_char1_stream),out) `DefaultClockDomain
+              o_clerk:Port(Stream(SQL_char15_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(data_filter_s)<NormalStreamlet>{
+          Scope(streamlet_data_filter_s){
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              p_size:Port(Stream(int_stream),in) `DefaultClockDomain
+              l_extendedprice_out:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              l_shipinstruct:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain
+              p_partkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              l_quantity:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              l_extendedprice_in:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              l_partkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              l_discount_out:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_discount_in:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              p_brand:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              l_shipmode:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_is_larger_equal_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_comparator_is_larger_equal_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input1:Port(VarType(type_in),in) `DefaultClockDomain
+              input0:Port(VarType(type_in),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type9260_9274),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(converter_s)<@LogicalDataType(DummyLogicalData)@LogicalDataType(DummyLogicalData)@int>{
+          Scope(streamlet_converter_s){
+            Variables{
+              channel:int(NotInferred("$arg$channel"))
+              input_type:DummyLogicalData(NotInferred("$arg$input_type"))
+              output_type:DummyLogicalData(NotInferred("$arg$output_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:PortArray[NotInferred("channel")](VarType(input_type),in) `DefaultClockDomain
+              output:PortArray[NotInferred("channel")](VarType(output_type),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(main_s)<NormalStreamlet>{
+          Scope(streamlet_main_s){
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              l_linenumber:Port(Stream(int_stream),in) `DefaultClockDomain
+              p_partkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              revenue:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_orderkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              err:Port(Stream($generated$Type23774_23788),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@LG BOX)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@LG BOX){
+            Variables{
+              value:string(LG BOX)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_is_equal_s@Stream(SQL_char10_stream))<NormalStreamlet>{
+          Scope(streamlet_comparator_is_equal_s@Stream(SQL_char10_stream)){
+            Types{
+              type_in:Stream(SQL_char10_stream){
+                DataType=Bit(80)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain
+              input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(region_s)<NormalStreamlet>{
+          Scope(streamlet_region_s){
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              r_regionkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              r_comment:Port(Stream(varchar_stream),out) `DefaultClockDomain
+              r_name:Port(Stream(SQL_char25_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s)<@LogicalDataType(DummyLogicalData)@int>{
+          Scope(streamlet_const_value_generator_s){
+            Variables{
+              value:int(NotInferred("$arg$value"))
+              type_out:DummyLogicalData(NotInferred("$arg$type_out"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(VarType(type_out),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(supplier_s)<NormalStreamlet>{
+          Scope(streamlet_supplier_s){
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              s_acctbal:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              s_suppkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              s_address:Port(Stream(varchar_stream),out) `DefaultClockDomain
+              s_name:Port(Stream(SQL_char25_stream),out) `DefaultClockDomain
+              s_nationkey:Port(Stream(int_stream),out) `DefaultClockDomain
+              s_phone:Port(Stream(SQL_char15_stream),out) `DefaultClockDomain
+              s_comment:Port(Stream(varchar_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s)<@string>{
+          Scope(streamlet_is_equal_to_const_char10_s){
+            Variables{
+              value:string(NotInferred("$arg$value"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+              input:Port(VarType(SQL_char10_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@MED BOX)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@MED BOX){
+            Variables{
+              value:string(MED BOX)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@SM PACK)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@SM PACK){
+            Variables{
+              value:string(SM PACK)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@6)<NormalStreamlet>{
+          Scope(streamlet_const_value_generator_s@Stream(SQL_decimal_15_2_stream)@6){
+            Variables{
+              value:int(6)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s@Stream(int_stream)@5)<NormalStreamlet>{
+          Scope(streamlet_const_value_generator_s@Stream(int_stream)@5){
+            Variables{
+              value:int(5)
+            }
+            Types{
+              type_out:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(int_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@SM BOX)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@SM BOX){
+            Variables{
+              value:string(SM BOX)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@SM BOX)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@SM BOX){
+            Variables{
+              value:string(SM BOX)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@LG BOX)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@LG BOX){
+            Variables{
+              value:string(LG BOX)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(padding_zero_s)<@LogicalDataType(DummyLogicalData)@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_padding_zero_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+              type_out:DummyLogicalData(NotInferred("$arg$type_out"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              stream_out:Port(VarType(type_out),out) `DefaultClockDomain
+              stream_in:Port(VarType(type_in),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@LG PACK)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@LG PACK){
+            Variables{
+              value:string(LG PACK)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@LG PACK)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@LG PACK){
+            Variables{
+              value:string(LG PACK)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char25_s@DELIVER IN PERSON)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char25_s@DELIVER IN PERSON){
+            Variables{
+              value:string(DELIVER IN PERSON)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type11077_11091),out) `DefaultClockDomain
+              input:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(duplicator_s)<@LogicalDataType(DummyLogicalData)@int>{
+          Scope(streamlet_duplicator_s){
+            Variables{
+              output_channel:int(NotInferred("$arg$output_channel"))
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:PortArray[NotInferred("output_channel")](VarType(data_type),out) `DefaultClockDomain
+              input:Port(VarType(data_type),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@5)<NormalStreamlet>{
+          Scope(streamlet_const_value_generator_s@Stream(SQL_decimal_15_2_stream)@5){
+            Variables{
+              value:int(5)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(accumulator_s@Stream(SQL_decimal_15_2_stream))<NormalStreamlet>{
+          Scope(streamlet_accumulator_s@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              data_type:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+              count_type:Stream(count_type){
+                DataType=Bit(32)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+              overflow_type:Stream(overflow_type){
+                DataType=Bit(1)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              overflow:Port(Stream(overflow_type),out) `DefaultClockDomain
+              output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              count:Port(Stream(count_type),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char25_s)<@string>{
+          Scope(streamlet_is_equal_to_const_char25_s){
+            Variables{
+              value:string(NotInferred("$arg$value"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream($generated$Type11077_11091),out) `DefaultClockDomain
+              input:Port(VarType(SQL_char25_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_comparator_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input1:Port(VarType(type_in),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type5166_5180),out) `DefaultClockDomain
+              input0:Port(VarType(type_in),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_is_smaller_equal_s@Stream(int_stream))<NormalStreamlet>{
+          Scope(streamlet_comparator_is_smaller_equal_s@Stream(int_stream)){
+            Types{
+              type_in:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input0:Port(Stream(int_stream),in) `DefaultClockDomain
+              input1:Port(Stream(int_stream),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type9551_9565),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@MED PKG)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@MED PKG){
+            Variables{
+              value:string(MED PKG)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_is_equal_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_comparator_is_equal_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input1:Port(VarType(type_in),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain
+              input0:Port(VarType(type_in),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s)<@string>{
+          Scope(streamlet_const_char10_generator_s){
+            Variables{
+              value:string(NotInferred("$arg$value"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(VarType(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(void_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_void_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:Port(VarType(type_in),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@SM PKG)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@SM PKG){
+            Variables{
+              value:string(SM PKG)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(adder_s@Stream(SQL_decimal_15_2_stream))<NormalStreamlet>{
+          Scope(streamlet_adder_s@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              data_type:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              overflow:Port(Stream($generated$Type7814_7828),out) `DefaultClockDomain
+              input0:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              input1:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(customer_s)<NormalStreamlet>{
+          Scope(streamlet_customer_s){
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              c_comment:Port(Stream(varchar_stream),out) `DefaultClockDomain
+              c_custkey:Port(Stream(int_stream),in) `DefaultClockDomain
+              c_acctbal:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              c_address:Port(Stream(varchar_stream),out) `DefaultClockDomain
+              c_phone:Port(Stream(SQL_char15_stream),out) `DefaultClockDomain
+              c_name:Port(Stream(varchar_stream),out) `DefaultClockDomain
+              c_mktsegment:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+              c_nationkey:Port(Stream(int_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(divider_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_divider_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              divisor:Port(VarType(data_type),in) `DefaultClockDomain
+              quotient:Port(VarType(data_type),out) `DefaultClockDomain
+              dividend:Port(VarType(data_type),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@LG PKG)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@LG PKG){
+            Variables{
+              value:string(LG PKG)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_char10_generator_s@MED PKG)<NormalStreamlet>{
+          Scope(streamlet_const_char10_generator_s@MED PKG){
+            Variables{
+              value:string(MED PKG)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@14)<NormalStreamlet>{
+          Scope(streamlet_const_value_generator_s@Stream(SQL_decimal_15_2_stream)@14){
+            Variables{
+              value:int(14)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(is_equal_to_const_char10_s@AIR)<NormalStreamlet>{
+          Scope(streamlet_is_equal_to_const_char10_s@AIR){
+            Variables{
+              value:string(AIR)
+            }
+            ScopeRelations{
+              --StreamletScope-->package_tpch
+            }
+            Ports{
+              input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain
+            }
+          }
+        }
+      }
+      Implements{
+        Implement(comparator_is_larger_equal_i@Stream(SQL_decimal_15_2_stream))<NormalImplement> -> Streamlet(comparator_is_larger_equal_s@Stream(SQL_decimal_15_2_stream)){
+          Scope(implement_comparator_is_larger_equal_i@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              type_in:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(stream_filter_1bit_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(stream_filter_1bit_s<@data_type>){
+          Scope(implement_stream_filter_1bit_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(or_i)<@LogicalDataType(DummyLogicalData)@int> -> ProxyStreamlet(or_s<@data_type@input_channel>){
+          Scope(implement_or_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+              input_channel:int(NotInferred("$arg$input_channel"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(customer_i)<NormalImplement> -> Streamlet(customer_s){
+          Scope(implement_customer_i){
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(orders_i)<NormalImplement> -> Streamlet(orders_s){
+          Scope(implement_orders_i){
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_is_smaller_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(comparator_is_smaller_s<@type_in>){
+          Scope(implement_comparator_is_smaller_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@SM PKG)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@SM PKG){
+          Scope(implement_is_equal_to_const_char10_i@SM PKG){
+            Variables{
+              value:string(SM PKG)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              const_gen:(Implement(const_char10_generator_i@SM PKG))
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+            }
+            Connections{
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@6)<NormalImplement> -> Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@6){
+          Scope(implement_const_value_generator_i@Stream(SQL_decimal_15_2_stream)@6){
+            Variables{
+              value:int(6)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@band1)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@band1){
+          Scope(implement_is_equal_to_const_char10_i@band1){
+            Variables{
+              value:string(band1)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+              const_gen:(Implement(const_char10_generator_i@band1))
+            }
+            Connections{
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(adder_i@Stream(SQL_decimal_15_2_stream))<NormalImplement> -> Streamlet(adder_s@Stream(SQL_decimal_15_2_stream)){
+          Scope(implement_adder_i@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              data_type:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@16)<NormalImplement> -> Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@16){
+          Scope(implement_const_value_generator_i@Stream(SQL_decimal_15_2_stream)@16){
+            Variables{
+              value:int(16)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@LG BOX)<NormalImplement> -> Streamlet(const_char10_generator_s@LG BOX){
+          Scope(implement_const_char10_generator_i@LG BOX){
+            Variables{
+              value:string(LG BOX)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(or_i@Stream(select_stream)@3)<NormalImplement> -> Streamlet(or_s@Stream(select_stream)@3){
+          Scope(implement_or_i@Stream(select_stream)@3){
+            Variables{
+              input_channel:int(3)
+            }
+            Types{
+              data_type:Stream(select_stream){
+                DataType=Bit(1)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@SM CASE)<NormalImplement> -> Streamlet(const_char10_generator_s@SM CASE){
+          Scope(implement_const_char10_generator_i@SM CASE){
+            Variables{
+              value:string(SM CASE)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(accumulator_i@Stream(SQL_decimal_15_2_stream))<NormalImplement> -> Streamlet(accumulator_s@Stream(SQL_decimal_15_2_stream)){
+          Scope(implement_accumulator_i@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              data_type:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_is_larger_equal_i@Stream(int_stream))<NormalImplement> -> Streamlet(comparator_is_larger_equal_s@Stream(int_stream)){
+          Scope(implement_comparator_is_larger_equal_i@Stream(int_stream)){
+            Types{
+              type_in:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(multiplier_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(multiplier_s<@data_type>){
+          Scope(implement_multiplier_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i@Stream(int_stream)@15)<NormalImplement> -> Streamlet(const_value_generator_s@Stream(int_stream)@15){
+          Scope(implement_const_value_generator_i@Stream(int_stream)@15){
+            Variables{
+              value:int(15)
+            }
+            Types{
+              type_out:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@SM BOX)<NormalImplement> -> Streamlet(const_char10_generator_s@SM BOX){
+          Scope(implement_const_char10_generator_i@SM BOX){
+            Variables{
+              value:string(SM BOX)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@1)<NormalImplement> -> Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@1){
+          Scope(implement_const_value_generator_i@Stream(SQL_decimal_15_2_stream)@1){
+            Variables{
+              value:int(1)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(partsupp_i)<NormalImplement> -> Streamlet(partsupp_s){
+          Scope(implement_partsupp_i){
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(lineitem_i)<NormalImplement> -> Streamlet(lineitem_s){
+          Scope(implement_lineitem_i){
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(region_i)<NormalImplement> -> Streamlet(region_s){
+          Scope(implement_region_i){
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(where_claus_i)<NormalImplement> -> Streamlet(where_claus_s){
+          Scope(implement_where_claus_i){
+            Variables{
+              containers:[string]({SM CASE,SM BOX,SM PACK,SM PKG,MED BAG,MED BOX,MED PKG,MED PACK,LG CASE,LG BOX,LG PACK,LG PKG})
+              size_max:[int]({5,10,15})
+              quantity_min:[int]({4,5,6})
+              shipmodes:[string]({AIR,AIR REG})
+              quantity_max:[int]({14,15,16})
+              shipinstruct:string(DELIVER IN PERSON)
+              bands:[string]({band0,band1,band2})
+              size_min:[int]({1,1,1})
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              p_size_min_gen_2:(Implement(const_value_generator_i@Stream(int_stream)@1))
+              or_0:(Implement(or_i@Stream(select_stream)@3))
+              l_quantity_max_compare_0:(Implement(comparator_is_smaller_equal_i@Stream(SQL_decimal_15_2_stream)))
+              container_or_0:(Implement(or_i@Stream(select_stream)@4))
+              p_size_max_gen_2:(Implement(const_value_generator_i@Stream(int_stream)@15))
+              p_container_2_1:(Implement(is_equal_to_const_char10_i@LG BOX))
+              container_or_1:(Implement(or_i@Stream(select_stream)@4))
+              p_container_1_0:(Implement(is_equal_to_const_char10_i@MED BAG))
+              l_shipmode_comp_1_1:(Implement(is_equal_to_const_char10_i@AIR REG))
+              and_0:(Implement(and_i@Stream(select_stream)@9))
+              p_container_1_1:(Implement(is_equal_to_const_char10_i@MED BOX))
+              l_shipmode_comp_2_0:(Implement(is_equal_to_const_char10_i@AIR))
+              l_shipmode_comp_2_1:(Implement(is_equal_to_const_char10_i@AIR REG))
+              p_brand_equal_2:(Implement(is_equal_to_const_char10_i@band2))
+              l_shipmode_or_2:(Implement(or_i@Stream(select_stream)@2))
+              l_quantity_max_compare_1:(Implement(comparator_is_smaller_equal_i@Stream(SQL_decimal_15_2_stream)))
+              p_size_min_compare_0:(Implement(comparator_is_larger_equal_i@Stream(int_stream)))
+              l_shipmode_comp_1_0:(Implement(is_equal_to_const_char10_i@AIR))
+              p_container_2_3:(Implement(is_equal_to_const_char10_i@LG PKG))
+              p_size_max_compare_2:(Implement(comparator_is_smaller_equal_i@Stream(int_stream)))
+              p_container_2_2:(Implement(is_equal_to_const_char10_i@LG PACK))
+              p_size_min_gen_1:(Implement(const_value_generator_i@Stream(int_stream)@1))
+              l_shipmode_comp_0_1:(Implement(is_equal_to_const_char10_i@AIR REG))
+              container_or_2:(Implement(or_i@Stream(select_stream)@4))
+              l_quantity_min_compare_0:(Implement(comparator_is_larger_equal_i@Stream(SQL_decimal_15_2_stream)))
+              p_container_0_2:(Implement(is_equal_to_const_char10_i@SM PACK))
+              p_size_max_gen_1:(Implement(const_value_generator_i@Stream(int_stream)@10))
+              l_quantity_max_gen_1:(Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@15))
+              p_container_0_0:(Implement(is_equal_to_const_char10_i@SM CASE))
+              l_shipmode_or_0:(Implement(or_i@Stream(select_stream)@2))
+              l_quantity_max_compare_2:(Implement(comparator_is_smaller_equal_i@Stream(SQL_decimal_15_2_stream)))
+              p_brand_equal_0:(Implement(is_equal_to_const_char10_i@band0))
+              p_size_max_compare_0:(Implement(comparator_is_smaller_equal_i@Stream(int_stream)))
+              p_size_max_compare_1:(Implement(comparator_is_smaller_equal_i@Stream(int_stream)))
+              l_quantity_min_gen_2:(Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@6))
+              p_size_max_gen_0:(Implement(const_value_generator_i@Stream(int_stream)@5))
+              l_quantity_min_compare_1:(Implement(comparator_is_larger_equal_i@Stream(SQL_decimal_15_2_stream)))
+              p_container_0_3:(Implement(is_equal_to_const_char10_i@SM PKG))
+              p_brand_equal_1:(Implement(is_equal_to_const_char10_i@band1))
+              l_quantity_min_gen_0:(Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@4))
+              key_equal_0:(Implement(comparator_is_equal_i@Stream(int_stream)))
+              l_quantity_min_gen_1:(Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@5))
+              p_size_min_gen_0:(Implement(const_value_generator_i@Stream(int_stream)@1))
+              l_shipmode_or_1:(Implement(or_i@Stream(select_stream)@2))
+              l_quantity_min_compare_2:(Implement(comparator_is_larger_equal_i@Stream(SQL_decimal_15_2_stream)))
+              l_quantity_max_gen_2:(Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@16))
+              p_container_0_1:(Implement(is_equal_to_const_char10_i@SM BOX))
+              p_container_1_2:(Implement(is_equal_to_const_char10_i@MED PKG))
+              p_size_min_compare_1:(Implement(comparator_is_larger_equal_i@Stream(int_stream)))
+              and_1:(Implement(and_i@Stream(select_stream)@9))
+              p_size_min_compare_2:(Implement(comparator_is_larger_equal_i@Stream(int_stream)))
+              and_2:(Implement(and_i@Stream(select_stream)@9))
+              l_quantity_max_gen_0:(Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@14))
+              l_shipmode_comp_0_0:(Implement(is_equal_to_const_char10_i@AIR))
+              l_shipinstruct_0:(Implement(is_equal_to_const_char25_i@DELIVER IN PERSON))
+              p_container_1_3:(Implement(is_equal_to_const_char10_i@MED PACK))
+              p_container_2_0:(Implement(is_equal_to_const_char10_i@LG CASE))
+            }
+            Connections{
+              Self.l_quantity:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_quantity_max_compare_2).input0:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_20804-20850) 
+              ExternalOwner(p_size_max_compare_2).output:Port(Stream($generated$Type9551_9565),out) `DefaultClockDomain =0=> ExternalOwner(and_2).input@6:Port(Stream(select_stream),in) `DefaultClockDomain[6] (connection_21594-21655) @NoStrictType
+              Self.l_shipmode:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_shipmode_comp_2_1).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_21913-21953) 
+              ExternalOwner(l_quantity_min_gen_0).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(l_quantity_min_compare_0).input1:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_13938-14001) 
+              ExternalOwner(container_or_0).output:Port(Stream(select_stream),out) `DefaultClockDomain =0=> ExternalOwner(and_0).input@2:Port(Stream(select_stream),in) `DefaultClockDomain[2] (connection_13623-13678) @NoStrictType
+              ExternalOwner(p_container_1_0).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(container_or_1).input@0:Port(Stream(select_stream),in) `DefaultClockDomain[0] (connection_16666-16731) @NoStrictType
+              ExternalOwner(p_container_1_3).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(container_or_1).input@3:Port(Stream(select_stream),in) `DefaultClockDomain[3] (connection_16873-16938) @NoStrictType
+              ExternalOwner(key_equal_0).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> ExternalOwner(and_1).input@0:Port(Stream(select_stream),in) `DefaultClockDomain[0] (connection_15933-15985) @NoStrictType
+              ExternalOwner(l_quantity_max_gen_0).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(l_quantity_max_compare_0).input1:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_14331-14394) 
+              ExternalOwner(p_brand_equal_0).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(and_0).input@1:Port(Stream(select_stream),in) `DefaultClockDomain[1] (connection_12776-12832) @NoStrictType
+              ExternalOwner(p_size_max_gen_1).output:Port(Stream(int_stream),out) `DefaultClockDomain =0=> ExternalOwner(p_size_max_compare_1).input1:Port(Stream(int_stream),in) `DefaultClockDomain (connection_18331-18386) 
+              ExternalOwner(p_size_min_gen_2).output:Port(Stream(int_stream),out) `DefaultClockDomain =0=> ExternalOwner(p_size_min_compare_2).input1:Port(Stream(int_stream),in) `DefaultClockDomain (connection_21200-21255) 
+              Self.p_brand:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_brand_equal_1).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_16058-16091) 
+              ExternalOwner(l_shipmode_comp_2_1).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(l_shipmode_or_2).input@1:Port(Stream(select_stream),in) `DefaultClockDomain[1] (connection_22031-22101) @NoStrictType
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_container_0_3).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_13306-13343) 
+              ExternalOwner(l_shipinstruct_0).output:Port(Stream($generated$Type11077_11091),out) `DefaultClockDomain =0=> ExternalOwner(and_0).input@8:Port(Stream(select_stream),in) `DefaultClockDomain[8] (connection_15761-15818) @NoStrictType
+              Self.p_size:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_size_min_compare_2).input0:Port(Stream(int_stream),in) `DefaultClockDomain (connection_21158-21196) 
+              ExternalOwner(l_quantity_max_gen_2).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(l_quantity_max_compare_2).input1:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_20854-20917) 
+              ExternalOwner(p_container_0_1).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(container_or_0).input@1:Port(Stream(select_stream),in) `DefaultClockDomain[1] (connection_13416-13481) @NoStrictType
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_container_1_1).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_16543-16580) 
+              ExternalOwner(p_size_min_gen_0).output:Port(Stream(int_stream),out) `DefaultClockDomain =0=> ExternalOwner(p_size_min_compare_0).input1:Port(Stream(int_stream),in) `DefaultClockDomain (connection_14677-14732) 
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_container_2_0).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_19706-19743) 
+              ExternalOwner(l_quantity_max_gen_1).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(l_quantity_max_compare_1).input1:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_17650-17713) 
+              ExternalOwner(l_shipmode_comp_0_0).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(l_shipmode_or_0).input@0:Port(Stream(select_stream),in) `DefaultClockDomain[0] (connection_15434-15504) @NoStrictType
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_container_2_1).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_19747-19784) 
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_container_2_3).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_19829-19866) 
+              ExternalOwner(p_size_max_compare_0).output:Port(Stream($generated$Type9551_9565),out) `DefaultClockDomain =0=> ExternalOwner(and_0).input@6:Port(Stream(select_stream),in) `DefaultClockDomain[6] (connection_15071-15132) @NoStrictType
+              ExternalOwner(l_quantity_min_compare_2).output:Port(Stream($generated$Type9260_9274),out) `DefaultClockDomain =0=> ExternalOwner(and_2).input@3:Port(Stream(select_stream),in) `DefaultClockDomain[3] (connection_20528-20593) @NoStrictType
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_container_1_2).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_16584-16621) 
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_container_0_1).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_13224-13261) 
+              ExternalOwner(p_size_max_compare_1).output:Port(Stream($generated$Type9551_9565),out) `DefaultClockDomain =0=> ExternalOwner(and_1).input@6:Port(Stream(select_stream),in) `DefaultClockDomain[6] (connection_18390-18451) @NoStrictType
+              ExternalOwner(l_quantity_min_gen_1).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(l_quantity_min_compare_1).input1:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_17257-17320) 
+              Self.p_size:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_size_max_compare_2).input0:Port(Stream(int_stream),in) `DefaultClockDomain (connection_21493-21531) 
+              ExternalOwner(l_shipinstruct_0).output:Port(Stream($generated$Type11077_11091),out) `DefaultClockDomain =0=> ExternalOwner(and_1).input@8:Port(Stream(select_stream),in) `DefaultClockDomain[8] (connection_18963-19020) @NoStrictType
+              ExternalOwner(key_equal_0).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> ExternalOwner(and_2).input@0:Port(Stream(select_stream),in) `DefaultClockDomain[0] (connection_19135-19187) @NoStrictType
+              ExternalOwner(p_brand_equal_0).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(and_2).input@1:Port(Stream(select_stream),in) `DefaultClockDomain[1] (connection_19297-19353) @NoStrictType
+              ExternalOwner(p_container_2_0).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(container_or_2).input@0:Port(Stream(select_stream),in) `DefaultClockDomain[0] (connection_19870-19935) @NoStrictType
+              Self.l_shipmode:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_shipmode_comp_1_0).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_18665-18705) 
+              ExternalOwner(p_container_2_2).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(container_or_2).input@2:Port(Stream(select_stream),in) `DefaultClockDomain[2] (connection_20008-20073) @NoStrictType
+              Self.p_size:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_size_max_compare_1).input0:Port(Stream(int_stream),in) `DefaultClockDomain (connection_18289-18327) 
+              ExternalOwner(and_2).output:Port(Stream(select_stream),out) `DefaultClockDomain =0=> ExternalOwner(or_0).input@2:Port(Stream(select_stream),in) `DefaultClockDomain[2] (connection_19099-19129) 
+              ExternalOwner(l_shipmode_comp_0_1).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(l_shipmode_or_0).input@1:Port(Stream(select_stream),in) `DefaultClockDomain[1] (connection_15508-15578) @NoStrictType
+              ExternalOwner(container_or_1).output:Port(Stream(select_stream),out) `DefaultClockDomain =0=> ExternalOwner(and_1).input@2:Port(Stream(select_stream),in) `DefaultClockDomain[2] (connection_16942-16997) @NoStrictType
+              Self.l_shipmode:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_shipmode_comp_2_0).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_21869-21909) 
+              ExternalOwner(l_quantity_max_compare_0).output:Port(Stream($generated$Type9551_9565),out) `DefaultClockDomain =0=> ExternalOwner(and_0).input@4:Port(Stream(select_stream),in) `DefaultClockDomain[4] (connection_14398-14463) @NoStrictType
+              ExternalOwner(p_container_1_1).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(container_or_1).input@1:Port(Stream(select_stream),in) `DefaultClockDomain[1] (connection_16735-16800) @NoStrictType
+              Self.p_brand:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_brand_equal_2).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_19260-19293) 
+              Self.l_shipmode:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_shipmode_comp_1_1).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_18709-18749) 
+              Self.p_partkey:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(key_equal_0).input0:Port(Stream(int_stream),in) `DefaultClockDomain (connection_12542-12574) 
+              ExternalOwner(key_equal_0).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> ExternalOwner(and_0).input@0:Port(Stream(select_stream),in) `DefaultClockDomain[0] (connection_12614-12666) @NoStrictType
+              Self.l_quantity:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_quantity_min_compare_0).input0:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_13888-13934) 
+              ExternalOwner(and_1).output:Port(Stream(select_stream),out) `DefaultClockDomain =0=> ExternalOwner(or_0).input@1:Port(Stream(select_stream),in) `DefaultClockDomain[1] (connection_15897-15927) 
+              ExternalOwner(p_container_1_2).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(container_or_1).input@2:Port(Stream(select_stream),in) `DefaultClockDomain[2] (connection_16804-16869) @NoStrictType
+              ExternalOwner(l_quantity_min_compare_1).output:Port(Stream($generated$Type9260_9274),out) `DefaultClockDomain =0=> ExternalOwner(and_1).input@3:Port(Stream(select_stream),in) `DefaultClockDomain[3] (connection_17324-17389) @NoStrictType
+              Self.p_size:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_size_min_compare_1).input0:Port(Stream(int_stream),in) `DefaultClockDomain (connection_17954-17992) 
+              ExternalOwner(p_size_min_gen_1).output:Port(Stream(int_stream),out) `DefaultClockDomain =0=> ExternalOwner(p_size_min_compare_1).input1:Port(Stream(int_stream),in) `DefaultClockDomain (connection_17996-18051) 
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_container_1_3).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_16625-16662) 
+              ExternalOwner(p_size_min_compare_1).output:Port(Stream($generated$Type9260_9274),out) `DefaultClockDomain =0=> ExternalOwner(and_1).input@5:Port(Stream(select_stream),in) `DefaultClockDomain[5] (connection_18055-18116) @NoStrictType
+              ExternalOwner(and_0).output:Port(Stream(select_stream),out) `DefaultClockDomain =0=> ExternalOwner(or_0).input@0:Port(Stream(select_stream),in) `DefaultClockDomain[0] (connection_12443-12473) 
+              Self.l_shipmode:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_shipmode_comp_0_1).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_15390-15430) 
+              Self.l_shipinstruct:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_shipinstruct_0).input:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain (connection_15716-15757) 
+              Self.l_quantity:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_quantity_min_compare_2).input0:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_20411-20457) 
+              Self.l_partkey:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(key_equal_0).input1:Port(Stream(int_stream),in) `DefaultClockDomain (connection_12578-12610) 
+              ExternalOwner(p_brand_equal_1).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(and_1).input@1:Port(Stream(select_stream),in) `DefaultClockDomain[1] (connection_16095-16151) @NoStrictType
+              ExternalOwner(l_quantity_min_compare_0).output:Port(Stream($generated$Type9260_9274),out) `DefaultClockDomain =0=> ExternalOwner(and_0).input@3:Port(Stream(select_stream),in) `DefaultClockDomain[3] (connection_14005-14070) @NoStrictType
+              ExternalOwner(l_shipmode_or_2).output:Port(Stream(select_stream),out) `DefaultClockDomain =0=> ExternalOwner(and_2).input@7:Port(Stream(select_stream),in) `DefaultClockDomain[7] (connection_22105-22161) @NoStrictType
+              ExternalOwner(l_shipmode_comp_1_0).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(l_shipmode_or_1).input@0:Port(Stream(select_stream),in) `DefaultClockDomain[0] (connection_18753-18823) @NoStrictType
+              Self.p_brand:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_brand_equal_0).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_12739-12772) 
+              Self.p_size:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_size_max_compare_0).input0:Port(Stream(int_stream),in) `DefaultClockDomain (connection_14970-15008) 
+              ExternalOwner(p_size_min_compare_2).output:Port(Stream($generated$Type9260_9274),out) `DefaultClockDomain =0=> ExternalOwner(and_2).input@5:Port(Stream(select_stream),in) `DefaultClockDomain[5] (connection_21259-21320) @NoStrictType
+              ExternalOwner(p_size_max_gen_2).output:Port(Stream(int_stream),out) `DefaultClockDomain =0=> ExternalOwner(p_size_max_compare_2).input1:Port(Stream(int_stream),in) `DefaultClockDomain (connection_21535-21590) 
+              ExternalOwner(p_container_2_1).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(container_or_2).input@1:Port(Stream(select_stream),in) `DefaultClockDomain[1] (connection_19939-20004) @NoStrictType
+              ExternalOwner(p_container_0_0).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(container_or_0).input@0:Port(Stream(select_stream),in) `DefaultClockDomain[0] (connection_13347-13412) @NoStrictType
+              ExternalOwner(p_size_min_compare_0).output:Port(Stream($generated$Type9260_9274),out) `DefaultClockDomain =0=> ExternalOwner(and_0).input@5:Port(Stream(select_stream),in) `DefaultClockDomain[5] (connection_14736-14797) @NoStrictType
+              Self.l_quantity:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_quantity_min_compare_1).input0:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_17207-17253) 
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_container_2_2).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_19788-19825) 
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_container_0_2).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_13265-13302) 
+              Self.l_shipmode:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_shipmode_comp_0_0).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_15346-15386) 
+              ExternalOwner(p_container_0_3).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(container_or_0).input@3:Port(Stream(select_stream),in) `DefaultClockDomain[3] (connection_13554-13619) @NoStrictType
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_container_1_0).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_16502-16539) 
+              Self.l_quantity:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_quantity_max_compare_1).input0:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_17600-17646) 
+              ExternalOwner(l_shipmode_comp_1_1).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(l_shipmode_or_1).input@1:Port(Stream(select_stream),in) `DefaultClockDomain[1] (connection_18827-18897) @NoStrictType
+              ExternalOwner(l_shipinstruct_0).output:Port(Stream($generated$Type11077_11091),out) `DefaultClockDomain =0=> ExternalOwner(and_2).input@8:Port(Stream(select_stream),in) `DefaultClockDomain[8] (connection_22167-22224) @NoStrictType
+              ExternalOwner(or_0).output:Port(Stream(select_stream),out) `DefaultClockDomain =0=> Self.select:Port(Stream(select_stream),out) `DefaultClockDomain (connection_11859-11881) 
+              ExternalOwner(p_container_0_2).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(container_or_0).input@2:Port(Stream(select_stream),in) `DefaultClockDomain[2] (connection_13485-13550) @NoStrictType
+              ExternalOwner(p_size_max_gen_0).output:Port(Stream(int_stream),out) `DefaultClockDomain =0=> ExternalOwner(p_size_max_compare_0).input1:Port(Stream(int_stream),in) `DefaultClockDomain (connection_15012-15067) 
+              ExternalOwner(l_shipmode_or_0).output:Port(Stream(select_stream),out) `DefaultClockDomain =0=> ExternalOwner(and_0).input@7:Port(Stream(select_stream),in) `DefaultClockDomain[7] (connection_15582-15638) @NoStrictType
+              ExternalOwner(l_quantity_max_compare_1).output:Port(Stream($generated$Type9551_9565),out) `DefaultClockDomain =0=> ExternalOwner(and_1).input@4:Port(Stream(select_stream),in) `DefaultClockDomain[4] (connection_17717-17782) @NoStrictType
+              ExternalOwner(l_quantity_max_compare_2).output:Port(Stream($generated$Type9551_9565),out) `DefaultClockDomain =0=> ExternalOwner(and_2).input@4:Port(Stream(select_stream),in) `DefaultClockDomain[4] (connection_20921-20986) @NoStrictType
+              ExternalOwner(l_shipmode_or_1).output:Port(Stream(select_stream),out) `DefaultClockDomain =0=> ExternalOwner(and_1).input@7:Port(Stream(select_stream),in) `DefaultClockDomain[7] (connection_18901-18957) @NoStrictType
+              Self.p_size:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_size_min_compare_0).input0:Port(Stream(int_stream),in) `DefaultClockDomain (connection_14635-14673) 
+              ExternalOwner(container_or_2).output:Port(Stream(select_stream),out) `DefaultClockDomain =0=> ExternalOwner(and_2).input@2:Port(Stream(select_stream),in) `DefaultClockDomain[2] (connection_20146-20201) @NoStrictType
+              ExternalOwner(l_shipmode_comp_2_0).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(l_shipmode_or_2).input@0:Port(Stream(select_stream),in) `DefaultClockDomain[0] (connection_21957-22027) @NoStrictType
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(p_container_0_0).input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_13183-13220) 
+              Self.l_quantity:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_quantity_max_compare_0).input0:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_14281-14327) 
+              ExternalOwner(l_quantity_min_gen_2).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(l_quantity_min_compare_2).input1:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_20461-20524) 
+              ExternalOwner(p_container_2_3).output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain =0=> ExternalOwner(container_or_2).input@3:Port(Stream(select_stream),in) `DefaultClockDomain[3] (connection_20077-20142) @NoStrictType
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@band0)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@band0){
+          Scope(implement_is_equal_to_const_char10_i@band0){
+            Variables{
+              value:string(band0)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              const_gen:(Implement(const_char10_generator_i@band0))
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+            }
+            Connections{
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(main_i)<NormalImplement> -> Streamlet(main_s){
+          Scope(implement_main_i){
+            Types{
+              err_stream:Stream(err_stream){
+                DataType=Bit(1)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              to_neg:(Implement(to_neg_i@Stream(SQL_decimal_15_2_stream)))
+              data_src_part:(Implement(part_i))
+              data_filter:(Implement(data_filter_i))
+              accu:(Implement(accumulator_i@Stream(SQL_decimal_15_2_stream)))
+              data_src_lineitem:(Implement(lineitem_i))
+              err_and:(Implement(and_i@Stream(err_stream)@3))
+              multiplier:(Implement(multiplier_i@Stream(SQL_decimal_15_2_stream)))
+              adder:(Implement(adder_i@Stream(SQL_decimal_15_2_stream)))
+              const_value_gen:(Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@1))
+            }
+            Connections{
+              Self.l_orderkey:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(data_src_lineitem).l_orderkey:Port(Stream(int_stream),in) `DefaultClockDomain (connection_23871-23914) 
+              ExternalOwner(data_src_lineitem).l_shipmode:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(data_filter).l_shipmode:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_24399-24454) 
+              ExternalOwner(data_src_lineitem).l_extendedprice:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(data_filter).l_extendedprice_in:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_24589-24657) 
+              ExternalOwner(adder).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(multiplier).input0:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_25077-25111) 
+              Self.p_partkey:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(data_src_part).p_partkey:Port(Stream(int_stream),in) `DefaultClockDomain (connection_24006-24043) 
+              ExternalOwner(accu).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> Self.revenue:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain (connection_25271-25294) 
+              ExternalOwner(data_src_lineitem).l_quantity:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(data_filter).l_quantity:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_24293-24348) 
+              ExternalOwner(err_and).output:Port(Stream(err_stream),out) `DefaultClockDomain =0=> Self.err:Port(Stream($generated$Type23774_23788),out) `DefaultClockDomain (connection_25562-25599) @NoStrictType
+              ExternalOwner(adder).overflow:Port(Stream($generated$Type7814_7828),out) `DefaultClockDomain =0=> ExternalOwner(err_and).input@2:Port(Stream(err_stream),in) `DefaultClockDomain[2] (connection_25508-25558) @NoStrictType
+              ExternalOwner(data_src_part).p_container:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(data_filter).p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_24236-24289) 
+              ExternalOwner(multiplier).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(accu).input:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_25235-25267) 
+              ExternalOwner(data_filter).l_discount_out:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(to_neg).input:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_24827-24870) 
+              ExternalOwner(multiplier).overflow:Port(Stream($generated$Type8252_8266),out) `DefaultClockDomain =0=> ExternalOwner(err_and).input@0:Port(Stream(err_stream),in) `DefaultClockDomain[0] (connection_25396-25451) @NoStrictType
+              ExternalOwner(data_src_part).p_brand:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(data_filter).p_brand:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_24187-24232) 
+              ExternalOwner(accu).overflow:Port(Stream(overflow_type),out) `DefaultClockDomain =0=> ExternalOwner(err_and).input@1:Port(Stream(err_stream),in) `DefaultClockDomain[1] (connection_25455-25504) @NoStrictType
+              ExternalOwner(to_neg).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(adder).input1:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_24932-24962) 
+              ExternalOwner(data_src_lineitem).l_shipinstruct:Port(Stream(SQL_char25_stream),out) `DefaultClockDomain =0=> ExternalOwner(data_filter).l_shipinstruct:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain (connection_24458-24521) 
+              Self.p_partkey:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(data_filter).p_partkey:Port(Stream(int_stream),in) `DefaultClockDomain (connection_24091-24126) 
+              ExternalOwner(data_src_lineitem).l_partkey:Port(Stream(int_stream),out) `DefaultClockDomain =0=> ExternalOwner(data_filter).l_partkey:Port(Stream(int_stream),in) `DefaultClockDomain (connection_24130-24183) 
+              ExternalOwner(data_src_part).p_size:Port(Stream(int_stream),out) `DefaultClockDomain =0=> ExternalOwner(data_filter).p_size:Port(Stream(int_stream),in) `DefaultClockDomain (connection_24352-24395) 
+              ExternalOwner(const_value_gen).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(adder).input0:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_24966-25005) 
+              ExternalOwner(data_filter).l_extendedprice_out:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(multiplier).input1:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_25115-25168) 
+              ExternalOwner(data_src_lineitem).l_discount:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> ExternalOwner(data_filter).l_discount_in:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_24527-24585) 
+              Self.l_linenumber:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(data_src_lineitem).l_linenumber:Port(Stream(int_stream),in) `DefaultClockDomain (connection_23918-23965) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(part_i)<NormalImplement> -> Streamlet(part_s){
+          Scope(implement_part_i){
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i)<@LogicalDataType(DummyLogicalData)@int> -> ProxyStreamlet(const_value_generator_s<@type_out@value>){
+          Scope(implement_const_value_generator_i){
+            Variables{
+              type_out:DummyLogicalData(NotInferred("$arg$type_out"))
+              value:int(NotInferred("$arg$value"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(divider_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(divider_s<@data_type>){
+          Scope(implement_divider_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_is_larger_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(comparator_is_larger_s<@type_in>){
+          Scope(implement_comparator_is_larger_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_is_larger_equal_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(comparator_is_larger_equal_s<@type_in>){
+          Scope(implement_comparator_is_larger_equal_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(to_neg_i@Stream(SQL_decimal_15_2_stream))<NormalImplement> -> Streamlet(to_neg_s@Stream(SQL_decimal_15_2_stream)){
+          Scope(implement_to_neg_i@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              data_type:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@AIR REG)<NormalImplement> -> Streamlet(const_char10_generator_s@AIR REG){
+          Scope(implement_const_char10_generator_i@AIR REG){
+            Variables{
+              value:string(AIR REG)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(and_i@Stream(select_stream)@9)<NormalImplement> -> Streamlet(and_s@Stream(select_stream)@9){
+          Scope(implement_and_i@Stream(select_stream)@9){
+            Variables{
+              input_channel:int(9)
+            }
+            Types{
+              data_type:Stream(select_stream){
+                DataType=Bit(1)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@AIR)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@AIR){
+          Scope(implement_is_equal_to_const_char10_i@AIR){
+            Variables{
+              value:string(AIR)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+              const_gen:(Implement(const_char10_generator_i@AIR))
+            }
+            Connections{
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i)<@string> -> ProxyStreamlet(is_equal_to_const_char10_s<@value>){
+          Scope(implement_is_equal_to_const_char10_i){
+            Variables{
+              value:string(NotInferred("$arg$value"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              compare:(NotInferred("comparator_is_equal_i"))
+              const_gen:(NotInferred("const_char10_generator_i"))
+            }
+            Connections{
+              ExternalOwner(const_gen).NotInferred("output") =0=> ExternalOwner(compare).NotInferred("input0") (connection_10838-10873) 
+              ExternalOwner(compare).NotInferred("output") =0=> Self.NotInferred("output") (connection_10905-10945) @NoStrictType
+              Self.NotInferred("input") =0=> ExternalOwner(compare).NotInferred("input1") (connection_10877-10901) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(comparator_s<@type_in>){
+          Scope(implement_comparator_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@SM PACK)<NormalImplement> -> Streamlet(const_char10_generator_s@SM PACK){
+          Scope(implement_const_char10_generator_i@SM PACK){
+            Variables{
+              value:string(SM PACK)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@band1)<NormalImplement> -> Streamlet(const_char10_generator_s@band1){
+          Scope(implement_const_char10_generator_i@band1){
+            Variables{
+              value:string(band1)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i)<@string> -> ProxyStreamlet(const_char10_generator_s<@value>){
+          Scope(implement_const_char10_generator_i){
+            Variables{
+              value:string(NotInferred("$arg$value"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@4)<NormalImplement> -> Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@4){
+          Scope(implement_const_value_generator_i@Stream(SQL_decimal_15_2_stream)@4){
+            Variables{
+              value:int(4)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@MED PKG)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@MED PKG){
+          Scope(implement_is_equal_to_const_char10_i@MED PKG){
+            Variables{
+              value:string(MED PKG)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+              const_gen:(Implement(const_char10_generator_i@MED PKG))
+            }
+            Connections{
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char25_i@DELIVER IN PERSON)<NormalImplement> -> Streamlet(is_equal_to_const_char25_s@DELIVER IN PERSON){
+          Scope(implement_is_equal_to_const_char25_i@DELIVER IN PERSON){
+            Variables{
+              value:string(DELIVER IN PERSON)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              const_gen:(Implement(const_char25_generator_i@DELIVER IN PERSON))
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char25_stream)))
+            }
+            Connections{
+              Self.input:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain (connection_11353-11377) 
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char25_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain (connection_11314-11349) 
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type11077_11091),out) `DefaultClockDomain (connection_11381-11421) @NoStrictType
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char25_generator_i@DELIVER IN PERSON)<NormalImplement> -> Streamlet(const_char25_generator_s@DELIVER IN PERSON){
+          Scope(implement_const_char25_generator_i@DELIVER IN PERSON){
+            Variables{
+              value:string(DELIVER IN PERSON)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@LG PACK)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@LG PACK){
+          Scope(implement_is_equal_to_const_char10_i@LG PACK){
+            Variables{
+              value:string(LG PACK)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+              const_gen:(Implement(const_char10_generator_i@LG PACK))
+            }
+            Connections{
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@band0)<NormalImplement> -> Streamlet(const_char10_generator_s@band0){
+          Scope(implement_const_char10_generator_i@band0){
+            Variables{
+              value:string(band0)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_is_equal_i@Stream(SQL_char25_stream))<NormalImplement> -> Streamlet(comparator_is_equal_s@Stream(SQL_char25_stream)){
+          Scope(implement_comparator_is_equal_i@Stream(SQL_char25_stream)){
+            Types{
+              type_in:Stream(SQL_char25_stream){
+                DataType=Bit(200)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char25_i)<@string> -> ProxyStreamlet(is_equal_to_const_char25_s<@value>){
+          Scope(implement_is_equal_to_const_char25_i){
+            Variables{
+              value:string(NotInferred("$arg$value"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              const_gen:(NotInferred("const_char25_generator_i"))
+              compare:(NotInferred("comparator_is_equal_i"))
+            }
+            Connections{
+              ExternalOwner(const_gen).NotInferred("output") =0=> ExternalOwner(compare).NotInferred("input0") (connection_11314-11349) 
+              ExternalOwner(compare).NotInferred("output") =0=> Self.NotInferred("output") (connection_11381-11421) @NoStrictType
+              Self.NotInferred("input") =0=> ExternalOwner(compare).NotInferred("input1") (connection_11353-11377) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_is_smaller_equal_i@Stream(int_stream))<NormalImplement> -> Streamlet(comparator_is_smaller_equal_s@Stream(int_stream)){
+          Scope(implement_comparator_is_smaller_equal_i@Stream(int_stream)){
+            Types{
+              type_in:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@SM BOX)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@SM BOX){
+          Scope(implement_is_equal_to_const_char10_i@SM BOX){
+            Variables{
+              value:string(SM BOX)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+              const_gen:(Implement(const_char10_generator_i@SM BOX))
+            }
+            Connections{
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(and_i@Stream(err_stream)@3)<NormalImplement> -> Streamlet(and_s@Stream(err_stream)@3){
+          Scope(implement_and_i@Stream(err_stream)@3){
+            Variables{
+              input_channel:int(3)
+            }
+            Types{
+              data_type:Stream(err_stream){
+                DataType=Bit(1)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@LG BOX)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@LG BOX){
+          Scope(implement_is_equal_to_const_char10_i@LG BOX){
+            Variables{
+              value:string(LG BOX)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+              const_gen:(Implement(const_char10_generator_i@LG BOX))
+            }
+            Connections{
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(supplier_i)<NormalImplement> -> Streamlet(supplier_s){
+          Scope(implement_supplier_i){
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@LG PACK)<NormalImplement> -> Streamlet(const_char10_generator_s@LG PACK){
+          Scope(implement_const_char10_generator_i@LG PACK){
+            Variables{
+              value:string(LG PACK)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(or_i@Stream(select_stream)@4)<NormalImplement> -> Streamlet(or_s@Stream(select_stream)@4){
+          Scope(implement_or_i@Stream(select_stream)@4){
+            Variables{
+              input_channel:int(4)
+            }
+            Types{
+              data_type:Stream(select_stream){
+                DataType=Bit(1)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(void_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(void_s<@type_in>){
+          Scope(implement_void_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_is_equal_i@Stream(SQL_char10_stream))<NormalImplement> -> Streamlet(comparator_is_equal_s@Stream(SQL_char10_stream)){
+          Scope(implement_comparator_is_equal_i@Stream(SQL_char10_stream)){
+            Types{
+              type_in:Stream(SQL_char10_stream){
+                DataType=Bit(80)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@MED PACK)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@MED PACK){
+          Scope(implement_is_equal_to_const_char10_i@MED PACK){
+            Variables{
+              value:string(MED PACK)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              const_gen:(Implement(const_char10_generator_i@MED PACK))
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+            }
+            Connections{
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@MED BAG)<NormalImplement> -> Streamlet(const_char10_generator_s@MED BAG){
+          Scope(implement_const_char10_generator_i@MED BAG){
+            Variables{
+              value:string(MED BAG)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_is_smaller_equal_i@Stream(SQL_decimal_15_2_stream))<NormalImplement> -> Streamlet(comparator_is_smaller_equal_s@Stream(SQL_decimal_15_2_stream)){
+          Scope(implement_comparator_is_smaller_equal_i@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              type_in:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char25_generator_i)<@string> -> ProxyStreamlet(const_char25_generator_s<@value>){
+          Scope(implement_const_char25_generator_i){
+            Variables{
+              value:string(NotInferred("$arg$value"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(stream_filter_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(stream_filter_s<@data_type>){
+          Scope(implement_stream_filter_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(to_neg_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(to_neg_s<@data_type>){
+          Scope(implement_to_neg_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_is_smaller_equal_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(comparator_is_smaller_equal_s<@type_in>){
+          Scope(implement_comparator_is_smaller_equal_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@AIR)<NormalImplement> -> Streamlet(const_char10_generator_s@AIR){
+          Scope(implement_const_char10_generator_i@AIR){
+            Variables{
+              value:string(AIR)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(adder_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(adder_s<@data_type>){
+          Scope(implement_adder_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@band2)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@band2){
+          Scope(implement_is_equal_to_const_char10_i@band2){
+            Variables{
+              value:string(band2)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              const_gen:(Implement(const_char10_generator_i@band2))
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+            }
+            Connections{
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@band2)<NormalImplement> -> Streamlet(const_char10_generator_s@band2){
+          Scope(implement_const_char10_generator_i@band2){
+            Variables{
+              value:string(band2)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(data_filter_i)<NormalImplement> -> Streamlet(data_filter_s){
+          Scope(implement_data_filter_i){
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              l_discount_filter:(Implement(stream_filter_1bit_i@Stream(SQL_decimal_15_2_stream)))
+              selection:(Implement(where_claus_i))
+              l_extendedprice_filter:(Implement(stream_filter_1bit_i@Stream(SQL_decimal_15_2_stream)))
+            }
+            Connections{
+              Self.l_discount_in:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_discount_filter).input:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_23468-23509) 
+              Self.p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(selection).p_container:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_22930-22967) 
+              ExternalOwner(selection).select:Port(Stream(select_stream),out) `DefaultClockDomain =0=> ExternalOwner(l_discount_filter).select:Port(Stream(stream_filter_select_stream_1bit),in) `DefaultClockDomain (connection_23513-23558) 
+              Self.p_size:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(selection).p_size:Port(Stream(int_stream),in) `DefaultClockDomain (connection_23010-23037) 
+              Self.p_partkey:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(selection).p_partkey:Port(Stream(int_stream),in) `DefaultClockDomain (connection_22823-22856) 
+              ExternalOwner(selection).select:Port(Stream(select_stream),out) `DefaultClockDomain =0=> ExternalOwner(l_extendedprice_filter).select:Port(Stream(stream_filter_select_stream_1bit),in) `DefaultClockDomain (connection_23272-23322) 
+              Self.l_shipmode:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(selection).l_shipmode:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_23041-23076) 
+              Self.l_extendedprice_in:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain =0=> ExternalOwner(l_extendedprice_filter).input:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_23217-23268) 
+              Self.l_quantity:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain =0=> ExternalOwner(selection).l_quantity:Port(Stream(SQL_decimal_15_2_stream),in) `DefaultClockDomain (connection_22971-23006) 
+              ExternalOwner(l_discount_filter).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> Self.l_discount_out:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain (connection_23562-23605) 
+              Self.l_partkey:Port(Stream(int_stream),in) `DefaultClockDomain =0=> ExternalOwner(selection).l_partkey:Port(Stream(int_stream),in) `DefaultClockDomain (connection_22860-22893) 
+              Self.p_brand:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(selection).p_brand:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_22897-22926) 
+              Self.l_shipinstruct:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain =0=> ExternalOwner(selection).l_shipinstruct:Port(Stream(SQL_char25_stream),in) `DefaultClockDomain (connection_23080-23123) 
+              ExternalOwner(l_extendedprice_filter).output:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain =0=> Self.l_extendedprice_out:Port(Stream(SQL_decimal_15_2_stream),out) `DefaultClockDomain (connection_23326-23379) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@SM CASE)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@SM CASE){
+          Scope(implement_is_equal_to_const_char10_i@SM CASE){
+            Variables{
+              value:string(SM CASE)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+              const_gen:(Implement(const_char10_generator_i@SM CASE))
+            }
+            Connections{
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(duplicator_i)<@LogicalDataType(DummyLogicalData)@int> -> ProxyStreamlet(duplicator_s<@data_type@output_channel>){
+          Scope(implement_duplicator_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+              output_channel:int(NotInferred("$arg$output_channel"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@SM PKG)<NormalImplement> -> Streamlet(const_char10_generator_s@SM PKG){
+          Scope(implement_const_char10_generator_i@SM PKG){
+            Variables{
+              value:string(SM PKG)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@5)<NormalImplement> -> Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@5){
+          Scope(implement_const_value_generator_i@Stream(SQL_decimal_15_2_stream)@5){
+            Variables{
+              value:int(5)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@MED PKG)<NormalImplement> -> Streamlet(const_char10_generator_s@MED PKG){
+          Scope(implement_const_char10_generator_i@MED PKG){
+            Variables{
+              value:string(MED PKG)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@MED PACK)<NormalImplement> -> Streamlet(const_char10_generator_s@MED PACK){
+          Scope(implement_const_char10_generator_i@MED PACK){
+            Variables{
+              value:string(MED PACK)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(multiplier_i@Stream(SQL_decimal_15_2_stream))<NormalImplement> -> Streamlet(multiplier_s@Stream(SQL_decimal_15_2_stream)){
+          Scope(implement_multiplier_i@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              data_type:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@15)<NormalImplement> -> Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@15){
+          Scope(implement_const_value_generator_i@Stream(SQL_decimal_15_2_stream)@15){
+            Variables{
+              value:int(15)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_is_equal_i@Stream(int_stream))<NormalImplement> -> Streamlet(comparator_is_equal_s@Stream(int_stream)){
+          Scope(implement_comparator_is_equal_i@Stream(int_stream)){
+            Types{
+              type_in:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(nation_i)<NormalImplement> -> Streamlet(nation_s){
+          Scope(implement_nation_i){
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@MED BOX)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@MED BOX){
+          Scope(implement_is_equal_to_const_char10_i@MED BOX){
+            Variables{
+              value:string(MED BOX)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              const_gen:(Implement(const_char10_generator_i@MED BOX))
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+            }
+            Connections{
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(stream_filter_1bit_i@Stream(SQL_decimal_15_2_stream))<NormalImplement> -> Streamlet(stream_filter_1bit_s@Stream(SQL_decimal_15_2_stream)){
+          Scope(implement_stream_filter_1bit_i@Stream(SQL_decimal_15_2_stream)){
+            Types{
+              data_type:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@LG CASE)<NormalImplement> -> Streamlet(const_char10_generator_s@LG CASE){
+          Scope(implement_const_char10_generator_i@LG CASE){
+            Variables{
+              value:string(LG CASE)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_is_equal_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(comparator_is_equal_s<@type_in>){
+          Scope(implement_comparator_is_equal_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@MED BAG)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@MED BAG){
+          Scope(implement_is_equal_to_const_char10_i@MED BAG){
+            Variables{
+              value:string(MED BAG)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+              const_gen:(Implement(const_char10_generator_i@MED BAG))
+            }
+            Connections{
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@LG CASE)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@LG CASE){
+          Scope(implement_is_equal_to_const_char10_i@LG CASE){
+            Variables{
+              value:string(LG CASE)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+              const_gen:(Implement(const_char10_generator_i@LG CASE))
+            }
+            Connections{
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(accumulator_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(accumulator_s<@data_type>){
+          Scope(implement_accumulator_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(converter_i)<@LogicalDataType(DummyLogicalData)@LogicalDataType(DummyLogicalData)@int> -> ProxyStreamlet(converter_s<@input_type@output_type@channel>){
+          Scope(implement_converter_i){
+            Variables{
+              output_type:DummyLogicalData(NotInferred("$arg$output_type"))
+              input_type:DummyLogicalData(NotInferred("$arg$input_type"))
+              channel:int(NotInferred("$arg$channel"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@AIR REG)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@AIR REG){
+          Scope(implement_is_equal_to_const_char10_i@AIR REG){
+            Variables{
+              value:string(AIR REG)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              const_gen:(Implement(const_char10_generator_i@AIR REG))
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+            }
+            Connections{
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(or_i@Stream(select_stream)@2)<NormalImplement> -> Streamlet(or_s@Stream(select_stream)@2){
+          Scope(implement_or_i@Stream(select_stream)@2){
+            Variables{
+              input_channel:int(2)
+            }
+            Types{
+              data_type:Stream(select_stream){
+                DataType=Bit(1)
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@LG PKG)<NormalImplement> -> Streamlet(const_char10_generator_s@LG PKG){
+          Scope(implement_const_char10_generator_i@LG PKG){
+            Variables{
+              value:string(LG PKG)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i@Stream(int_stream)@10)<NormalImplement> -> Streamlet(const_value_generator_s@Stream(int_stream)@10){
+          Scope(implement_const_value_generator_i@Stream(int_stream)@10){
+            Variables{
+              value:int(10)
+            }
+            Types{
+              type_out:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@LG PKG)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@LG PKG){
+          Scope(implement_is_equal_to_const_char10_i@LG PKG){
+            Variables{
+              value:string(LG PKG)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              const_gen:(Implement(const_char10_generator_i@LG PKG))
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+            }
+            Connections{
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(is_equal_to_const_char10_i@SM PACK)<NormalImplement> -> Streamlet(is_equal_to_const_char10_s@SM PACK){
+          Scope(implement_is_equal_to_const_char10_i@SM PACK){
+            Variables{
+              value:string(SM PACK)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+            Instances{
+              const_gen:(Implement(const_char10_generator_i@SM PACK))
+              compare:(Implement(comparator_is_equal_i@Stream(SQL_char10_stream)))
+            }
+            Connections{
+              ExternalOwner(const_gen).output:Port(Stream(SQL_char10_stream),out) `DefaultClockDomain =0=> ExternalOwner(compare).input0:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10838-10873) 
+              ExternalOwner(compare).output:Port(Stream($generated$Type9825_9839),out) `DefaultClockDomain =0=> Self.output:Port(Stream($generated$Type10601_10615),out) `DefaultClockDomain (connection_10905-10945) @NoStrictType
+              Self.input:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain =0=> ExternalOwner(compare).input1:Port(Stream(SQL_char10_stream),in) `DefaultClockDomain (connection_10877-10901) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(and_i)<@LogicalDataType(DummyLogicalData)@int> -> ProxyStreamlet(and_s<@data_type@input_channel>){
+          Scope(implement_and_i){
+            Variables{
+              input_channel:int(NotInferred("$arg$input_channel"))
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i@Stream(int_stream)@5)<NormalImplement> -> Streamlet(const_value_generator_s@Stream(int_stream)@5){
+          Scope(implement_const_value_generator_i@Stream(int_stream)@5){
+            Variables{
+              value:int(5)
+            }
+            Types{
+              type_out:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i@Stream(SQL_decimal_15_2_stream)@14)<NormalImplement> -> Streamlet(const_value_generator_s@Stream(SQL_decimal_15_2_stream)@14){
+          Scope(implement_const_value_generator_i@Stream(SQL_decimal_15_2_stream)@14){
+            Variables{
+              value:int(14)
+            }
+            Types{
+              type_out:Stream(SQL_decimal_15_2_stream){
+                DataType=DataGroup(SQL_decimal_15_2)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_char10_generator_i@MED BOX)<NormalImplement> -> Streamlet(const_char10_generator_s@MED BOX){
+          Scope(implement_const_char10_generator_i@MED BOX){
+            Variables{
+              value:string(MED BOX)
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i@Stream(int_stream)@1)<NormalImplement> -> Streamlet(const_value_generator_s@Stream(int_stream)@1){
+          Scope(implement_const_value_generator_i@Stream(int_stream)@1){
+            Variables{
+              value:int(1)
+            }
+            Types{
+              type_out:Stream(int_stream){
+                DataType=Bit(32)
+                dimension=1, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(padding_zero_i)<@LogicalDataType(DummyLogicalData)@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(padding_zero_s<@type_in@type_out>){
+          Scope(implement_padding_zero_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+              type_out:DummyLogicalData(NotInferred("$arg$type_out"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_tpch
+            }
+          }
+          simulation_process{None}
+        }
+      }
+    }
+  }
+}

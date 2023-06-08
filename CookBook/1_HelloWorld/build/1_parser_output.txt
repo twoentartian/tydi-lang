@@ -1,0 +1,111 @@
+Project(test_project){
+  Package(main){
+    Scope(package_main){
+      Variables{
+        str_value:string(NotInferred(""helloworld""))
+        bool_value:bool(NotInferred("true"))
+        int_value2:UnknownType(NotInferred("10"))
+        color_depth:UnknownType(NotInferred("8"))
+        float_value:float(NotInferred("1.0"))
+        clockdomain_value:clockdomain(NotInferred(""50MHz-1""))
+        int_value:int(NotInferred("10"))
+        clockdomain_value2:clockdomain(ClockDomain(clockdomain_9_7))
+        $package$main:PackageType(NotInferred(""))
+      }
+      Types{
+        rgb:DataGroup(rgb){
+          Scope(group_rgb){
+            Types{
+              b:Bit(NotInferred("color_depth"))
+              r:Bit(NotInferred("color_depth"))
+              g:Bit(NotInferred("color_depth"))
+            }
+            ScopeRelations{
+              --GroupScope-->package_main
+            }
+          }
+        }
+      }
+      Streamlets{
+        Streamlet(rgb_bypass)<NormalStreamlet>{
+          Scope(streamlet_rgb_bypass){
+            ScopeRelations{
+              --StreamletScope-->package_main
+            }
+            Ports{
+              input:Port(Stream($generated$Type591_650),in) `NotInferred("clockdomain_value")
+              output:Port(Stream($generated$Type685_744),out) `NotInferred("clockdomain_value")
+              output2:Port(Stream($generated$Type828_839),out) `NotInferred("clockdomain_value2")
+              input2:Port(Stream($generated$Type780_791),in) `NotInferred("clockdomain_value2")
+            }
+          }
+        }
+        Streamlet(duplicator_s)<@LogicalDataType(DummyLogicalData)@int>{
+          Scope(streamlet_duplicator_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+              output_channel:int(NotInferred("$arg$output_channel"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_main
+            }
+            Ports{
+              input:Port(VarType(data_type),in) `DefaultClockDomain
+              output:PortArray[NotInferred("output_channel")](VarType(data_type),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(void_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_void_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_main
+            }
+            Ports{
+              input:Port(VarType(type_in),in) `DefaultClockDomain
+            }
+          }
+        }
+      }
+      Implements{
+        Implement(void_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(void_s<@type_in>){
+          Scope(implement_void_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_main
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(duplicator_i)<@LogicalDataType(DummyLogicalData)@int> -> ProxyStreamlet(duplicator_s<@data_type@output_channel>){
+          Scope(implement_duplicator_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+              output_channel:int(NotInferred("$arg$output_channel"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_main
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(impl_rgb_bypass)<NormalImplement> -> ProxyStreamlet(rgb_bypass<>){
+          Scope(implement_impl_rgb_bypass){
+            ScopeRelations{
+              --ImplementScope-->package_main
+            }
+            Connections{
+              Self.NotInferred("input2") =0=> Self.NotInferred("output2") (connection_974-992) 
+              Self.NotInferred("input") =0=> Self.NotInferred("output") (connection_939-970) @NoStrictType
+            }
+          }
+          simulation_process{None}
+        }
+      }
+    }
+  }
+}

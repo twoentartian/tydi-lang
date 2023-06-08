@@ -1,0 +1,36 @@
+namespace test_project::main {
+  type rgb = Group(r: Bits(8),g: Bits(144),b: Bits(8));
+  type rgb_stream = Stream (
+    data: rgb,
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+
+  streamlet component = (
+    input: in rgb_stream,
+    output: out rgb_stream,
+  );
+
+  
+  streamlet component_impl0 = component {
+    impl:
+    {
+      input -- output;
+    },
+  };
+
+  
+  streamlet component_impl1 = component {
+    impl:
+    {
+      input -- output;
+    },
+  };
+
+
+}

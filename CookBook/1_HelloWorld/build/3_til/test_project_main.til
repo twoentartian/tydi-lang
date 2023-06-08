@@ -1,0 +1,62 @@
+namespace test_project::main {
+  type rgb = Group(b: Bits(8),r: Bits(8),g: Bits(8));
+  type IGgeneratedIGType685_744 = Stream (
+    data: rgb,
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 5,
+    direction: Forward,
+    user: rgb,
+    keep: true,
+  );
+  type IGgeneratedIGType780_791 = Stream (
+    data: rgb,
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+  type IGgeneratedIGType591_650 = Stream (
+    data: rgb,
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 5,
+    direction: Forward,
+    user: rgb,
+    keep: true,
+  );
+  type IGgeneratedIGType828_839 = Stream (
+    data: rgb,
+    throughput: 1,
+    dimensionality: 0,
+    synchronicity: Sync,
+    complexity: 7,
+    direction: Forward,
+    user: Null,
+    keep: false,
+  );
+
+  #streamlet documentation#
+  streamlet rgb_bypass = (
+    input: in IGgeneratedIGType591_650,
+    output: out IGgeneratedIGType685_744,
+    output2: out IGgeneratedIGType828_839,
+    input2: in IGgeneratedIGType780_791,
+  );
+
+  #streamlet documentation#
+  streamlet impl_rgb_bypass = rgb_bypass {
+    impl:#implement documentation#
+    {
+      input2 -- output2;
+      input -- output;
+    },
+  };
+
+
+}

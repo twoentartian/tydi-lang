@@ -1,0 +1,138 @@
+Project(test_project){
+  Package(main){
+    Scope(package_main){
+      Variables{
+        test_log_2_f:float(3)
+        array:[int]({0,1,2,3,4})
+        seven:int(7)
+        test_four2:int(4)
+        two:int(2)
+        test_three:int(3)
+        eight:int(8)
+        four:int(4)
+        test_four:int(4)
+        test_log_2:int(3)
+        error_msgs:UnknownType(NotInferred("{"msg0","msg1"}"))
+        $package$main:PackageType(NotInferred(""))
+        three_point_five:float(3.5)
+        array1:[int]({0,1,2,3,4})
+      }
+      Types{
+        rgb:DataGroup(rgb){
+          Scope(group_rgb){
+            Types{
+              r:Bit(8)
+              g:Bit(144)
+              b:Bit(8)
+            }
+            ScopeRelations{
+              --GroupScope-->package_main
+            }
+          }
+        }
+        rgb_stream:Stream(rgb_stream){
+          DataType=DataGroup(rgb)
+          dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+      }
+      Streamlets{
+        Streamlet(component)<NormalStreamlet>{
+          Scope(streamlet_component){
+            ScopeRelations{
+              --StreamletScope-->package_main
+            }
+            Ports{
+              input:Port(Stream(rgb_stream),in) `DefaultClockDomain
+              output:Port(Stream(rgb_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(void_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_void_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_main
+            }
+            Ports{
+              input:Port(VarType(type_in),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(duplicator_s)<@LogicalDataType(DummyLogicalData)@int>{
+          Scope(streamlet_duplicator_s){
+            Variables{
+              output_channel:int(NotInferred("$arg$output_channel"))
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_main
+            }
+            Ports{
+              input:Port(VarType(data_type),in) `DefaultClockDomain
+              output:PortArray[NotInferred("output_channel")](VarType(data_type),out) `DefaultClockDomain
+            }
+          }
+        }
+      }
+      Implements{
+        Implement(component_impl0)<NormalImplement> -> Streamlet(component){
+          Scope(implement_component_impl0){
+            ScopeRelations{
+              --ImplementScope-->package_main
+            }
+            Connections{
+              Self.input:Port(Stream(rgb_stream),in) `DefaultClockDomain =0=> Self.output:Port(Stream(rgb_stream),out) `DefaultClockDomain (connection_1063-1079) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(void_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(void_s<@type_in>){
+          Scope(implement_void_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_main
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(component_impl1)<NormalImplement> -> Streamlet(component){
+          Scope(implement_component_impl1){
+            ScopeRelations{
+              --ImplementScope-->package_main
+            }
+            Connections{
+              Self.input:Port(Stream(rgb_stream),in) `DefaultClockDomain =0=> Self.output:Port(Stream(rgb_stream),out) `DefaultClockDomain (connection_1126-1142) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(duplicator_i)<@LogicalDataType(DummyLogicalData)@int> -> ProxyStreamlet(duplicator_s<@data_type@output_channel>){
+          Scope(implement_duplicator_i){
+            Variables{
+              output_channel:int(NotInferred("$arg$output_channel"))
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_main
+            }
+          }
+          simulation_process{None}
+        }
+      }
+      Asserts{
+        assert(true)
+        assert(true)
+        assert(true)
+        assert(true)
+        assert(true)
+        assert(true)
+        assert(true)
+        assert(true)
+      }
+    }
+  }
+}

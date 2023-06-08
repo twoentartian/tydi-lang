@@ -1,0 +1,138 @@
+Project(test_project){
+  Package(main){
+    Scope(package_main){
+      Variables{
+        test_log_2_f:UnknownType(NotInferred("log2(2^3)"))
+        array:UnknownType(NotInferred("{0,1,2,3,4}"))
+        seven:UnknownType(NotInferred("eight - 1"))
+        test_four2:UnknownType(NotInferred("ceil(three_point_five)"))
+        two:UnknownType(NotInferred("1 << 1"))
+        test_three:UnknownType(NotInferred("floor(three_point_five)"))
+        eight:UnknownType(NotInferred("two * four"))
+        four:UnknownType(NotInferred("two << 1"))
+        test_four:UnknownType(NotInferred("round(three_point_five)"))
+        test_log_2:UnknownType(NotInferred("round(test_log_2_f)"))
+        error_msgs:UnknownType(NotInferred("{"msg0","msg1"}"))
+        $package$main:PackageType(NotInferred(""))
+        three_point_five:UnknownType(NotInferred("(seven+0.0) / 2"))
+        array1:UnknownType(NotInferred("(0=1=>5)"))
+      }
+      Types{
+        rgb:DataGroup(rgb){
+          Scope(group_rgb){
+            Types{
+              r:Bit(NotInferred("eight"))
+              g:Bit(NotInferred("test_four * test_four2 * test_three * test_log_2"))
+              b:Bit(NotInferred("eight"))
+            }
+            ScopeRelations{
+              --GroupScope-->package_main
+            }
+          }
+        }
+        rgb_stream:Stream(rgb_stream){
+          DataType=VarType(rgb)
+          dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+      }
+      Streamlets{
+        Streamlet(component)<NormalStreamlet>{
+          Scope(streamlet_component){
+            ScopeRelations{
+              --StreamletScope-->package_main
+            }
+            Ports{
+              input:Port(VarType(rgb_stream),in) `DefaultClockDomain
+              output:Port(VarType(rgb_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(void_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_void_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_main
+            }
+            Ports{
+              input:Port(VarType(type_in),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(duplicator_s)<@LogicalDataType(DummyLogicalData)@int>{
+          Scope(streamlet_duplicator_s){
+            Variables{
+              output_channel:int(NotInferred("$arg$output_channel"))
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_main
+            }
+            Ports{
+              input:Port(VarType(data_type),in) `DefaultClockDomain
+              output:PortArray[NotInferred("output_channel")](VarType(data_type),out) `DefaultClockDomain
+            }
+          }
+        }
+      }
+      Implements{
+        Implement(component_impl0)<NormalImplement> -> ProxyStreamlet(component<>){
+          Scope(implement_component_impl0){
+            ScopeRelations{
+              --ImplementScope-->package_main
+            }
+            Connections{
+              Self.NotInferred("input") =0=> Self.NotInferred("output") (connection_1063-1079) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(void_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(void_s<@type_in>){
+          Scope(implement_void_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_main
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(component_impl1)<NormalImplement> -> ProxyStreamlet(component<>){
+          Scope(implement_component_impl1){
+            ScopeRelations{
+              --ImplementScope-->package_main
+            }
+            Connections{
+              Self.NotInferred("input") =0=> Self.NotInferred("output") (connection_1126-1142) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(duplicator_i)<@LogicalDataType(DummyLogicalData)@int> -> ProxyStreamlet(duplicator_s<@data_type@output_channel>){
+          Scope(implement_duplicator_i){
+            Variables{
+              output_channel:int(NotInferred("$arg$output_channel"))
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_main
+            }
+          }
+          simulation_process{None}
+        }
+      }
+      Asserts{
+        assert(NotInferred("array1[4] == 4"))
+        assert(NotInferred("array1[0] == 0"))
+        assert(NotInferred("round(test_four) == 4"))
+        assert(NotInferred("round(test_three) == 3"))
+        assert(NotInferred("array[0] == 0"))
+        assert(NotInferred("round(test_four2) == 4"))
+        assert(NotInferred("round(test_log_2_f) == 3"))
+        assert(NotInferred("array[4] == 4"))
+      }
+    }
+  }
+}

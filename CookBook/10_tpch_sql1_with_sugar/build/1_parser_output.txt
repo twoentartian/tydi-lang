@@ -1,0 +1,1063 @@
+Project(test_project){
+  Package(std){
+    Scope(package_std){
+      Variables{
+        max_decimal_15:UnknownType(NotInferred("10^15 - 1"))
+        month_max:UnknownType(NotInferred("12"))
+        bit_width_decimal_15:UnknownType(NotInferred("ceil(log2(max_decimal_15))"))
+        $package$std:PackageType(NotInferred(""))
+        year_max:UnknownType(NotInferred("10^5 - 1"))
+        day_max:UnknownType(NotInferred("31"))
+      }
+      Types{
+        stream_filter_select_stream:Stream(stream_filter_select_stream){
+          DataType=Bit(NotInferred("2"))
+          dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        month_t:Bit(NotInferred("ceil(log2(month_max))"))
+        SQL_decimal_15_2:DataGroup(SQL_decimal_15_2){
+          Scope(group_SQL_decimal_15_2){
+            Variables{
+              frac:UnknownType(NotInferred("2"))
+            }
+            Types{
+              decimal:VarType(SQL_decimal_15)
+            }
+            ScopeRelations{
+              --GroupScope-->package_std
+            }
+          }
+        }
+        year_stream:Stream(year_stream){
+          DataType=VarType(year_t)
+          dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        date_stream:Stream(date_stream){
+          DataType=VarType(Date)
+          dimension=NotInferred("1"), user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        SQL_char15:Bit(NotInferred("8*15"))
+        SQL_char10_stream:Stream(SQL_char10_stream){
+          DataType=VarType(SQL_char10)
+          dimension=NotInferred("1"), user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        key_stream:VarType(int_stream)
+        day_t:Bit(NotInferred("ceil(log2(day_max))"))
+        varchar_stream:Stream(varchar_stream){
+          DataType=VarType(SQL_char)
+          dimension=NotInferred("2"), user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        SQL_char25:Bit(NotInferred("8*25"))
+        SQL_char25_stream:Stream(SQL_char25_stream){
+          DataType=VarType(SQL_char25)
+          dimension=NotInferred("1"), user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        SQL_decimal_15_2_stream:Stream(SQL_decimal_15_2_stream){
+          DataType=VarType(SQL_decimal_15_2)
+          dimension=NotInferred("1"), user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        day_stream:Stream(day_stream){
+          DataType=VarType(day_t)
+          dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        int_stream:Stream(int_stream){
+          DataType=VarType(SQL_int)
+          dimension=NotInferred("1"), user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        SQL_char15_stream:Stream(SQL_char15_stream){
+          DataType=VarType(SQL_char15)
+          dimension=NotInferred("1"), user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        year_t:Bit(NotInferred("ceil(log2(year_max))"))
+        Date:DataGroup(Date){
+          Scope(group_Date){
+            Types{
+              day:VarType(day_t)
+              month:VarType(month_t)
+              year:VarType(year_t)
+            }
+            ScopeRelations{
+              --GroupScope-->package_std
+            }
+          }
+        }
+        SQL_decimal_15:Bit(NotInferred("bit_width_decimal_15"))
+        SQL_int:Bit(NotInferred("32"))
+        month_stream:Stream(month_stream){
+          DataType=VarType(month_t)
+          dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        SQL_char1_stream:Stream(SQL_char1_stream){
+          DataType=VarType(SQL_char)
+          dimension=NotInferred("1"), user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+        }
+        SQL_char10:Bit(NotInferred("8*10"))
+        SQL_char:Bit(NotInferred("8"))
+      }
+      Streamlets{
+        Streamlet(supplier_s)<NormalStreamlet>{
+          Scope(streamlet_supplier_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              s_comment:Port(VarType(varchar_stream),out) `DefaultClockDomain
+              s_acctbal:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              s_suppkey:Port(VarType(key_stream),in) `DefaultClockDomain
+              s_name:Port(VarType(SQL_char25_stream),out) `DefaultClockDomain
+              s_address:Port(VarType(varchar_stream),out) `DefaultClockDomain
+              s_phone:Port(VarType(SQL_char15_stream),out) `DefaultClockDomain
+              s_nationkey:Port(VarType(key_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(partsupp_s)<NormalStreamlet>{
+          Scope(streamlet_partsupp_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              ps_availqty:Port(VarType(int_stream),out) `DefaultClockDomain
+              ps_supplycost:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              ps_comment:Port(VarType(varchar_stream),out) `DefaultClockDomain
+              ps_partkey:Port(VarType(key_stream),in) `DefaultClockDomain
+              ps_suppkey:Port(VarType(key_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(accumulator_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_accumulator_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            Types{
+              count_type:Stream(count_type){
+                DataType=Bit(NotInferred("32"))
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+              overflow_type:Stream(overflow_type){
+                DataType=Bit(NotInferred("1"))
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              overflow:Port(VarType(overflow_type),out) `DefaultClockDomain
+              input:Port(VarType(data_type),in) `DefaultClockDomain
+              count:Port(VarType(count_type),out) `DefaultClockDomain
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(comparator_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_comparator_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              input0:Port(VarType(type_in),in) `DefaultClockDomain
+              output:Port(Stream($generated$Type5165_5179),out) `DefaultClockDomain
+              input1:Port(VarType(type_in),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(duplicator_s)<@LogicalDataType(DummyLogicalData)@int>{
+          Scope(streamlet_duplicator_s){
+            Variables{
+              output_channel:int(NotInferred("$arg$output_channel"))
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              output:PortArray[NotInferred("output_channel")](VarType(data_type),out) `DefaultClockDomain
+              input:Port(VarType(data_type),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(adder_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_adder_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              input0:Port(VarType(data_type),in) `DefaultClockDomain
+              overflow:Port(Stream($generated$Type7248_7262),out) `DefaultClockDomain
+              input1:Port(VarType(data_type),in) `DefaultClockDomain
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(region_s)<NormalStreamlet>{
+          Scope(streamlet_region_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              r_regionkey:Port(VarType(key_stream),in) `DefaultClockDomain
+              r_comment:Port(VarType(varchar_stream),out) `DefaultClockDomain
+              r_name:Port(VarType(SQL_char25_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(to_neg_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_to_neg_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              input:Port(VarType(data_type),in) `DefaultClockDomain
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(nation_s)<NormalStreamlet>{
+          Scope(streamlet_nation_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              n_comment:Port(VarType(varchar_stream),out) `DefaultClockDomain
+              n_name:Port(VarType(SQL_char25_stream),out) `DefaultClockDomain
+              n_nationkey:Port(VarType(key_stream),in) `DefaultClockDomain
+              n_regionkey:Port(VarType(key_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(customer_s)<NormalStreamlet>{
+          Scope(streamlet_customer_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              c_acctbal:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              c_address:Port(VarType(varchar_stream),out) `DefaultClockDomain
+              c_nationkey:Port(VarType(key_stream),out) `DefaultClockDomain
+              c_custkey:Port(VarType(key_stream),in) `DefaultClockDomain
+              c_comment:Port(VarType(varchar_stream),out) `DefaultClockDomain
+              c_mktsegment:Port(VarType(SQL_char10_stream),out) `DefaultClockDomain
+              c_phone:Port(VarType(SQL_char15_stream),out) `DefaultClockDomain
+              c_name:Port(VarType(varchar_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(multiplier_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_multiplier_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              overflow:Port(Stream($generated$Type7686_7700),out) `DefaultClockDomain
+              input0:Port(VarType(data_type),in) `DefaultClockDomain
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+              input1:Port(VarType(data_type),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(orders_s)<NormalStreamlet>{
+          Scope(streamlet_orders_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              o_orderdate:Port(VarType(date_stream),out) `DefaultClockDomain
+              o_orderkey:Port(VarType(key_stream),in) `DefaultClockDomain
+              o_orderstatus:Port(VarType(SQL_char1_stream),out) `DefaultClockDomain
+              o_shippriority:Port(VarType(int_stream),out) `DefaultClockDomain
+              o_clerk:Port(VarType(SQL_char15_stream),out) `DefaultClockDomain
+              o_custkey:Port(VarType(key_stream),out) `DefaultClockDomain
+              o_totalprice:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              o_orderpriority:Port(VarType(SQL_char15_stream),out) `DefaultClockDomain
+              o_comment:Port(VarType(varchar_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(divider_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_divider_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              dividend:Port(VarType(data_type),in) `DefaultClockDomain
+              divisor:Port(VarType(data_type),in) `DefaultClockDomain
+              quotient:Port(VarType(data_type),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(sql_date_constructor_s)<NormalStreamlet>{
+          Scope(streamlet_sql_date_constructor_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              date_output:Port(VarType(date_stream),out) `DefaultClockDomain
+              year_input:Port(VarType(year_stream),in) `DefaultClockDomain
+              day_input:Port(VarType(day_stream),in) `DefaultClockDomain
+              month_input:Port(VarType(month_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_date_generator_s)<NormalStreamlet>{
+          Scope(streamlet_const_date_generator_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              date_output:Port(VarType(date_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(part_s)<NormalStreamlet>{
+          Scope(streamlet_part_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              p_type:Port(VarType(varchar_stream),out) `DefaultClockDomain
+              p_retailprice:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              p_container:Port(VarType(SQL_char10_stream),out) `DefaultClockDomain
+              p_comment:Port(VarType(varchar_stream),out) `DefaultClockDomain
+              p_mfgr:Port(VarType(SQL_char25_stream),out) `DefaultClockDomain
+              p_size:Port(VarType(int_stream),out) `DefaultClockDomain
+              p_name:Port(VarType(varchar_stream),out) `DefaultClockDomain
+              p_partkey:Port(VarType(key_stream),in) `DefaultClockDomain
+              p_brand:Port(VarType(SQL_char10_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(lineitem_s)<NormalStreamlet>{
+          Scope(streamlet_lineitem_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              l_linenumber:Port(VarType(key_stream),in) `DefaultClockDomain
+              l_comment:Port(VarType(varchar_stream),out) `DefaultClockDomain
+              l_shipinstruct:Port(VarType(SQL_char25_stream),out) `DefaultClockDomain
+              l_orderkey:Port(VarType(key_stream),in) `DefaultClockDomain
+              l_returnflag:Port(VarType(SQL_char1_stream),out) `DefaultClockDomain
+              l_partkey:Port(VarType(key_stream),out) `DefaultClockDomain
+              l_shipdate:Port(VarType(date_stream),out) `DefaultClockDomain
+              l_commitdate:Port(VarType(date_stream),out) `DefaultClockDomain
+              l_shipmode:Port(VarType(SQL_char10_stream),out) `DefaultClockDomain
+              l_tax:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_suppkey:Port(VarType(key_stream),out) `DefaultClockDomain
+              l_extendedprice:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_linestatus:Port(VarType(SQL_char1_stream),out) `DefaultClockDomain
+              l_receiptdate:Port(VarType(date_stream),out) `DefaultClockDomain
+              l_quantity:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_discount:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(void_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_void_s){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              input:Port(VarType(type_in),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(sum_qty_s)<NormalStreamlet>{
+          Scope(streamlet_sum_qty_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              sum_base_price:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              error:Port(Stream($generated$Type13832_13846),out) `DefaultClockDomain
+              l_quantity:Port(VarType(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              l_extendedprice:Port(VarType(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              avg_price:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              sum_qty:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(stream_filter_s)<@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_stream_filter_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+              select:Port(VarType(stream_filter_select_stream),in) `DefaultClockDomain
+              input:Port(VarType(data_type),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(sum_disc_price_s)<NormalStreamlet>{
+          Scope(streamlet_sum_disc_price_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              l_tax:Port(VarType(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              error:Port(Stream($generated$Type15124_15138),out) `DefaultClockDomain
+              sum_disc_price:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_extendedprice:Port(VarType(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              l_discount:Port(VarType(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              sum_charge:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(avg_qty_s)<NormalStreamlet>{
+          Scope(streamlet_avg_qty_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              count_order:Port(Stream($generated$Type16825_16840),out) `DefaultClockDomain
+              avg_disc:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              error:Port(Stream($generated$Type16858_16872),out) `DefaultClockDomain
+              l_discount:Port(VarType(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              avg_qty:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_quantity:Port(VarType(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(padding_zero_s)<@LogicalDataType(DummyLogicalData)@LogicalDataType(DummyLogicalData)>{
+          Scope(streamlet_padding_zero_s){
+            Variables{
+              type_out:DummyLogicalData(NotInferred("$arg$type_out"))
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              stream_in:Port(VarType(type_in),in) `DefaultClockDomain
+              stream_out:Port(VarType(type_out),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(main_s)<NormalStreamlet>{
+          Scope(streamlet_main_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              count_order:Port(Stream($generated$Type18605_18620),out) `DefaultClockDomain
+              avg_disc:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              err:Port(Stream($generated$Type18656_18670),out) `DefaultClockDomain
+              l_linestatus:Port(VarType(SQL_char1_stream),out) `DefaultClockDomain
+              sum_base_price:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              sum_qty:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_orderkey:Port(VarType(key_stream),in) `DefaultClockDomain
+              sum_charge:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              avg_price:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_linenumber:Port(VarType(key_stream),in) `DefaultClockDomain
+              sum_disc_price:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_returnflag:Port(VarType(SQL_char1_stream),out) `DefaultClockDomain
+              avg_qty:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(data_filter_s)<NormalStreamlet>{
+          Scope(streamlet_data_filter_s){
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              l_partkey_out:Port(VarType(key_stream),out) `DefaultClockDomain
+              l_shipinstruct_out:Port(VarType(SQL_char25_stream),out) `DefaultClockDomain
+              l_shipmode_out:Port(VarType(SQL_char10_stream),out) `DefaultClockDomain
+              l_partkey_in:Port(VarType(key_stream),in) `DefaultClockDomain
+              l_shipdate_in:Port(VarType(date_stream),in) `DefaultClockDomain
+              l_comment_out:Port(VarType(varchar_stream),out) `DefaultClockDomain
+              l_shipmode_in:Port(VarType(SQL_char10_stream),in) `DefaultClockDomain
+              l_tax_out:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_commitdate_in:Port(VarType(date_stream),in) `DefaultClockDomain
+              l_suppkey_in:Port(VarType(key_stream),in) `DefaultClockDomain
+              l_quantity_out:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_extendedprice_out:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_comment_in:Port(VarType(varchar_stream),in) `DefaultClockDomain
+              l_receiptdate_in:Port(VarType(date_stream),in) `DefaultClockDomain
+              l_extendedprice_in:Port(VarType(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              l_returnflag_in:Port(VarType(SQL_char1_stream),in) `DefaultClockDomain
+              l_shipinstruct_in:Port(VarType(SQL_char25_stream),in) `DefaultClockDomain
+              l_receiptdate_out:Port(VarType(date_stream),out) `DefaultClockDomain
+              l_commitdate_out:Port(VarType(date_stream),out) `DefaultClockDomain
+              l_quantity_in:Port(VarType(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              l_discount_in:Port(VarType(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              l_linestatus_in:Port(VarType(SQL_char1_stream),in) `DefaultClockDomain
+              l_suppkey_out:Port(VarType(key_stream),out) `DefaultClockDomain
+              l_discount_out:Port(VarType(SQL_decimal_15_2_stream),out) `DefaultClockDomain
+              l_returnflag_out:Port(VarType(SQL_char1_stream),out) `DefaultClockDomain
+              l_tax_in:Port(VarType(SQL_decimal_15_2_stream),in) `DefaultClockDomain
+              l_linestatus_out:Port(VarType(SQL_char1_stream),out) `DefaultClockDomain
+              l_shipdate_out:Port(VarType(date_stream),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(const_value_generator_s)<@LogicalDataType(DummyLogicalData)@int>{
+          Scope(streamlet_const_value_generator_s){
+            Variables{
+              value:int(NotInferred("$arg$value"))
+              type_out:DummyLogicalData(NotInferred("$arg$type_out"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              output:Port(VarType(type_out),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(converter_s)<@LogicalDataType(DummyLogicalData)@LogicalDataType(DummyLogicalData)@int>{
+          Scope(streamlet_converter_s){
+            Variables{
+              channel:int(NotInferred("$arg$channel"))
+              input_type:DummyLogicalData(NotInferred("$arg$input_type"))
+              output_type:DummyLogicalData(NotInferred("$arg$output_type"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              input:PortArray[NotInferred("channel")](VarType(input_type),in) `DefaultClockDomain
+              output:PortArray[NotInferred("channel")](VarType(output_type),out) `DefaultClockDomain
+            }
+          }
+        }
+        Streamlet(and_s)<@LogicalDataType(DummyLogicalData)@int>{
+          Scope(streamlet_and_s){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+              input_channel:int(NotInferred("$arg$input_channel"))
+            }
+            ScopeRelations{
+              --StreamletScope-->package_std
+            }
+            Ports{
+              output:Port(VarType(data_type),out) `DefaultClockDomain
+              input:PortArray[NotInferred("input_channel")](VarType(data_type),in) `DefaultClockDomain
+            }
+          }
+        }
+      }
+      Implements{
+        Implement(to_neg_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(to_neg_s<@data_type>){
+          Scope(implement_to_neg_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(and_i)<@LogicalDataType(DummyLogicalData)@int> -> ProxyStreamlet(and_s<@data_type@input_channel>){
+          Scope(implement_and_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+              input_channel:int(NotInferred("$arg$input_channel"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(data_filter_i)<NormalImplement> -> ProxyStreamlet(data_filter_s<>){
+          Scope(implement_data_filter_i){
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+            Instances{
+              l_suppkey_bypass:(NotInferred("stream_filter_i"))
+              l_extendedprice_bypass:(NotInferred("stream_filter_i"))
+              l_discount_bypass:(NotInferred("stream_filter_i"))
+              l_shipdate_bypass:(NotInferred("stream_filter_i"))
+              l_shipinstruct_bypass:(NotInferred("stream_filter_i"))
+              compare_date:(NotInferred("comparator_i"))
+              l_linestatus_bypass:(NotInferred("stream_filter_i"))
+              l_quantity_bypass:(NotInferred("stream_filter_i"))
+              l_shipmode_bypass:(NotInferred("stream_filter_i"))
+              baseline_date:(NotInferred("const_date_generator_i"))
+              l_returnflag_bypass:(NotInferred("stream_filter_i"))
+              l_comment_bypass:(NotInferred("stream_filter_i"))
+              l_receiptdate_bypass:(NotInferred("stream_filter_i"))
+              l_tax_bypass:(NotInferred("stream_filter_i"))
+              l_partkey_bypass:(NotInferred("stream_filter_i"))
+              l_commitdate_bypass:(NotInferred("stream_filter_i"))
+            }
+            Connections{
+              ExternalOwner(l_shipmode_bypass).NotInferred("output") =0=> Self.NotInferred("l_shipmode_out") (connection_13273-13316) 
+              Self.NotInferred("l_returnflag_in") =0=> ExternalOwner(l_returnflag_bypass).NotInferred("input") (connection_11811-11856) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_comment_bypass).NotInferred("select") (connection_13433-13480) 
+              ExternalOwner(l_quantity_bypass).NotInferred("output") =0=> Self.NotInferred("l_quantity_out") (connection_11017-11060) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_extendedprice_bypass).NotInferred("select") (connection_11204-11257) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_partkey_bypass).NotInferred("select") (connection_10539-10586) 
+              Self.NotInferred("l_extendedprice_in") =0=> ExternalOwner(l_extendedprice_bypass).NotInferred("input") (connection_11149-11200) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_tax_bypass).NotInferred("select") (connection_11652-11695) 
+              Self.NotInferred("l_linestatus_in") =0=> ExternalOwner(l_linestatus_bypass).NotInferred("input") (connection_12040-12085) 
+              ExternalOwner(l_shipdate_bypass).NotInferred("output") =0=> Self.NotInferred("l_shipdate_out") (connection_12359-12402) 
+              Self.NotInferred("l_quantity_in") =0=> ExternalOwner(l_quantity_bypass).NotInferred("input") (connection_10920-10961) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_suppkey_bypass).NotInferred("select") (connection_10744-10791) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_linestatus_bypass).NotInferred("select") (connection_12089-12139) 
+              ExternalOwner(l_tax_bypass).NotInferred("output") =0=> Self.NotInferred("l_tax_out") (connection_11699-11732) 
+              ExternalOwner(l_partkey_bypass).NotInferred("output") =0=> Self.NotInferred("l_partkey_out") (connection_10590-10631) 
+              ExternalOwner(l_discount_bypass).NotInferred("output") =0=> Self.NotInferred("l_discount_out") (connection_11495-11538) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_quantity_bypass).NotInferred("select") (connection_10965-11013) 
+              ExternalOwner(l_linestatus_bypass).NotInferred("output") =0=> Self.NotInferred("l_linestatus_out") (connection_12143-12190) 
+              Self.NotInferred("l_receiptdate_in") =0=> ExternalOwner(l_receiptdate_bypass).NotInferred("input") (connection_12701-12748) 
+              Self.NotInferred("l_shipinstruct_in") =0=> ExternalOwner(l_shipinstruct_bypass).NotInferred("input") (connection_12938-12987) 
+              ExternalOwner(l_shipinstruct_bypass).NotInferred("output") =0=> Self.NotInferred("l_shipinstruct_out") (connection_13047-13098) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_shipmode_bypass).NotInferred("select") (connection_13221-13269) 
+              ExternalOwner(l_comment_bypass).NotInferred("output") =0=> Self.NotInferred("l_comment_out") (connection_13484-13525) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_returnflag_bypass).NotInferred("select") (connection_11860-11910) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_discount_bypass).NotInferred("select") (connection_11443-11491) 
+              ExternalOwner(l_extendedprice_bypass).NotInferred("output") =0=> Self.NotInferred("l_extendedprice_out") (connection_11261-11314) 
+              ExternalOwner(l_suppkey_bypass).NotInferred("output") =0=> Self.NotInferred("l_suppkey_out") (connection_10795-10836) 
+              Self.NotInferred("l_discount_in") =0=> ExternalOwner(l_discount_bypass).NotInferred("input") (connection_11398-11439) 
+              ExternalOwner(baseline_date).NotInferred("date_output") =0=> ExternalOwner(compare_date).NotInferred("input1") (connection_10377-10426) 
+              Self.NotInferred("l_tax_in") =0=> ExternalOwner(l_tax_bypass).NotInferred("input") (connection_11617-11648) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_shipdate_bypass).NotInferred("select") (connection_12307-12355) 
+              Self.NotInferred("l_partkey_in") =0=> ExternalOwner(l_partkey_bypass).NotInferred("input") (connection_10496-10535) 
+              Self.NotInferred("l_shipdate_in") =0=> ExternalOwner(compare_date).NotInferred("input0") (connection_10336-10373) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_commitdate_bypass).NotInferred("select") (connection_12525-12575) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_receiptdate_bypass).NotInferred("select") (connection_12752-12803) 
+              ExternalOwner(compare_date).NotInferred("output") =0=> ExternalOwner(l_shipinstruct_bypass).NotInferred("select") (connection_12991-13043) 
+              Self.NotInferred("l_shipmode_in") =0=> ExternalOwner(l_shipmode_bypass).NotInferred("input") (connection_13176-13217) 
+              Self.NotInferred("l_comment_in") =0=> ExternalOwner(l_comment_bypass).NotInferred("input") (connection_13390-13429) 
+              ExternalOwner(l_receiptdate_bypass).NotInferred("output") =0=> Self.NotInferred("l_receiptdate_out") (connection_12807-12856) 
+              ExternalOwner(l_returnflag_bypass).NotInferred("output") =0=> Self.NotInferred("l_returnflag_out") (connection_11914-11961) 
+              Self.NotInferred("l_commitdate_in") =0=> ExternalOwner(l_commitdate_bypass).NotInferred("input") (connection_12476-12521) 
+              Self.NotInferred("l_suppkey_in") =0=> ExternalOwner(l_suppkey_bypass).NotInferred("input") (connection_10701-10740) 
+              Self.NotInferred("l_shipdate_in") =0=> ExternalOwner(l_shipdate_bypass).NotInferred("input") (connection_12262-12303) 
+              ExternalOwner(l_commitdate_bypass).NotInferred("output") =0=> Self.NotInferred("l_commitdate_out") (connection_12579-12626) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(orders_i)<NormalImplement> -> ProxyStreamlet(orders_s<>){
+          Scope(implement_orders_i){
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(lineitem_i)<NormalImplement> -> ProxyStreamlet(lineitem_s<>){
+          Scope(implement_lineitem_i){
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(comparator_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(comparator_s<@type_in>){
+          Scope(implement_comparator_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(duplicator_i)<@LogicalDataType(DummyLogicalData)@int> -> ProxyStreamlet(duplicator_s<@data_type@output_channel>){
+          Scope(implement_duplicator_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+              output_channel:int(NotInferred("$arg$output_channel"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(supplier_i)<NormalImplement> -> ProxyStreamlet(supplier_s<>){
+          Scope(implement_supplier_i){
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(converter_i)<@LogicalDataType(DummyLogicalData)@LogicalDataType(DummyLogicalData)@int> -> ProxyStreamlet(converter_s<@input_type@output_type@channel>){
+          Scope(implement_converter_i){
+            Variables{
+              input_type:DummyLogicalData(NotInferred("$arg$input_type"))
+              output_type:DummyLogicalData(NotInferred("$arg$output_type"))
+              channel:int(NotInferred("$arg$channel"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(adder_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(adder_s<@data_type>){
+          Scope(implement_adder_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(avg_qty_i)<NormalImplement> -> ProxyStreamlet(avg_qty_s<>){
+          Scope(implement_avg_qty_i){
+            Types{
+              count_type:VarType(streamlet[accumulator_s].count_type)
+              error_stream:Stream(error_stream){
+                DataType=Bit(NotInferred("1"))
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+            Instances{
+              accu0:(NotInferred("accumulator_i"))
+              divider1:(NotInferred("divider_i"))
+              accu1:(NotInferred("accumulator_i"))
+              and:(NotInferred("and_i"))
+              converter:(NotInferred("converter_i"))
+              divider0:(NotInferred("divider_i"))
+            }
+            Connections{
+              Self.NotInferred("l_quantity") =0=> ExternalOwner(accu0).NotInferred("input") (connection_17260-17286) 
+              ExternalOwner(divider1).NotInferred("quotient") =0=> Self.NotInferred("avg_disc") (connection_17730-17760) 
+              ExternalOwner(converter).NotInferred("output")[NotInferred("1")] =0=> ExternalOwner(divider0).NotInferred("divisor") (connection_17366-17406) 
+              ExternalOwner(accu0).NotInferred("overflow") =0=> ExternalOwner(and).NotInferred("input")[NotInferred("0")] (connection_17862-17908) @NoStrictType
+              ExternalOwner(accu1).NotInferred("overflow") =0=> ExternalOwner(and).NotInferred("input")[NotInferred("1")] (connection_17912-17958) @NoStrictType
+              ExternalOwner(divider0).NotInferred("quotient") =0=> Self.NotInferred("avg_qty") (connection_17410-17439) 
+              ExternalOwner(accu0).NotInferred("count") =0=> ExternalOwner(converter).NotInferred("input")[NotInferred("1")] (connection_17328-17362) 
+              ExternalOwner(accu0).NotInferred("output") =0=> ExternalOwner(divider0).NotInferred("dividend") (connection_17290-17324) 
+              Self.NotInferred("l_discount") =0=> ExternalOwner(accu1).NotInferred("input") (connection_17445-17471) 
+              ExternalOwner(accu1).NotInferred("count") =0=> ExternalOwner(converter).NotInferred("input")[NotInferred("0")] (connection_17602-17636) 
+              ExternalOwner(and).NotInferred("output") =0=> Self.NotInferred("error") (connection_17962-17997) @NoStrictType
+              ExternalOwner(accu1).NotInferred("output") =0=> ExternalOwner(divider1).NotInferred("dividend") (connection_17475-17509) 
+              ExternalOwner(converter).NotInferred("output")[NotInferred("0")] =0=> ExternalOwner(divider1).NotInferred("divisor") (connection_17640-17680) 
+              ExternalOwner(accu1).NotInferred("count") =0=> Self.NotInferred("count_order") (connection_17684-17726) @NoStrictType
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(multiplier_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(multiplier_s<@data_type>){
+          Scope(implement_multiplier_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_value_generator_i)<@LogicalDataType(DummyLogicalData)@int> -> ProxyStreamlet(const_value_generator_s<@type_out@value>){
+          Scope(implement_const_value_generator_i){
+            Variables{
+              value:int(NotInferred("$arg$value"))
+              type_out:DummyLogicalData(NotInferred("$arg$type_out"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(accumulator_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(accumulator_s<@data_type>){
+          Scope(implement_accumulator_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(partsupp_i)<NormalImplement> -> ProxyStreamlet(partsupp_s<>){
+          Scope(implement_partsupp_i){
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(divider_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(divider_s<@data_type>){
+          Scope(implement_divider_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(sql_date_constructor_i)<NormalImplement> -> ProxyStreamlet(sql_date_constructor_s<>){
+          Scope(implement_sql_date_constructor_i){
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(main_i)<NormalImplement> -> ProxyStreamlet(main_s<>){
+          Scope(implement_main_i){
+            Types{
+              error_stream:Stream(error_stream){
+                DataType=Bit(NotInferred("1"))
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+            Instances{
+              data_src:(NotInferred("lineitem_i"))
+              data_filter:(NotInferred("data_filter_i"))
+              part1:(NotInferred("sum_disc_price_i"))
+              part0:(NotInferred("sum_qty_i"))
+              part2:(NotInferred("avg_qty_i"))
+              and:(NotInferred("and_i"))
+            }
+            Connections{
+              ExternalOwner(data_filter).NotInferred("l_linestatus_out") =0=> Self.NotInferred("l_linestatus") (connection_19679-19724) 
+              ExternalOwner(data_src).NotInferred("l_receiptdate") =0=> ExternalOwner(data_filter).NotInferred("l_receiptdate_in") (connection_19404-19459) 
+              ExternalOwner(data_filter).NotInferred("l_quantity_out") =0=> ExternalOwner(part0).NotInferred("l_quantity") (connection_19771-19818) 
+              ExternalOwner(data_filter).NotInferred("l_discount_out") =0=> ExternalOwner(part1).NotInferred("l_discount") (connection_20099-20146) 
+              ExternalOwner(data_src).NotInferred("l_returnflag") =0=> ExternalOwner(data_filter).NotInferred("l_returnflag_in") (connection_19180-19233) 
+              ExternalOwner(part2).NotInferred("avg_disc") =0=> Self.NotInferred("avg_disc") (connection_20443-20470) 
+              ExternalOwner(data_src).NotInferred("l_quantity") =0=> ExternalOwner(data_filter).NotInferred("l_quantity_in") (connection_18968-19017) 
+              ExternalOwner(part2).NotInferred("error") =0=> ExternalOwner(and).NotInferred("input")[NotInferred("2")] (connection_20718-20761) @NoStrictType
+              ExternalOwner(data_src).NotInferred("l_tax") =0=> ExternalOwner(data_filter).NotInferred("l_tax_in") (connection_19137-19176) 
+              ExternalOwner(data_filter).NotInferred("l_quantity_out") =0=> ExternalOwner(part2).NotInferred("l_quantity") (connection_20312-20359) 
+              ExternalOwner(part0).NotInferred("sum_qty") =0=> Self.NotInferred("sum_qty") (connection_19883-19908) 
+              ExternalOwner(and).NotInferred("output") =0=> Self.NotInferred("err") (connection_20765-20798) @NoStrictType
+              ExternalOwner(part1).NotInferred("sum_disc_price") =0=> Self.NotInferred("sum_disc_price") (connection_20191-20230) 
+              ExternalOwner(part1).NotInferred("sum_charge") =0=> Self.NotInferred("sum_charge") (connection_20234-20265) 
+              ExternalOwner(part2).NotInferred("count_order") =0=> Self.NotInferred("count_order") (connection_20474-20522) @NoStrictType
+              ExternalOwner(data_src).NotInferred("l_suppkey") =0=> ExternalOwner(data_filter).NotInferred("l_suppkey_in") (connection_18917-18964) 
+              ExternalOwner(part0).NotInferred("avg_price") =0=> Self.NotInferred("avg_price") (connection_19955-19984) 
+              Self.NotInferred("l_linenumber") =0=> ExternalOwner(data_src).NotInferred("l_linenumber") (connection_18782-18820) 
+              ExternalOwner(data_filter).NotInferred("l_returnflag_out") =0=> Self.NotInferred("l_returnflag") (connection_19630-19675) 
+              ExternalOwner(data_src).NotInferred("l_discount") =0=> ExternalOwner(data_filter).NotInferred("l_discount_in") (connection_19084-19133) 
+              ExternalOwner(data_src).NotInferred("l_partkey") =0=> ExternalOwner(data_filter).NotInferred("l_partkey_in") (connection_18866-18913) 
+              ExternalOwner(data_filter).NotInferred("l_extendedprice_out") =0=> ExternalOwner(part1).NotInferred("l_extendedprice") (connection_20038-20095) 
+              ExternalOwner(data_src).NotInferred("l_commitdate") =0=> ExternalOwner(data_filter).NotInferred("l_commitdate_in") (connection_19347-19400) 
+              ExternalOwner(data_src).NotInferred("l_shipinstruct") =0=> ExternalOwner(data_filter).NotInferred("l_shipinstruct_in") (connection_19463-19520) 
+              ExternalOwner(part2).NotInferred("avg_qty") =0=> Self.NotInferred("avg_qty") (connection_20414-20439) 
+              ExternalOwner(data_filter).NotInferred("l_extendedprice_out") =0=> ExternalOwner(part0).NotInferred("l_extendedprice") (connection_19822-19879) 
+              Self.NotInferred("l_orderkey") =0=> ExternalOwner(data_src).NotInferred("l_orderkey") (connection_18744-18778) 
+              ExternalOwner(data_src).NotInferred("l_comment") =0=> ExternalOwner(data_filter).NotInferred("l_comment_in") (connection_19577-19624) 
+              ExternalOwner(data_src).NotInferred("l_linestatus") =0=> ExternalOwner(data_filter).NotInferred("l_linestatus_in") (connection_19237-19290) 
+              ExternalOwner(data_src).NotInferred("l_shipdate") =0=> ExternalOwner(data_filter).NotInferred("l_shipdate_in") (connection_19294-19343) 
+              ExternalOwner(part0).NotInferred("error") =0=> ExternalOwner(and).NotInferred("input")[NotInferred("0")] (connection_20624-20667) @NoStrictType
+              ExternalOwner(data_filter).NotInferred("l_discount_out") =0=> ExternalOwner(part2).NotInferred("l_discount") (connection_20363-20410) 
+              ExternalOwner(data_src).NotInferred("l_shipmode") =0=> ExternalOwner(data_filter).NotInferred("l_shipmode_in") (connection_19524-19573) 
+              ExternalOwner(part1).NotInferred("error") =0=> ExternalOwner(and).NotInferred("input")[NotInferred("1")] (connection_20671-20714) @NoStrictType
+              ExternalOwner(data_filter).NotInferred("l_tax_out") =0=> ExternalOwner(part1).NotInferred("l_tax") (connection_20150-20187) 
+              ExternalOwner(part0).NotInferred("sum_base_price") =0=> Self.NotInferred("sum_base_price") (connection_19912-19951) 
+              ExternalOwner(data_src).NotInferred("l_extendedprice") =0=> ExternalOwner(data_filter).NotInferred("l_extendedprice_in") (connection_19021-19080) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(nation_i)<NormalImplement> -> ProxyStreamlet(nation_s<>){
+          Scope(implement_nation_i){
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(stream_filter_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(stream_filter_s<@data_type>){
+          Scope(implement_stream_filter_i){
+            Variables{
+              data_type:DummyLogicalData(NotInferred("$arg$data_type"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(void_i)<@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(void_s<@type_in>){
+          Scope(implement_void_i){
+            Variables{
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(part_i)<NormalImplement> -> ProxyStreamlet(part_s<>){
+          Scope(implement_part_i){
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(region_i)<NormalImplement> -> ProxyStreamlet(region_s<>){
+          Scope(implement_region_i){
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(padding_zero_i)<@LogicalDataType(DummyLogicalData)@LogicalDataType(DummyLogicalData)> -> ProxyStreamlet(padding_zero_s<@type_in@type_out>){
+          Scope(implement_padding_zero_i){
+            Variables{
+              type_out:DummyLogicalData(NotInferred("$arg$type_out"))
+              type_in:DummyLogicalData(NotInferred("$arg$type_in"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(const_date_generator_i)<@int@int@int> -> ProxyStreamlet(const_date_generator_s<>){
+          Scope(implement_const_date_generator_i){
+            Variables{
+              day:int(NotInferred("$arg$day"))
+              year:int(NotInferred("$arg$year"))
+              month:int(NotInferred("$arg$month"))
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+            Instances{
+              day_gen:(NotInferred("const_value_generator_i"))
+              compositor:(NotInferred("sql_date_constructor_i"))
+              month_gen:(NotInferred("const_value_generator_i"))
+              year_gen:(NotInferred("const_value_generator_i"))
+            }
+            Connections{
+              ExternalOwner(day_gen).NotInferred("output") =0=> ExternalOwner(compositor).NotInferred("day_input") (connection_8815-8854) 
+              ExternalOwner(compositor).NotInferred("date_output") =0=> Self.NotInferred("date_output") (connection_8950-8988) 
+              ExternalOwner(month_gen).NotInferred("output") =0=> ExternalOwner(compositor).NotInferred("month_input") (connection_8858-8901) 
+              ExternalOwner(year_gen).NotInferred("output") =0=> ExternalOwner(compositor).NotInferred("year_input") (connection_8905-8946) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(sum_disc_price_i)<NormalImplement> -> ProxyStreamlet(sum_disc_price_s<>){
+          Scope(implement_sum_disc_price_i){
+            Types{
+              error_stream:Stream(error_stream){
+                DataType=Bit(NotInferred("1"))
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+            Instances{
+              const_decimal_15_value2:(NotInferred("const_value_generator_i"))
+              adder:(NotInferred("adder_i"))
+              multiplier:(NotInferred("multiplier_i"))
+              const_decimal_15_value:(NotInferred("const_value_generator_i"))
+              multiplier2:(NotInferred("multiplier_i"))
+              adder2:(NotInferred("adder_i"))
+              neg:(NotInferred("to_neg_i"))
+              and:(NotInferred("and_i"))
+            }
+            Connections{
+              ExternalOwner(neg).NotInferred("output") =0=> ExternalOwner(adder).NotInferred("input1") (connection_15517-15544) 
+              ExternalOwner(adder2).NotInferred("output") =0=> ExternalOwner(multiplier2).NotInferred("input0") (connection_16082-16118) 
+              Self.NotInferred("l_discount") =0=> ExternalOwner(neg).NotInferred("input") (connection_15489-15513) 
+              ExternalOwner(adder2).NotInferred("overflow") =0=> ExternalOwner(and).NotInferred("input")[NotInferred("2")] (connection_16428-16475) @NoStrictType
+              Self.NotInferred("l_tax") =0=> ExternalOwner(adder2).NotInferred("input0") (connection_16003-16026) 
+              ExternalOwner(const_decimal_15_value).NotInferred("output") =0=> ExternalOwner(adder).NotInferred("input0") (connection_15439-15485) 
+              Self.NotInferred("l_extendedprice") =0=> ExternalOwner(multiplier).NotInferred("input1") (connection_15654-15691) 
+              ExternalOwner(multiplier2).NotInferred("overflow") =0=> ExternalOwner(and).NotInferred("input")[NotInferred("3")] (connection_16479-16531) @NoStrictType
+              ExternalOwner(multiplier).NotInferred("overflow") =0=> ExternalOwner(and).NotInferred("input")[NotInferred("0")] (connection_16323-16374) @NoStrictType
+              ExternalOwner(multiplier).NotInferred("output") =0=> ExternalOwner(multiplier2).NotInferred("input1") (connection_16122-16162) 
+              ExternalOwner(multiplier).NotInferred("output") =0=> Self.NotInferred("sum_disc_price") (connection_15695-15731) 
+              ExternalOwner(adder).NotInferred("overflow") =0=> ExternalOwner(and).NotInferred("input")[NotInferred("1")] (connection_16378-16424) @NoStrictType
+              ExternalOwner(adder).NotInferred("output") =0=> ExternalOwner(multiplier).NotInferred("input0") (connection_15616-15650) 
+              ExternalOwner(multiplier2).NotInferred("output") =0=> Self.NotInferred("sum_charge") (connection_16166-16199) 
+              ExternalOwner(and).NotInferred("output") =0=> Self.NotInferred("error") (connection_16535-16570) @NoStrictType
+              ExternalOwner(const_decimal_15_value2).NotInferred("output") =0=> ExternalOwner(adder2).NotInferred("input1") (connection_16030-16078) 
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(customer_i)<NormalImplement> -> ProxyStreamlet(customer_s<>){
+          Scope(implement_customer_i){
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+          }
+          simulation_process{None}
+        }
+        Implement(sum_qty_i)<NormalImplement> -> ProxyStreamlet(sum_qty_s<>){
+          Scope(implement_sum_qty_i){
+            Types{
+              count_type:VarType(streamlet[accumulator_s].count_type)
+              error_stream:Stream(error_stream){
+                DataType=Bit(NotInferred("1"))
+                dimension=0, user=DataNull, throughput=1, synchronicity=Sync, complexity=7, direction=Forward, keep=false
+              }
+            }
+            ScopeRelations{
+              --ImplementScope-->package_std
+            }
+            Instances{
+              avg_price_divider:(NotInferred("divider_i"))
+              accu1:(NotInferred("accumulator_i"))
+              and:(NotInferred("and_i"))
+              accu0:(NotInferred("accumulator_i"))
+              converter:(NotInferred("converter_i"))
+            }
+            Connections{
+              ExternalOwner(accu1).NotInferred("output") =0=> ExternalOwner(avg_price_divider).NotInferred("dividend") (connection_14313-14356) 
+              ExternalOwner(avg_price_divider).NotInferred("quotient") =0=> Self.NotInferred("avg_price") (connection_14539-14579) 
+              Self.NotInferred("l_quantity") =0=> ExternalOwner(accu0).NotInferred("input") (connection_14109-14135) 
+              ExternalOwner(accu0).NotInferred("overflow") =0=> ExternalOwner(and).NotInferred("input")[NotInferred("0")] (connection_14681-14727) @NoStrictType
+              ExternalOwner(accu1).NotInferred("output") =0=> Self.NotInferred("sum_base_price") (connection_14278-14309) 
+              Self.NotInferred("l_extendedprice") =0=> ExternalOwner(accu1).NotInferred("input") (connection_14169-14200) 
+              ExternalOwner(accu1).NotInferred("count") =0=> ExternalOwner(converter).NotInferred("input")[NotInferred("0")] (connection_14448-14482) 
+              ExternalOwner(and).NotInferred("output") =0=> Self.NotInferred("error") (connection_14781-14816) @NoStrictType
+              ExternalOwner(accu1).NotInferred("overflow") =0=> ExternalOwner(and).NotInferred("input")[NotInferred("1")] (connection_14731-14777) @NoStrictType
+              ExternalOwner(accu0).NotInferred("output") =0=> Self.NotInferred("sum_qty") (connection_14139-14163) 
+              ExternalOwner(converter).NotInferred("output")[NotInferred("0")] =0=> ExternalOwner(avg_price_divider).NotInferred("divisor") (connection_14486-14535) 
+            }
+          }
+          simulation_process{None}
+        }
+      }
+    }
+  }
+}
